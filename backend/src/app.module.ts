@@ -2,8 +2,13 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
+import { ApiKey } from './api-keys/entities/api-key.entity';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { Project } from './projects/entities/project.entity';
+import { TelemetryEvent } from './telemetry/entities/telemetry-event.entity';
+import { WorkSession } from './telemetry/entities/work-session.entity';
+import { User } from './users/entities/user.entity';
 
 @Module({
   imports: [
@@ -18,7 +23,7 @@ import { AppService } from './app.service';
       username: process.env.POSTGRES_USER,
       password: process.env.POSTGRES_PASSWORD,
       database: process.env.POSTGRES_DB,
-      autoLoadEntities: true,
+      entities: [User, ApiKey, Project, TelemetryEvent, WorkSession],
       synchronize: true,
     }),
   ],
