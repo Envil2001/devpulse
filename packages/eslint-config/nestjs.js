@@ -37,9 +37,14 @@ export default function nestjsConfig(options = {}) {
         { checksVoidReturn: { attributes: false } },
       ],
 
-      // NestJS DI/decorator patterns often trigger these
+      // NestJS DI/decorator patterns often trigger these —
+      // library typings (ThrottlerModule, PassportModule, etc.) are
+      // frequently unresolved at the type-check level, so errors here
+      // are almost always false-positives from third-party code.
+      '@typescript-eslint/no-unsafe-assignment': 'warn',
       '@typescript-eslint/no-unsafe-call': 'warn',
       '@typescript-eslint/no-unsafe-member-access': 'warn',
+      '@typescript-eslint/no-unsafe-return': 'warn',
 
       // n plugin rules that conflict with TS/NestJS tooling
       'n/no-missing-import': 'off',

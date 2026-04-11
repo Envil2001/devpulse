@@ -16,6 +16,10 @@ export const env = createEnv({
     // Redis
     REDIS_HOST: z.string().min(1).default('localhost'),
     REDIS_PORT: z.coerce.number().default(6379),
+
+    // JWT
+    JWT_SECRET: z.string().min(1),
+    JWT_EXPIRES_IN: z.string().default('7d'),
   },
 
   runtimeEnv: process.env,

@@ -1,2 +1,2 @@
-export { typeIdGenerator } from './generator.js';
-export { type IdTypePrefixes, idTypes, type TypeId } from './types.js';
+export * from './generator.js';
+export * from './types.js';
