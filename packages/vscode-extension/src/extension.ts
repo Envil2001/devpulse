@@ -1,8 +1,8 @@
 import * as vscode from 'vscode';
 
 /**
- * Activated after the workbench has finished starting (`onStartupFinished`), or when the
- * hello-world command runs (`onCommand:...`) if activation was deferred.
+ * Activated after the workbench has finished starting (`onStartupFinished`).
+ * Command activation from `contributes.commands` is inferred by VS Code — no duplicate `onCommand` in package.json.
  */
 export function activate(context: vscode.ExtensionContext): void {
   console.log('DevPulse extension is active');
