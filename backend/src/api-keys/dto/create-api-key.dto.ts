@@ -1,0 +1,12 @@
+import { IsOptional, IsString, MaxLength } from 'class-validator';
+
+export class CreateApiKeyDto {
+  @IsString({ message: 'Name must be a string' })
+  @MaxLength(100, { message: 'Name must not exceed 100 characters' })
+  declare public name: string;
+
+  @IsOptional()
+  @IsString({ message: 'Device label must be a string' })
+  @MaxLength(100, { message: 'Device label must not exceed 100 characters' })
+  public deviceLabel?: string;
+}

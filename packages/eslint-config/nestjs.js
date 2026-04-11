@@ -12,6 +12,7 @@ import baseConfig from './base.js';
  * @param {string}  [options.tsconfigRootDir]
  * @param {'commonjs'|'module'} [options.sourceType]
  * @param {Record<string, unknown>} [options.rules]
+ * @param {unknown[]} [options.extraConfigs]
  */
 export default function nestjsConfig(options = {}) {
   const base = baseConfig({
@@ -25,11 +26,14 @@ export default function nestjsConfig(options = {}) {
       ? nPlugin.configs['flat/recommended-module']
       : nPlugin.configs['flat/recommended-script'];
 
-  return tseslint.config(...base, nodeConfig, {
-    languageOptions: {
-      sourceType: options.sourceType ?? 'commonjs',
-    },
-    rules: {
+  return tseslint.config(
+    ...base,
+    nodeConfig,
+    {
+      languageOptions: {
+        sourceType: options.sourceType ?? 'commonjs',
+      },
+      rules: {
       // Node.js async safety
       '@typescript-eslint/no-floating-promises': 'error',
       '@typescript-eslint/no-misused-promises': [
@@ -46,6 +50,28 @@ export default function nestjsConfig(options = {}) {
       '@typescript-eslint/no-unsafe-member-access': 'warn',
       '@typescript-eslint/no-unsafe-return': 'warn',
 
+      // Require explicit access modifiers on class members
+      '@typescript-eslint/explicit-member-accessibility': [
+        'warn',
+        {
+          accessibility: 'explicit',
+          overrides: { constructors: 'no-public' },
+        },
+      ],
+
+      // Forbid non-null assertions like x! and class-field definite assertions like field!: T
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'TSNonNullExpression',
+          message: 'Non-null assertion (!) is forbidden. Use proper narrowing instead.',
+        },
+        {
+          selector: 'PropertyDefinition[definite=true]',
+          message: 'Definite assignment assertion (!) is forbidden. Use declare or initializer instead.',
+        },
+      ],
+
       // n plugin rules that conflict with TS/NestJS tooling
       'n/no-missing-import': 'off',
       'n/no-unpublished-import': 'off',
@@ -56,7 +82,9 @@ export default function nestjsConfig(options = {}) {
       // NestJS @Module / @Controller / @Injectable classes look "empty" to ESLint
       '@typescript-eslint/no-extraneous-class': 'off',
 
-      ...options.rules,
+        ...options.rules,
+      },
     },
-  });
+    ...(options.extraConfigs ?? []),
+  );
 }

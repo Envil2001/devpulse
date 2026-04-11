@@ -5,7 +5,9 @@ import { APP_GUARD } from '@nestjs/core/constants';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
+import { ApiKeysModule } from './api-keys/api-keys.module';
 import { ApiKey } from './api-keys/entities/api-key.entity';
+import { AuthModule } from './auth/auth.module';
 import { Project } from './projects/entities/project.entity';
 import { TelemetryEvent } from './telemetry/entities/telemetry-event.entity';
 import { WorkSession } from './telemetry/entities/work-session.entity';
@@ -48,6 +50,9 @@ const throttlerProvider: Provider = {
       entities: [User, ApiKey, Project, TelemetryEvent, WorkSession],
       synchronize: true,
     }),
+
+    AuthModule,
+    ApiKeysModule,
   ],
   controllers: [AppController],
   providers: [AppService, throttlerProvider],
