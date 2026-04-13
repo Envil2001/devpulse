@@ -17,6 +17,10 @@
       {
         "command": "devpulse.devpulse.helloWorld",
         "title": "DevPulse: Hello World"
+      },
+      {
+        "command": "devpulse.devpulse.setApiKey",
+        "title": "DevPulse: Set API Key"
       }
     ]
   },

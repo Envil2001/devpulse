@@ -1,5 +1,7 @@
 import * as vscode from 'vscode';
 
+import { DEVPULSE_API_KEY_SECRET } from './secret-keys.js';
+
 /**
  * Activated after the workbench has finished starting (`onStartupFinished`).
  * Command activation from `contributes.commands` is inferred by VS Code — no duplicate `onCommand` in package.json.
@@ -7,11 +9,33 @@ import * as vscode from 'vscode';
 export function activate(context: vscode.ExtensionContext): void {
   console.log('DevPulse extension is active');
 
-  const disposable = vscode.commands.registerCommand('devpulse.devpulse.helloWorld', () => {
-    vscode.window.showInformationMessage('Hello from DevPulse!');
-  });
+  context.subscriptions.push(
+    vscode.commands.registerCommand('devpulse.devpulse.helloWorld', () => {
+      void vscode.window.showInformationMessage('Hello from DevPulse!');
+    }),
+    vscode.commands.registerCommand('devpulse.devpulse.setApiKey', async () => {
+      const apiKey = await vscode.window.showInputBox({
+        title: 'DevPulse API Key',
+        prompt:
+          'Paste your API key. It is stored only in the OS secret store (VS Code SecretStorage).',
+        password: true,
+        ignoreFocusOut: true,
+        validateInput: (value) => {
+          if (!value.trim()) {
+            return 'API key cannot be empty';
+          }
+          return null;
+        },
+      });
 
-  context.subscriptions.push(disposable);
+      if (apiKey === undefined) {
+        return;
+      }
+
+      await context.secrets.store(DEVPULSE_API_KEY_SECRET, apiKey.trim());
+      void vscode.window.showInformationMessage('DevPulse API key saved securely.');
+    }),
+  );
 }
 
 export function deactivate(): void {
