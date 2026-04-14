@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 
+import { ActivityMonitor } from './activity-monitor.js';
 import { DEVPULSE_API_KEY_SECRET } from './secret-keys.js';
 
 /**
@@ -9,7 +10,12 @@ import { DEVPULSE_API_KEY_SECRET } from './secret-keys.js';
 export function activate(context: vscode.ExtensionContext): void {
   console.log('DevPulse extension is active');
 
+  const outputChannel = vscode.window.createOutputChannel('DevPulse');
+  const activityMonitor = new ActivityMonitor(undefined, outputChannel);
+
   context.subscriptions.push(
+    outputChannel,
+    activityMonitor,
     vscode.commands.registerCommand('devpulse.devpulse.helloWorld', () => {
       void vscode.window.showInformationMessage('Hello from DevPulse!');
     }),
