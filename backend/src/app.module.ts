@@ -11,6 +11,7 @@ import { AuthModule } from './auth/auth.module';
 import { Project } from './projects/entities/project.entity';
 import { TelemetryEvent } from './telemetry/entities/telemetry-event.entity';
 import { WorkSession } from './telemetry/entities/work-session.entity';
+import { TelemetryModule } from './telemetry/telemetry.module';
 import { User } from './users/entities/user.entity';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -53,6 +54,7 @@ const throttlerProvider: Provider = {
 
     AuthModule,
     ApiKeysModule,
+    TelemetryModule,
   ],
   controllers: [AppController],
   providers: [AppService, throttlerProvider],
