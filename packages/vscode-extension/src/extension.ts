@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 
 import { ActivityMonitor } from './activity-monitor.js';
+import { GitContextProvider } from './git-context.js';
 import { DEVPULSE_API_KEY_SECRET } from './secret-keys.js';
 
 /**
@@ -12,10 +13,36 @@ export function activate(context: vscode.ExtensionContext): void {
 
   const outputChannel = vscode.window.createOutputChannel('DevPulse');
   const activityMonitor = new ActivityMonitor(undefined, outputChannel);
+  const gitContextProvider = new GitContextProvider(outputChannel);
 
-  context.subscriptions.push(
+  const statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
+  statusBar.name = 'DevPulse Git Context';
+  statusBar.tooltip = 'DevPulse: current workspace and Git branch';
+  statusBar.show();
+
+  const applyGitContext = async (): Promise<void> => {
+    const { workspaceName, gitBranch } = gitContextProvider.currentContext;
+
+    const labelWorkspace = workspaceName ?? 'No Workspace';
+    const labelBranch = gitBranch ?? 'No Git';
+    statusBar.text = `$(repo) ${labelWorkspace}  $(git-branch) ${labelBranch}`;
+
+    await vscode.commands.executeCommand('setContext', 'devpulse.workspaceName', workspaceName);
+    await vscode.commands.executeCommand('setContext', 'devpulse.gitBranch', gitBranch);
+  };
+
+  void applyGitContext();
+
+  context.subscriptions.splice(
+    context.subscriptions.length,
+    0,
+    statusBar,
+    gitContextProvider.onDidChangeContext(() => {
+      void applyGitContext();
+    }),
     outputChannel,
     activityMonitor,
+    gitContextProvider,
     vscode.commands.registerCommand('devpulse.devpulse.helloWorld', () => {
       void vscode.window.showInformationMessage('Hello from DevPulse!');
     }),
