@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 
+import { TelemetryBridge } from './telemetry/telemetry-bridge.js';
 import { ActivityMonitor } from './activity-monitor.js';
 import { GitContextProvider } from './git-context.js';
 import { DEVPULSE_API_KEY_SECRET } from './secret-keys.js';
@@ -14,6 +15,13 @@ export function activate(context: vscode.ExtensionContext): void {
   const outputChannel = vscode.window.createOutputChannel('DevPulse');
   const activityMonitor = new ActivityMonitor(undefined, outputChannel);
   const gitContextProvider = new GitContextProvider(outputChannel);
+  const telemetryBridge = new TelemetryBridge(
+    context,
+    activityMonitor,
+    gitContextProvider,
+    outputChannel,
+  );
+  void telemetryBridge.start();
 
   const statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
   statusBar.name = 'DevPulse Git Context';
@@ -43,6 +51,7 @@ export function activate(context: vscode.ExtensionContext): void {
     outputChannel,
     activityMonitor,
     gitContextProvider,
+    telemetryBridge,
     vscode.commands.registerCommand('devpulse.devpulse.helloWorld', () => {
       void vscode.window.showInformationMessage('Hello from DevPulse!');
     }),
