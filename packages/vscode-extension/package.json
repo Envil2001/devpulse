@@ -22,7 +22,17 @@
         "command": "devpulse.devpulse.setApiKey",
         "title": "DevPulse: Set API Key"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "DevPulse",
+      "properties": {
+        "devpulse.apiUrl": {
+          "type": "string",
+          "default": "http://localhost:3000/api/v1",
+          "description": "DevPulse backend base URL (example: http://localhost:3000/api/v1)"
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "pnpm run compile",
