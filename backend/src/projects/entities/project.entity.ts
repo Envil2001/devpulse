@@ -33,7 +33,7 @@ export class Project {
   @Column({ name: 'root_path', length: 500 })
   public rootPath: string;
 
-  @Column({ length: 50, nullable: true })
+  @Column({ type: 'varchar', length: 50, nullable: true })
   public language: string | null;
 
   @Column({ name: 'is_archived', default: false })

@@ -42,13 +42,13 @@ export class TelemetryEvent {
   })
   public type: TelemetryEventType;
 
-  @Column({ name: 'git_branch', length: 255, nullable: true })
+  @Column({ type: 'varchar', name: 'git_branch', length: 255, nullable: true })
   public gitBranch: string | null;
 
-  @Column({ name: 'file_path', length: 500, nullable: true })
+  @Column({ type: 'varchar', name: 'file_path', length: 500, nullable: true })
   public filePath: string | null;
 
-  @Column({ length: 50, nullable: true })
+  @Column({ type: 'varchar', length: 50, nullable: true })
   public language: string | null;
 
   @Column({ name: 'duration_ms', type: 'int', nullable: true })
