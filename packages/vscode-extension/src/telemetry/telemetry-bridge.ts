@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 
 import type { ActivityMonitor, ActivityState } from '../activity-monitor.js';
-import type { GitContextProvider } from '../git-context.js';
+import type { GitContext, GitContextProvider } from '../git-context.js';
 
 import { TelemetryApiClient } from './api-client.js';
 import { TelemetryBufferStore } from './buffer-store.js';
@@ -20,6 +20,7 @@ export class TelemetryBridge implements vscode.Disposable {
 
   private lastActivityState: ActivityState | null = null;
   private lastActivityChangeAtMs: number | null = null;
+  private lastObservedGitBranch: string | null = null;
 
   constructor(
     private readonly context: vscode.ExtensionContext,
@@ -36,10 +37,14 @@ export class TelemetryBridge implements vscode.Disposable {
     // Ensure state is initialized so the first transition produces sensible durations.
     this.lastActivityState = this.activityMonitor.currentState;
     this.lastActivityChangeAtMs = Date.now();
+    this.lastObservedGitBranch = this.gitContextProvider.currentContext.gitBranch;
 
     this.disposables.push(
       this.activityMonitor.onDidChangeActivityState((state) => {
         this.onActivityTransition(state);
+      }),
+      this.gitContextProvider.onDidChangeContext((nextContext) => {
+        this.onGitContextTransition(nextContext);
       }),
       vscode.workspace.onDidSaveTextDocument((doc) => {
         if (doc.isClosed) {
@@ -85,19 +90,48 @@ export class TelemetryBridge implements vscode.Disposable {
     this.lastActivityChangeAtMs = now;
   }
 
+  private onGitContextTransition(nextContext: GitContext): void {
+    const previousBranch = this.lastObservedGitBranch;
+    const nextBranch = nextContext.gitBranch;
+
+    if (previousBranch === nextBranch) {
+      return;
+    }
+
+    // Emit explicit boundaries so backend aggregation splits time across branches
+    // even when checkout happens between minute ticks.
+    const boundaryTimestamp = new Date().toISOString();
+    this.enqueue(
+      this.createEvent('heartbeat', {
+        durationMs: null,
+        gitBranch: previousBranch,
+        clientTimestamp: boundaryTimestamp,
+      }),
+    );
+    this.enqueue(
+      this.createEvent('heartbeat', {
+        durationMs: null,
+        gitBranch: nextBranch,
+        clientTimestamp: boundaryTimestamp,
+      }),
+    );
+
+    this.lastObservedGitBranch = nextBranch;
+  }
+
   private createEvent(
     type: TelemetryEventPayload['type'],
-    partial: Partial<Omit<TelemetryEventPayload, 'type' | 'clientTimestamp'>>,
+    partial: Partial<Omit<TelemetryEventPayload, 'type'>>,
   ): TelemetryEventPayload {
     const { gitBranch } = this.gitContextProvider.currentContext;
 
     return {
       type,
-      gitBranch,
+      gitBranch: partial.gitBranch ?? gitBranch,
       filePath: partial.filePath ?? null,
       language: partial.language ?? null,
       durationMs: partial.durationMs ?? null,
-      clientTimestamp: new Date().toISOString(),
+      clientTimestamp: partial.clientTimestamp ?? new Date().toISOString(),
     };
   }
 
