@@ -17,9 +17,13 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { type AuthenticatedUser } from '../auth/interfaces/jwt-payload.interface';
 
-import { type CreateApiKeyDto } from './dto/create-api-key.dto';
-import { type UpdateApiKeyDto } from './dto/update-api-key.dto';
-import { type ApiKeyListItem, ApiKeysService, type CreatedApiKey } from './api-keys.service';
+import {
+  type ApiKeyListItemResponseDto,
+  type CreatedApiKeyResponseDto,
+} from './dto/api-keys-response.dto';
+import { type CreateApiKeyRequestDto } from './dto/create-api-key-request.dto';
+import { type UpdateApiKeyRequestDto } from './dto/update-api-key-request.dto';
+import { ApiKeysService } from './api-keys.service';
 
 @Controller('api-keys')
 @UseGuards(JwtAuthGuard)
@@ -30,13 +34,15 @@ export class ApiKeysController {
   @HttpCode(HttpStatus.CREATED)
   public async create(
     @CurrentUser() user: AuthenticatedUser,
-    @Body() dto: CreateApiKeyDto,
-  ): Promise<CreatedApiKey> {
+    @Body() dto: CreateApiKeyRequestDto,
+  ): Promise<CreatedApiKeyResponseDto> {
     return this.apiKeysService.create(user.id as TypeId<'users'>, dto);
   }
 
   @Get()
-  public async findAll(@CurrentUser() user: AuthenticatedUser): Promise<Array<ApiKeyListItem>> {
+  public async findAll(
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<Array<ApiKeyListItemResponseDto>> {
     return this.apiKeysService.findAllByUser(user.id as TypeId<'users'>);
   }
 
@@ -44,7 +50,7 @@ export class ApiKeysController {
   public async findOne(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id') id: string,
-  ): Promise<ApiKeyListItem> {
+  ): Promise<ApiKeyListItemResponseDto> {
     return this.apiKeysService.findOneByUser(user.id as TypeId<'users'>, id as TypeId<'apiKeys'>);
   }
 
@@ -52,8 +58,8 @@ export class ApiKeysController {
   public async update(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id') id: string,
-    @Body() dto: UpdateApiKeyDto,
-  ): Promise<ApiKeyListItem> {
+    @Body() dto: UpdateApiKeyRequestDto,
+  ): Promise<ApiKeyListItemResponseDto> {
     return this.apiKeysService.update(user.id as TypeId<'users'>, id as TypeId<'apiKeys'>, dto);
   }
 
@@ -61,7 +67,7 @@ export class ApiKeysController {
   public async revoke(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id') id: string,
-  ): Promise<ApiKeyListItem> {
+  ): Promise<ApiKeyListItemResponseDto> {
     return this.apiKeysService.revoke(user.id as TypeId<'users'>, id as TypeId<'apiKeys'>);
   }
 }

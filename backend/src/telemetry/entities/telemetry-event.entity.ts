@@ -29,10 +29,10 @@ export enum TelemetryEventType {
 @Index(['projectId', 'gitBranch', 'createdAt'])
 export class TelemetryEvent {
   @PrimaryColumn({ type: 'varchar', length: 40 })
-  id: TypeId<'telemetryEvents'>;
+  public id: TypeId<'telemetryEvents'>;
 
   @BeforeInsert()
-  generateId(): void {
+  public generateId(): void {
     this.id = typeIdGenerator('telemetryEvents');
   }
 
@@ -40,54 +40,54 @@ export class TelemetryEvent {
     type: 'enum',
     enum: TelemetryEventType,
   })
-  type: TelemetryEventType;
+  public type: TelemetryEventType;
 
   @Column({ name: 'git_branch', length: 255, nullable: true })
-  gitBranch: string | null;
+  public gitBranch: string | null;
 
   @Column({ name: 'file_path', length: 500, nullable: true })
-  filePath: string | null;
+  public filePath: string | null;
 
   @Column({ length: 50, nullable: true })
-  language: string | null;
+  public language: string | null;
 
   @Column({ name: 'duration_ms', type: 'int', nullable: true })
-  durationMs: number | null;
+  public durationMs: number | null;
 
   @Column({ name: 'client_timestamp', type: 'timestamptz', nullable: true })
-  clientTimestamp: Date | null;
+  public clientTimestamp: Date | null;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
-  createdAt: Date;
+  public createdAt: Date;
 
   @ManyToOne(() => ApiKey, (apiKey) => apiKey.telemetryEvents, {
     nullable: false,
     onDelete: 'CASCADE',
   })
-  apiKey: ApiKey;
+  public apiKey: ApiKey;
 
   @Column({ name: 'api_key_id', type: 'varchar', length: 40 })
-  apiKeyId: TypeId<'apiKeys'>;
+  public apiKeyId: TypeId<'apiKeys'>;
 
   @Column({ name: 'user_id', type: 'varchar', length: 40 })
   @Index()
-  userId: TypeId<'users'>;
+  public userId: TypeId<'users'>;
 
   @ManyToOne(() => Project, (project) => project.telemetryEvents, {
     nullable: true,
     onDelete: 'SET NULL',
   })
-  project: Project | null;
+  public project: Project | null;
 
   @Column({ name: 'project_id', type: 'varchar', length: 40, nullable: true })
-  projectId: TypeId<'projects'> | null;
+  public projectId: TypeId<'projects'> | null;
 
   @ManyToOne(() => WorkSession, (session) => session.events, {
     nullable: true,
     onDelete: 'SET NULL',
   })
-  session: WorkSession | null;
+  public session: WorkSession | null;
 
   @Column({ name: 'session_id', type: 'varchar', length: 40, nullable: true })
-  sessionId: TypeId<'workSessions'> | null;
+  public sessionId: TypeId<'workSessions'> | null;
 }

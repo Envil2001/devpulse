@@ -1,9 +1,12 @@
 import { Body, Controller, HttpCode, HttpStatus, Post, Req, UseGuards } from '@nestjs/common';
 import type { Request } from 'express';
 
+import { type TypeId } from '@devpulse/lib';
+
 import { TelemetryThrottle } from '../common/decorators/throtte.decorators';
 
-import { IngestTelemetryBatchDto } from './dto/ingest-telemetry-batch.dto';
+import { IngestTelemetryBatchRequestDto } from './dto/ingest-telemetry-batch-request.dto';
+import { type IngestTelemetryBatchResponseDto } from './dto/ingest-telemetry-batch-response.dto';
 import { ApiKeyGuard, type ApiKeyPrincipal } from './guards/api-key.guard';
 import { TelemetryQueue } from './telemetry.queue';
 
@@ -17,10 +20,8 @@ export class TelemetryController {
   @UseGuards(ApiKeyGuard)
   public async ingestBatch(
     @Req() req: Request,
-    @Body() dto: IngestTelemetryBatchDto,
-  ): Promise<{
-    accepted: number;
-  }> {
+    @Body() dto: IngestTelemetryBatchRequestDto,
+  ): Promise<IngestTelemetryBatchResponseDto> {
     const principal = (req as unknown as { apiKeyPrincipal?: ApiKeyPrincipal }).apiKeyPrincipal;
     if (principal === undefined) {
       // Should be prevented by guard.
@@ -28,8 +29,8 @@ export class TelemetryController {
     }
 
     await this.telemetryQueue.enqueue({
-      apiKeyId: principal.apiKeyId,
-      userId: principal.userId,
+      apiKeyId: principal.apiKeyId as TypeId<'apiKeys'>,
+      userId: principal.userId as TypeId<'users'>,
       events: dto.events,
     });
 

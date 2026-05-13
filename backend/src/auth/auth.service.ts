@@ -5,7 +5,7 @@ import { type TypeId } from '@devpulse/lib';
 
 import { UsersService } from '../users/users.service';
 
-import { type RegisterDto } from './dto/register.dto';
+import { type RegisterRequestDto } from './dto/register-request.dto';
 import { type AuthenticatedUser, type JwtPayload } from './interfaces/jwt-payload.interface';
 
 export interface AuthResponse {
@@ -24,7 +24,10 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async validateLocalUser(email: string, password: string): Promise<AuthenticatedUser | null> {
+  public async validateLocalUser(
+    email: string,
+    password: string,
+  ): Promise<AuthenticatedUser | null> {
     const user = await this.usersService.findByEmail(email);
 
     if (!user?.isActive) {
@@ -40,7 +43,7 @@ export class AuthService {
     return { id: user.id, email: user.email };
   }
 
-  async register(dto: RegisterDto): Promise<AuthResponse> {
+  public async register(dto: RegisterRequestDto): Promise<AuthResponse> {
     const user = await this.usersService.create(dto);
     const accessToken = this.generateAccessToken(user.id, user.email);
 
@@ -54,7 +57,7 @@ export class AuthService {
     };
   }
 
-  async login(authenticatedUser: AuthenticatedUser): Promise<AuthResponse> {
+  public async login(authenticatedUser: AuthenticatedUser): Promise<AuthResponse> {
     const userId = authenticatedUser.id as TypeId<'users'>;
     const user = await this.usersService.findById(userId);
 
@@ -74,11 +77,11 @@ export class AuthService {
     };
   }
 
-  getProfile(authenticatedUser: AuthenticatedUser): AuthenticatedUser {
+  public getProfile(authenticatedUser: AuthenticatedUser): AuthenticatedUser {
     return authenticatedUser;
   }
 
-  private generateAccessToken(userId: string, email: string): string {
+  private generateAccessToken(userId: TypeId<'users'>, email: string): string {
     const payload: JwtPayload = { sub: userId, email };
     return this.jwtService.sign(payload);
   }

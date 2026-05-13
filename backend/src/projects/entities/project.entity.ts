@@ -20,43 +20,43 @@ import { User } from '../../users/entities/user.entity';
 @Unique(['userId', 'rootPath'])
 export class Project {
   @PrimaryColumn({ type: 'varchar', length: 40 })
-  id: TypeId<'projects'>;
+  public id: TypeId<'projects'>;
 
   @BeforeInsert()
-  generateId(): void {
+  public generateId(): void {
     this.id = typeIdGenerator('projects');
   }
 
   @Column({ length: 150 })
-  name: string;
+  public name: string;
 
   @Column({ name: 'root_path', length: 500 })
-  rootPath: string;
+  public rootPath: string;
 
   @Column({ length: 50, nullable: true })
-  language: string | null;
+  public language: string | null;
 
   @Column({ name: 'is_archived', default: false })
-  isArchived: boolean;
+  public isArchived: boolean;
 
   @CreateDateColumn({ name: 'created_at' })
-  createdAt: Date;
+  public createdAt: Date;
 
   @UpdateDateColumn({ name: 'updated_at' })
-  updatedAt: Date;
+  public updatedAt: Date;
 
   @ManyToOne(() => User, (user) => user.projects, {
     nullable: false,
     onDelete: 'CASCADE',
   })
-  user: User;
+  public user: User;
 
   @Column({ name: 'user_id', type: 'varchar', length: 40 })
-  userId: TypeId<'users'>;
+  public userId: TypeId<'users'>;
 
   @OneToMany(() => TelemetryEvent, (event) => event.project, { cascade: true })
-  telemetryEvents: Array<TelemetryEvent>;
+  public telemetryEvents: Array<TelemetryEvent>;
 
   @OneToMany(() => WorkSession, (session) => session.project, { cascade: true })
-  workSessions: Array<WorkSession>;
+  public workSessions: Array<WorkSession>;
 }

@@ -11,7 +11,7 @@ import {
 
 import { TelemetryEventType } from '../entities/telemetry-event.entity';
 
-export class IngestTelemetryEventDto {
+export class IngestTelemetryEventRequestDto {
   @IsEnum(TelemetryEventType)
   public type: TelemetryEventType;
 
@@ -38,8 +38,8 @@ export class IngestTelemetryEventDto {
   public clientTimestamp: string;
 }
 
-export class IngestTelemetryBatchDto {
+export class IngestTelemetryBatchRequestDto {
   @ValidateNested({ each: true })
-  @Type(() => IngestTelemetryEventDto)
-  public events: Array<IngestTelemetryEventDto>;
+  @Type(() => IngestTelemetryEventRequestDto)
+  public events: Array<IngestTelemetryEventRequestDto>;
 }
