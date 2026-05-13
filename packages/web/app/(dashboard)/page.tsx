@@ -1,6 +1,50 @@
-import { AlertTriangle, Clock3, Focus, Sparkles } from 'lucide-react';
+'use client';
 
-export default function Home() {
+import { AlertTriangle, Clock3, Focus, Sparkles } from 'lucide-react';
+import { useEffect, useState } from 'react';
+
+import { ApiClientError } from '@/lib/api-client';
+import { getDashboardSummary } from '@/lib/analytics-client';
+import { getAccessToken } from '@/lib/auth-storage';
+
+interface DashboardSummaryState {
+  totalHours: number;
+  focusScore: number;
+  sessionCount: number;
+}
+
+export default function DashboardPage() {
+  const [summary, setSummary] = useState<DashboardSummaryState>({
+    totalHours: 0,
+    focusScore: 0,
+    sessionCount: 0,
+  });
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const token = getAccessToken();
+    if (token === null) {
+      return;
+    }
+
+    void (async () => {
+      try {
+        const data = await getDashboardSummary(token);
+        setSummary({
+          totalHours: data.totalHours,
+          focusScore: data.focusScore,
+          sessionCount: data.sessionCount,
+        });
+      } catch (fetchError) {
+        if (fetchError instanceof ApiClientError) {
+          setError(fetchError.message);
+        } else {
+          setError('Failed to load analytics');
+        }
+      }
+    })();
+  }, []);
+
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
       <section className="card-shell rounded-xl p-4 lg:col-span-2">
@@ -14,23 +58,34 @@ export default function Home() {
                 <Clock3 size={14} />
                 Total Hours
               </p>
-              <p className="mt-2 text-2xl font-semibold text-(--color-text)">32.4h</p>
+              <p className="mt-2 text-2xl font-semibold text-(--color-text)">
+                {summary.totalHours.toFixed(2)}h
+              </p>
             </article>
             <article className="rounded-lg bg-(--color-surface-muted) p-3">
               <p className="inline-flex items-center gap-1 text-sm text-(--color-text-muted)">
                 <Focus size={14} />
                 Focus Score
               </p>
-              <p className="mt-2 text-2xl font-semibold text-(--color-success)">84.2%</p>
+              <p className="mt-2 text-2xl font-semibold text-(--color-success)">
+                {summary.focusScore.toFixed(1)}%
+              </p>
             </article>
             <article className="rounded-lg bg-(--color-surface-muted) p-3">
               <p className="inline-flex items-center gap-1 text-sm text-(--color-text-muted)">
                 <AlertTriangle size={14} />
-                Context Switches
+                Sessions
               </p>
-              <p className="mt-2 text-2xl font-semibold text-(--color-warning)">17</p>
+              <p className="mt-2 text-2xl font-semibold text-(--color-warning)">
+                {summary.sessionCount}
+              </p>
             </article>
           </div>
+          {error !== null && (
+            <p className="mt-3 rounded-lg bg-(--color-primary-soft) px-3 py-2 text-sm text-(--color-danger)">
+              {error}
+            </p>
+          )}
         </div>
       </section>
 

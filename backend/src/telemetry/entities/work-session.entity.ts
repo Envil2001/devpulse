@@ -41,7 +41,7 @@ export class WorkSession {
   })
   public status: WorkSessionStatus;
 
-  @Column({ name: 'git_branch', length: 255, nullable: true })
+  @Column({ type: 'varchar', name: 'git_branch', length: 255, nullable: true })
   public gitBranch: string | null;
 
   @Column({ name: 'started_at', type: 'timestamptz' })
@@ -56,7 +56,7 @@ export class WorkSession {
   @Column({ name: 'total_duration_ms', type: 'int', nullable: true })
   public totalDurationMs: number | null;
 
-  @Column({ name: 'primary_language', length: 50, nullable: true })
+  @Column({ type: 'varchar', name: 'primary_language', length: 50, nullable: true })
   public primaryLanguage: string | null;
 
   @CreateDateColumn({ name: 'created_at' })

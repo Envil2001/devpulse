@@ -29,10 +29,10 @@ export class User {
   @Column({ name: 'password_hash', length: 255 })
   public passwordHash: string;
 
-  @Column({ name: 'display_name', length: 100, nullable: true })
+  @Column({ type: 'varchar', name: 'display_name', length: 100, nullable: true })
   public displayName: string | null;
 
-  @Column({ name: 'avatar_url', length: 500, nullable: true })
+  @Column({ type: 'varchar', name: 'avatar_url', length: 500, nullable: true })
   public avatarUrl: string | null;
 
   @Column({ name: 'is_active', default: true })

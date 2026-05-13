@@ -37,10 +37,10 @@ export class ApiKey {
   @Column({ name: 'is_active', default: true })
   declare public isActive: boolean;
 
-  @Column({ name: 'last_used_at', nullable: true })
+  @Column({ name: 'last_used_at', type: 'timestamptz', nullable: true })
   declare public lastUsedAt: Date | null;
 
-  @Column({ name: 'device_label', length: 100, nullable: true })
+  @Column({ name: 'device_label', type: 'varchar', length: 100, nullable: true })
   declare public deviceLabel: string | null;
 
   @CreateDateColumn({ name: 'created_at' })
