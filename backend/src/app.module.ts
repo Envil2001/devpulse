@@ -5,6 +5,7 @@ import { APP_GUARD } from '@nestjs/core/constants';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
+import { AnalyticsModule } from './analytics/analytics.module';
 import { ApiKeysModule } from './api-keys/api-keys.module';
 import { ApiKey } from './api-keys/entities/api-key.entity';
 import { AuthModule } from './auth/auth.module';
@@ -55,6 +56,7 @@ const throttlerProvider: Provider = {
     AuthModule,
     ApiKeysModule,
     TelemetryModule,
+    AnalyticsModule,
   ],
   controllers: [AppController],
   providers: [AppService, throttlerProvider],
