@@ -5,7 +5,7 @@ import { Repository } from 'typeorm';
 
 import { type TypeId } from '@devpulse/lib/ids';
 
-import { RegisterDto } from '../auth/dto/register.dto';
+import { type RegisterRequestDto } from '../auth/dto/register-request.dto';
 
 import { User } from './entities/user.entity';
 
@@ -18,7 +18,7 @@ export class UsersService {
     private readonly usersRepository: Repository<User>,
   ) {}
 
-  async create(dto: RegisterDto): Promise<User> {
+  public async create(dto: RegisterRequestDto): Promise<User> {
     const existing = await this.usersRepository.findOne({
       where: { email: dto.email.toLowerCase() },
     });
@@ -42,17 +42,17 @@ export class UsersService {
     }
   }
 
-  async findByEmail(email: string): Promise<User | null> {
+  public async findByEmail(email: string): Promise<User | null> {
     return this.usersRepository.findOne({
       where: { email: email.toLowerCase() },
     });
   }
 
-  async findById(id: TypeId<'users'>): Promise<User | null> {
+  public async findById(id: TypeId<'users'>): Promise<User | null> {
     return this.usersRepository.findOne({ where: { id } });
   }
 
-  async validatePassword(plaintext: string, hash: string): Promise<boolean> {
+  public async validatePassword(plaintext: string, hash: string): Promise<boolean> {
     return await bcrypt.compare(plaintext, hash);
   }
 }

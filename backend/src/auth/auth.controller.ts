@@ -3,7 +3,7 @@ import { Body, Controller, Get, HttpCode, HttpStatus, Post, UseGuards } from '@n
 import { AuthThrottle } from '../common/decorators/throtte.decorators';
 
 import { CurrentUser } from './decorators/current-user.decorator';
-import { RegisterDto } from './dto/register.dto';
+import { RegisterRequestDto } from './dto/register-request.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import type { AuthenticatedUser } from './interfaces/jwt-payload.interface';
@@ -16,7 +16,7 @@ export class AuthController {
   @Post('register')
   @AuthThrottle()
   @HttpCode(HttpStatus.CREATED)
-  register(@Body() dto: RegisterDto): Promise<AuthResponse> {
+  public register(@Body() dto: RegisterRequestDto): Promise<AuthResponse> {
     return this.authService.register(dto);
   }
 
@@ -24,13 +24,13 @@ export class AuthController {
   @AuthThrottle()
   @UseGuards(LocalAuthGuard)
   @HttpCode(HttpStatus.OK)
-  login(@CurrentUser() user: AuthenticatedUser): Promise<AuthResponse> {
+  public login(@CurrentUser() user: AuthenticatedUser): Promise<AuthResponse> {
     return this.authService.login(user);
   }
 
   @Get('me')
   @UseGuards(JwtAuthGuard)
-  getProfile(@CurrentUser() user: AuthenticatedUser): AuthenticatedUser {
+  public getProfile(@CurrentUser() user: AuthenticatedUser): AuthenticatedUser {
     return this.authService.getProfile(user);
   }
 }

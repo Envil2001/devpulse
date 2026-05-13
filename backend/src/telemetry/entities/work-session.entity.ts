@@ -27,10 +27,10 @@ export enum WorkSessionStatus {
 @Index(['projectId', 'gitBranch'])
 export class WorkSession {
   @PrimaryColumn({ type: 'varchar', length: 40 })
-  id: TypeId<'workSessions'>;
+  public id: TypeId<'workSessions'>;
 
   @BeforeInsert()
-  generateId(): void {
+  public generateId(): void {
     this.id = typeIdGenerator('workSessions');
   }
 
@@ -39,50 +39,50 @@ export class WorkSession {
     enum: WorkSessionStatus,
     default: WorkSessionStatus.ACTIVE,
   })
-  status: WorkSessionStatus;
+  public status: WorkSessionStatus;
 
   @Column({ name: 'git_branch', length: 255, nullable: true })
-  gitBranch: string | null;
+  public gitBranch: string | null;
 
   @Column({ name: 'started_at', type: 'timestamptz' })
-  startedAt: Date;
+  public startedAt: Date;
 
   @Column({ name: 'ended_at', type: 'timestamptz', nullable: true })
-  endedAt: Date | null;
+  public endedAt: Date | null;
 
   @Column({ name: 'active_duration_ms', type: 'int', default: 0 })
-  activeDurationMs: number;
+  public activeDurationMs: number;
 
   @Column({ name: 'total_duration_ms', type: 'int', nullable: true })
-  totalDurationMs: number | null;
+  public totalDurationMs: number | null;
 
   @Column({ name: 'primary_language', length: 50, nullable: true })
-  primaryLanguage: string | null;
+  public primaryLanguage: string | null;
 
   @CreateDateColumn({ name: 'created_at' })
-  createdAt: Date;
+  public createdAt: Date;
 
   @UpdateDateColumn({ name: 'updated_at' })
-  updatedAt: Date;
+  public updatedAt: Date;
 
   @ManyToOne(() => User, (user) => user.workSessions, {
     nullable: false,
     onDelete: 'CASCADE',
   })
-  user: User;
+  public user: User;
 
   @Column({ name: 'user_id', type: 'varchar', length: 40 })
-  userId: TypeId<'users'>;
+  public userId: TypeId<'users'>;
 
   @ManyToOne(() => Project, (project) => project.workSessions, {
     nullable: true,
     onDelete: 'SET NULL',
   })
-  project: Project | null;
+  public project: Project | null;
 
   @Column({ name: 'project_id', type: 'varchar', length: 40, nullable: true })
-  projectId: TypeId<'projects'> | null;
+  public projectId: TypeId<'projects'> | null;
 
   @OneToMany(() => TelemetryEvent, (event) => event.session)
-  events: Array<TelemetryEvent>;
+  public events: Array<TelemetryEvent>;
 }

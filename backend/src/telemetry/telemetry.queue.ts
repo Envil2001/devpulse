@@ -2,12 +2,14 @@ import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import { Queue } from 'bullmq';
 import IORedis from 'ioredis';
 
-import { type IngestTelemetryEventDto } from './dto/ingest-telemetry-batch.dto';
+import { type TypeId } from '@devpulse/lib';
+
+import { type IngestTelemetryEventRequestDto } from './dto/ingest-telemetry-batch-request.dto';
 
 export interface TelemetryIngestJob {
-  apiKeyId: string;
-  userId: string;
-  events: Array<IngestTelemetryEventDto>;
+  apiKeyId: TypeId<'apiKeys'>;
+  userId: TypeId<'users'>;
+  events: Array<IngestTelemetryEventRequestDto>;
 }
 
 const QUEUE_NAME = 'telemetry-events';

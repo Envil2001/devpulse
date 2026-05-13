@@ -6,23 +6,13 @@ import { Repository } from 'typeorm';
 
 import { type TypeId } from '@devpulse/lib';
 
-import { type CreateApiKeyDto } from './dto/create-api-key.dto';
-import { type UpdateApiKeyDto } from './dto/update-api-key.dto';
+import {
+  type ApiKeyListItemResponseDto,
+  type CreatedApiKeyResponseDto,
+} from './dto/api-keys-response.dto';
+import { type CreateApiKeyRequestDto } from './dto/create-api-key-request.dto';
+import { type UpdateApiKeyRequestDto } from './dto/update-api-key-request.dto';
 import { ApiKey } from './entities/api-key.entity';
-
-export interface ApiKeyListItem {
-  id: string;
-  name: string;
-  keyPrefix: string;
-  isActive: boolean;
-  lastUsedAt: Date | null;
-  deviceLabel: string | null;
-  createdAt: Date;
-}
-
-export interface CreatedApiKey extends ApiKeyListItem {
-  key: string;
-}
 
 @Injectable()
 export class ApiKeysService {
@@ -31,7 +21,10 @@ export class ApiKeysService {
     private readonly apiKeysRepository: Repository<ApiKey>,
   ) {}
 
-  public async create(userId: TypeId<'users'>, dto: CreateApiKeyDto): Promise<CreatedApiKey> {
+  public async create(
+    userId: TypeId<'users'>,
+    dto: CreateApiKeyRequestDto,
+  ): Promise<CreatedApiKeyResponseDto> {
     const key = this.generateApiKey();
     const keyHash = this.hashApiKey(key);
     const keyPrefix = key.slice(0, 12);
@@ -62,7 +55,7 @@ export class ApiKeysService {
     }
   }
 
-  public async findAllByUser(userId: TypeId<'users'>): Promise<Array<ApiKeyListItem>> {
+  public async findAllByUser(userId: TypeId<'users'>): Promise<Array<ApiKeyListItemResponseDto>> {
     const items = await this.apiKeysRepository.find({
       where: { userId },
       order: { createdAt: 'DESC' },
@@ -74,7 +67,7 @@ export class ApiKeysService {
   public async findOneByUser(
     userId: TypeId<'users'>,
     id: TypeId<'apiKeys'>,
-  ): Promise<ApiKeyListItem> {
+  ): Promise<ApiKeyListItemResponseDto> {
     const item = await this.findOwnedOrFail(userId, id);
     return this.toListItem(item);
   }
@@ -82,8 +75,8 @@ export class ApiKeysService {
   public async update(
     userId: TypeId<'users'>,
     id: TypeId<'apiKeys'>,
-    dto: UpdateApiKeyDto,
-  ): Promise<ApiKeyListItem> {
+    dto: UpdateApiKeyRequestDto,
+  ): Promise<ApiKeyListItemResponseDto> {
     const item = await this.findOwnedOrFail(userId, id);
 
     if (dto.name !== undefined) {
@@ -102,7 +95,10 @@ export class ApiKeysService {
     }
   }
 
-  public async revoke(userId: TypeId<'users'>, id: TypeId<'apiKeys'>): Promise<ApiKeyListItem> {
+  public async revoke(
+    userId: TypeId<'users'>,
+    id: TypeId<'apiKeys'>,
+  ): Promise<ApiKeyListItemResponseDto> {
     const item = await this.findOwnedOrFail(userId, id);
 
     if (!item.isActive) {
@@ -129,7 +125,7 @@ export class ApiKeysService {
     return item;
   }
 
-  private toListItem(item: ApiKey): ApiKeyListItem {
+  private toListItem(item: ApiKey): ApiKeyListItemResponseDto {
     return {
       id: item.id,
       name: item.name,
