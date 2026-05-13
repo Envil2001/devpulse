@@ -39,7 +39,7 @@ function isWorkspaceFolderLike(value: unknown): value is WorkspaceFolderLike {
   return typeof candidate.name === 'string' && typeof candidate.uri?.fsPath === 'string';
 }
 
-function resolveWorkspaceFolder(): unknown {
+function resolveWorkspaceFolder(): vscode.WorkspaceFolder | undefined {
   const activeEditor = vscode.window.activeTextEditor;
   if (activeEditor !== undefined) {
     const folder = vscode.workspace.getWorkspaceFolder(activeEditor.document.uri);
