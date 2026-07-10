@@ -1,5 +1,9 @@
 import { createEnv } from '@t3-oss/env-core';
+import { config } from 'dotenv';
+import { resolve } from 'path';
 import { z } from 'zod';
+
+config({ path: resolve(process.cwd(), '../.env') });
 
 export const env = createEnv({
   server: {
@@ -14,8 +18,7 @@ export const env = createEnv({
     DATABASE_URL: z.string().url(),
 
     // Redis
-    REDIS_HOST: z.string().min(1).default('localhost'),
-    REDIS_PORT: z.coerce.number().default(6379),
+    REDIS_URL: z.string().url(),
 
     // JWT
     JWT_SECRET: z.string().min(1),

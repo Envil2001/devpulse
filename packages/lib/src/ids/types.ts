@@ -1,5 +1,6 @@
 export const idTypes = {
   users: 'u',
+  encryption: 'en',
   apiKeys: 'ak',
   projects: 'p',
   telemetryEvents: 'te',

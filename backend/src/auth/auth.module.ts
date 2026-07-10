@@ -6,28 +6,26 @@ import type { StringValue } from 'ms';
 
 import { UsersModule } from '../users/users.module';
 
+import { AuthController } from './controllers/auth.controller';
+import { AuthService } from './services/auth.service';
+import { env } from '@devpulse/env/api';
 import { JwtStrategy } from './strategies/jwt.strategy';
-import { LocalStrategy } from './strategies/local.strategy';
-import { AuthController } from './auth.controller';
-import { AuthService } from './auth.service';
 
 @Module({
   imports: [
     UsersModule,
     PassportModule,
     JwtModule.registerAsync({
-      inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        secret: config.getOrThrow<string>('JWT_SECRET'),
+      useFactory: () => ({
+        secret: env.JWT_SECRET,
         signOptions: {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-          expiresIn: config.getOrThrow<string>('JWT_EXPIRES_IN') as StringValue,
+          expiresIn: env.JWT_EXPIRES_IN as StringValue,
         },
       }),
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, LocalStrategy, JwtStrategy],
+  providers: [AuthService, JwtStrategy],
   exports: [AuthService],
 })
 export class AuthModule {}
