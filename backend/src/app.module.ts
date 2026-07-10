@@ -1,5 +1,5 @@
 /* eslint-disable unicorn/numeric-separators-style */
-import { Module, type Provider } from '@nestjs/common';
+import { forwardRef, Module, type Provider } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core/constants';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
@@ -16,6 +16,9 @@ import { TelemetryModule } from './telemetry/telemetry.module';
 import { User } from './users/entities/user.entity';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { UserEncryption } from './users/entities/user.encryption';
+import { env } from '@devpulse/env/api';
+import { RedisModule } from './redis/redis.module';
 
 const throttlerProvider: Provider = {
   provide: APP_GUARD,
@@ -42,17 +45,16 @@ const throttlerProvider: Provider = {
       },
     ]),
 
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: 'localhost',
-      port: 5432,
-      username: process.env.POSTGRES_USER,
-      password: process.env.POSTGRES_PASSWORD,
-      database: process.env.POSTGRES_DB,
-      entities: [User, ApiKey, Project, TelemetryEvent, WorkSession],
-      synchronize: true,
+    TypeOrmModule.forRootAsync({
+      useFactory: () => ({
+        type: 'postgres',
+        url: env.DATABASE_URL,
+        entities: [User, UserEncryption, ApiKey, Project, TelemetryEvent, WorkSession],
+        synchronize: env.NODE_ENV !== 'production',
+      }),
     }),
 
+    RedisModule,
     AuthModule,
     ApiKeysModule,
     TelemetryModule,
