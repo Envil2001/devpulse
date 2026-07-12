@@ -1,7 +1,8 @@
-import { IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class CreateApiKeyRequestDto {
   @IsString({ message: 'Name must be a string' })
+  @IsNotEmpty({ message: 'Name is required' })
   @MaxLength(100, { message: 'Name must not exceed 100 characters' })
   declare public name: string;
 

@@ -1,297 +1,128 @@
-import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Job, Worker } from 'bullmq';
-import IORedis from 'ioredis';
-import { IsNull, Repository } from 'typeorm';
+import { DataSource, Repository, EntityManager } from 'typeorm';
+import { Worker, Job } from 'bullmq';
 
-import { TelemetryEvent, TelemetryEventType } from './entities/telemetry-event.entity';
+import { TelemetryJobData } from './queue/telemetry.queue';
+import { RedisService } from '../redis/services/redis.service';
 import { WorkSession, WorkSessionStatus } from './entities/work-session.entity';
-import { TelemetryIngestJob } from './telemetry.queue';
-
-const QUEUE_NAME = 'telemetry-events';
-const ONE_MINUTE_MS = 60_000;
-const SESSION_GAP_MS = 5 * ONE_MINUTE_MS;
-
-function resolveRedisHost(): string {
-  const host = process.env.REDIS_HOST ?? 'localhost';
-  return host === 'redis' ? 'localhost' : host;
-}
-
-function resolveRedisPort(): number {
-  return Number(process.env.REDIS_PORT ?? 6379);
-}
+import { Project } from '../projects/entities/project.entity';
+import { UserRepository } from '../users/repositories/users.repository';
+import { TelemetryEventItemDto } from './dto/request/ingest-telemetry-batch-request.dto';
+import { User } from '../users/entities/user.entity';
 
 @Injectable()
 export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
-  private readonly connection = new IORedis({
-    host: resolveRedisHost(),
-    port: resolveRedisPort(),
-    maxRetriesPerRequest: null,
-  });
-
-  private worker: Worker<TelemetryIngestJob> | undefined;
+  private readonly logger = new Logger(TelemetryWorker.name);
+  private worker!: Worker<TelemetryJobData>;
 
   constructor(
-    @InjectRepository(TelemetryEvent)
-    private readonly eventsRepository: Repository<TelemetryEvent>,
+    private readonly redisService: RedisService,
+    private readonly userRepository: UserRepository,
+    private readonly dataSource: DataSource,
     @InjectRepository(WorkSession)
-    private readonly sessionsRepository: Repository<WorkSession>,
+    private readonly sessionRepo: Repository<WorkSession>,
+    @InjectRepository(Project)
+    private readonly projectRepo: Repository<Project>,
   ) {}
 
-  public onModuleInit(): void {
-    this.worker = new Worker<TelemetryIngestJob>(
-      QUEUE_NAME,
-      async (job: Job<TelemetryIngestJob>) => this.process(job.data),
+  public async onModuleInit(): Promise<void> {
+    this.worker = new Worker<TelemetryJobData>(
+      'telemetry-ingestion',
+      async (job: Job<TelemetryJobData>) => {
+        await this.processTelemetryBatch(job.data);
+      },
       {
-        connection: this.connection,
-        concurrency: 10,
+        connection: this.redisService.getClient(),
+        concurrency: 5,
       },
     );
-  }
-
-  private async process(payload: TelemetryIngestJob): Promise<void> {
-    const now = new Date();
-
-    const events = payload.events.map((e) =>
-      this.eventsRepository.create({
-        type: e.type,
-        gitBranch: e.gitBranch ?? null,
-        filePath: e.filePath ?? null,
-        language: e.language ?? null,
-        durationMs: e.durationMs ?? null,
-        clientTimestamp: e.clientTimestamp ? new Date(e.clientTimestamp) : null,
-        apiKeyId: payload.apiKeyId,
-        userId: payload.userId,
-        projectId: null,
-        sessionId: null,
-        createdAt: now,
-      }),
-    );
-
-    await this.eventsRepository.save(events);
-    await this.aggregateHeartbeatSessions(payload.userId);
-  }
-
-  private async aggregateHeartbeatSessions(userId: TelemetryEvent['userId']): Promise<void> {
-    const pendingTicks = await this.eventsRepository.find({
-      where: {
-        userId,
-        type: TelemetryEventType.HEARTBEAT,
-        sessionId: IsNull(),
-      },
-      order: {
-        clientTimestamp: 'ASC',
-        createdAt: 'ASC',
-      },
-    });
-
-    if (pendingTicks.length === 0) {
-      return;
-    }
-
-    let state = await this.resolveInitialState(userId, pendingTicks[0]);
-
-    for (const tick of pendingTicks) {
-      const tickAt = this.resolveTickTime(tick);
-      if (state === null || !this.canAppendTick(state, tick.gitBranch, tickAt)) {
-        if (state !== null) {
-          await this.persistSessionState(state, false);
-        }
-        state = this.buildNewSessionState(userId, tick.gitBranch, tickAt);
-      }
-
-      state.tickIds.push(tick.id);
-      state.tickCount += 1;
-      state.lastTickAt = tickAt;
-      this.bumpLanguage(state, tick.language);
-    }
-
-    if (state !== null) {
-      await this.persistSessionState(state, true);
-    }
-  }
-
-  private async resolveInitialState(
-    userId: TelemetryEvent['userId'],
-    firstTick: TelemetryEvent,
-  ): Promise<SessionAggregationState | null> {
-    const latestSession = await this.sessionsRepository.findOne({
-      where: { userId },
-      order: { startedAt: 'DESC' },
-    });
-
-    if (latestSession === null) {
-      return null;
-    }
-
-    const firstTickAt = this.resolveTickTime(firstTick);
-    const canContinue = this.canContinueSession(latestSession, firstTick.gitBranch, firstTickAt);
-
-    if (latestSession.status === WorkSessionStatus.ACTIVE && !canContinue) {
-      latestSession.status = WorkSessionStatus.CLOSED;
-      await this.sessionsRepository.save(latestSession);
-      return null;
-    }
-
-    return canContinue ? this.buildStateFromExistingSession(latestSession) : null;
-  }
-
-  private resolveTickTime(event: TelemetryEvent): Date {
-    return event.clientTimestamp ?? event.createdAt;
-  }
-
-  private canContinueSession(
-    session: WorkSession,
-    gitBranch: string | null,
-    tickAt: Date,
-  ): boolean {
-    if (session.gitBranch !== gitBranch) {
-      return false;
-    }
-
-    const sessionEnd = session.endedAt ?? session.startedAt;
-    return tickAt.getTime() - sessionEnd.getTime() <= SESSION_GAP_MS;
-  }
-
-  private canAppendTick(
-    state: SessionAggregationState,
-    gitBranch: string | null,
-    tickAt: Date,
-  ): boolean {
-    if (state.gitBranch !== gitBranch) {
-      return false;
-    }
-
-    return tickAt.getTime() - state.lastTickAt.getTime() <= SESSION_GAP_MS;
-  }
-
-  private buildStateFromExistingSession(session: WorkSession): SessionAggregationState {
-    const estimatedExistingTickCount = Math.max(
-      0,
-      Math.round(session.activeDurationMs / ONE_MINUTE_MS),
-    );
-    const languageCounts = new Map<string, number>();
-    if (session.primaryLanguage !== null && estimatedExistingTickCount > 0) {
-      languageCounts.set(session.primaryLanguage, estimatedExistingTickCount);
-    }
-
-    return {
-      sessionId: session.id,
-      userId: session.userId,
-      gitBranch: session.gitBranch,
-      startedAt: session.startedAt,
-      lastTickAt: session.endedAt ?? session.startedAt,
-      tickCount: estimatedExistingTickCount,
-      languageCounts,
-      tickIds: [],
-    };
-  }
-
-  private buildNewSessionState(
-    userId: TelemetryEvent['userId'],
-    gitBranch: string | null,
-    startedAt: Date,
-  ): SessionAggregationState {
-    return {
-      sessionId: null,
-      userId,
-      gitBranch,
-      startedAt,
-      lastTickAt: startedAt,
-      tickCount: 0,
-      languageCounts: new Map<string, number>(),
-      tickIds: [],
-    };
-  }
-
-  private bumpLanguage(state: SessionAggregationState, language: string | null): void {
-    if (language === null) {
-      return;
-    }
-    const current = state.languageCounts.get(language) ?? 0;
-    state.languageCounts.set(language, current + 1);
-  }
-
-  private pickPrimaryLanguage(languageCounts: Map<string, number>): string | null {
-    let primary: string | null = null;
-    let max = -1;
-    for (const [language, count] of languageCounts.entries()) {
-      if (count > max) {
-        primary = language;
-        max = count;
-      }
-    }
-    return primary;
-  }
-
-  private async persistSessionState(
-    state: SessionAggregationState,
-    markActive: boolean,
-  ): Promise<void> {
-    const activeDurationMs = state.tickCount * ONE_MINUTE_MS;
-    const totalDurationMs = Math.max(
-      ONE_MINUTE_MS,
-      state.lastTickAt.getTime() - state.startedAt.getTime() + ONE_MINUTE_MS,
-    );
-
-    const primaryLanguage = this.pickPrimaryLanguage(state.languageCounts);
-
-    let sessionId: WorkSession['id'];
-
-    if (state.sessionId === null) {
-      const created = this.sessionsRepository.create({
-        userId: state.userId,
-        projectId: null,
-        gitBranch: state.gitBranch,
-        startedAt: state.startedAt,
-        endedAt: state.lastTickAt,
-        activeDurationMs,
-        totalDurationMs,
-        primaryLanguage,
-        status: markActive ? WorkSessionStatus.ACTIVE : WorkSessionStatus.CLOSED,
-      });
-      const saved = await this.sessionsRepository.save(created);
-      state.sessionId = saved.id;
-      sessionId = saved.id;
-    } else {
-      sessionId = state.sessionId;
-      await this.sessionsRepository.update(
-        { id: state.sessionId },
-        {
-          gitBranch: state.gitBranch,
-          startedAt: state.startedAt,
-          endedAt: state.lastTickAt,
-          activeDurationMs,
-          totalDurationMs,
-          primaryLanguage,
-          status: markActive ? WorkSessionStatus.ACTIVE : WorkSessionStatus.CLOSED,
-        },
-      );
-    }
-
-    if (state.tickIds.length > 0) {
-      await this.eventsRepository
-        .createQueryBuilder()
-        .update(TelemetryEvent)
-        .set({ sessionId })
-        .whereInIds(state.tickIds)
-        .execute();
-    }
   }
 
   public async onModuleDestroy(): Promise<void> {
-    await this.worker?.close();
-    await this.connection.quit();
+    await this.worker.close();
   }
-}
 
-interface SessionAggregationState {
-  sessionId: WorkSession['id'] | null;
-  userId: WorkSession['userId'];
-  gitBranch: WorkSession['gitBranch'];
-  startedAt: Date;
-  lastTickAt: Date;
-  tickCount: number;
-  languageCounts: Map<string, number>;
-  tickIds: Array<TelemetryEvent['id']>;
+  private async processTelemetryBatch(data: TelemetryJobData): Promise<void> {
+    const { userId, events } = data;
+    const user = await this.userRepository.findById(userId);
+
+    if (!user) {
+      this.logger.error(`User ${userId} not found.`);
+      return;
+    }
+
+    for (const event of events) {
+      await this.dataSource.transaction(async (manager: EntityManager) => {
+        await this.processEvent(manager, user, event);
+      });
+    }
+  }
+
+  private async processEvent(
+    manager: EntityManager,
+    user: User,
+    event: TelemetryEventItemDto,
+  ): Promise<void> {
+    const sessionRepo = manager.getRepository(WorkSession);
+    const projectRepo = manager.getRepository(Project);
+
+    let project: Project | null = null;
+    if (event.gitRemoteUrl) {
+      project = await projectRepo.findOneBy({ gitRemoteUrl: event.gitRemoteUrl });
+      if (!project) {
+        project = projectRepo.create({
+          gitRemoteUrl: event.gitRemoteUrl,
+          name: event.gitRemoteUrl.split('/').pop()?.replace('.git', '') || 'Unknown',
+        });
+        project = await projectRepo.save(project);
+      }
+    }
+
+    const eventTime = new Date(event.timestamp);
+
+    const lastSession = await sessionRepo.findOne({
+      where: {
+        userId: user.id,
+        gitBranch: event.branch,
+        status: WorkSessionStatus.ACTIVE,
+      },
+      order: { endedAt: 'DESC' },
+    });
+
+    const isContinuation =
+      lastSession &&
+      lastSession.endedAt &&
+      eventTime.getTime() - lastSession.endedAt.getTime() <= 5 * 60 * 1000;
+
+    if (isContinuation) {
+      lastSession.endedAt = eventTime;
+      lastSession.activeSeconds += event.activeSeconds;
+      lastSession.idleSeconds += event.idleSeconds;
+
+      const total = lastSession.activeSeconds + lastSession.idleSeconds;
+      lastSession.focusScore = total > 0 ? (lastSession.activeSeconds / total) * 100 : 0;
+
+      await sessionRepo.save(lastSession);
+    } else {
+      const total = event.activeSeconds + event.idleSeconds;
+      const focusScore = total > 0 ? (event.activeSeconds / total) * 100 : 0;
+
+      const newSession = sessionRepo.create({
+        user: user,
+        userId: user.id,
+        project: project || null,
+        projectId: project?.id || null,
+        gitBranch: event.branch,
+        startedAt: eventTime,
+        endedAt: eventTime,
+        activeSeconds: event.activeSeconds,
+        idleSeconds: event.idleSeconds,
+        focusScore,
+        earnedMoney: 0,
+        status: WorkSessionStatus.ACTIVE,
+      });
+      await sessionRepo.save(newSession);
+    }
+  }
 }
