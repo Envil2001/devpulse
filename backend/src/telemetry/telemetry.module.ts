@@ -10,9 +10,15 @@ import { TelemetryController } from './controllers/telemetry.controller';
 import { TelemetryQueue } from './queue/telemetry.queue';
 import { TelemetryWorker } from './telemetry.worker';
 import { ApiKeysModule } from '../api-keys/api-keys.module';
+import { UsersModule } from '../users/users.module';
+import { Project } from '../projects/entities/project.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([TelemetryEvent, WorkSession, ApiKey]), ApiKeysModule],
+  imports: [
+    TypeOrmModule.forFeature([TelemetryEvent, WorkSession, ApiKey, Project]),
+    ApiKeysModule,
+    UsersModule,
+  ],
   controllers: [TelemetryController],
   providers: [TelemetryQueue, TelemetryWorker, ApiKeyGuard],
 })

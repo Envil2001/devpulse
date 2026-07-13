@@ -1,4 +1,10 @@
-import { BadRequestException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import fs from 'fs/promises';
 import path from 'path';
@@ -275,6 +281,17 @@ export class AuthService {
 
     this.logger.log(`Login successful for email: ${email}`);
     return { accessToken };
+  }
+
+  public async getDemoToken() {
+    const user = await this.usersService.findByEmail('demo@devpulse.com');
+    if (!user) throw new NotFoundException();
+
+    return this.jwtService.sign({
+      sub: user.id,
+      email: user.email,
+      displayName: user.displayName,
+    });
   }
 
   private async loadDisposableDomains(): Promise<void> {

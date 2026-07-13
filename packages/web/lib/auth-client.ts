@@ -1,4 +1,4 @@
-import { postJson } from './api-client';
+import { getJson, postJson } from './api-client';
 
 export interface AuthUserDto {
   id: string;
@@ -28,4 +28,8 @@ export async function register(request: RegisterRequestDto): Promise<AuthRespons
 
 export async function login(request: LoginRequestDto): Promise<AuthResponseDto> {
   return postJson<AuthResponseDto, LoginRequestDto>('/auth/login', request);
+}
+
+export async function getDemoToken(): Promise<{ token: string }> {
+  return getJson<{ token: string }>('/auth/demo-token');
 }

@@ -1,4 +1,4 @@
-import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository, EntityManager } from 'typeorm';
 import { Worker, Job } from 'bullmq';
@@ -11,6 +11,8 @@ import { UserRepository } from '../users/repositories/users.repository';
 import { TelemetryEventItemDto } from './dto/request/ingest-telemetry-batch-request.dto';
 import { User } from '../users/entities/user.entity';
 import { TelemetryEvent } from './entities/telemetry-event.entity';
+import Redis from 'ioredis/built/Redis';
+import { BULL_REDIS_CLIENT } from '../redis/redis.module';
 
 @Injectable()
 export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
@@ -18,7 +20,8 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
   private worker!: Worker<TelemetryJobData>;
 
   constructor(
-    private readonly redisService: RedisService,
+    @Inject(BULL_REDIS_CLIENT)
+    private readonly redisConnection: Redis,
     private readonly userRepository: UserRepository,
     private readonly dataSource: DataSource,
     @InjectRepository(WorkSession)
@@ -36,7 +39,7 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
         await this.processTelemetryBatch(job.data);
       },
       {
-        connection: this.redisService.getClient(),
+        connection: this.redisConnection,
         concurrency: 5,
       },
     );
