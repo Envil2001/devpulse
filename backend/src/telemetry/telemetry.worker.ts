@@ -10,6 +10,7 @@ import { Project } from '../projects/entities/project.entity';
 import { UserRepository } from '../users/repositories/users.repository';
 import { TelemetryEventItemDto } from './dto/request/ingest-telemetry-batch-request.dto';
 import { User } from '../users/entities/user.entity';
+import { TelemetryEvent } from './entities/telemetry-event.entity';
 
 @Injectable()
 export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
@@ -24,6 +25,8 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
     private readonly sessionRepo: Repository<WorkSession>,
     @InjectRepository(Project)
     private readonly projectRepo: Repository<Project>,
+    @InjectRepository(TelemetryEvent)
+    private readonly telemetryEventRepo: Repository<TelemetryEvent>,
   ) {}
 
   public async onModuleInit(): Promise<void> {
@@ -66,6 +69,7 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
   ): Promise<void> {
     const sessionRepo = manager.getRepository(WorkSession);
     const projectRepo = manager.getRepository(Project);
+    const telemetryEventRepo = manager.getRepository(TelemetryEvent);
 
     let project: Project | null = null;
     if (event.gitRemoteUrl) {
@@ -95,6 +99,8 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
       lastSession.endedAt &&
       eventTime.getTime() - lastSession.endedAt.getTime() <= 5 * 60 * 1000;
 
+    let currentSession: WorkSession;
+
     if (isContinuation) {
       lastSession.endedAt = eventTime;
       lastSession.activeSeconds += event.activeSeconds;
@@ -103,7 +109,7 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
       const total = lastSession.activeSeconds + lastSession.idleSeconds;
       lastSession.focusScore = total > 0 ? (lastSession.activeSeconds / total) * 100 : 0;
 
-      await sessionRepo.save(lastSession);
+      currentSession = await sessionRepo.save(lastSession);
     } else {
       const total = event.activeSeconds + event.idleSeconds;
       const focusScore = total > 0 ? (event.activeSeconds / total) * 100 : 0;
@@ -122,7 +128,22 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
         earnedMoney: 0,
         status: WorkSessionStatus.ACTIVE,
       });
-      await sessionRepo.save(newSession);
+
+      currentSession = await sessionRepo.save(newSession);
     }
+
+    const rawEvent = telemetryEventRepo.create({
+      user: user,
+      project: project || null,
+      session: currentSession,
+      gitBranch: event.branch,
+      eventTimestamp: eventTime,
+      activeSeconds: event.activeSeconds,
+      idleSeconds: event.idleSeconds,
+      filesChanged: event.filesChanged,
+      fileExtensions: event.fileExtensions,
+    });
+
+    await telemetryEventRepo.save(rawEvent);
   }
 }
