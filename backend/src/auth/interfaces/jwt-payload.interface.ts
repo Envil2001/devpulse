@@ -1,11 +1,7 @@
-export interface JwtPayload {
-  sub: string;
-  email: string;
-  iat?: number;
-  exp?: number;
-}
+import { TypeId } from '@devpulse/lib';
 
 export interface AuthenticatedUser {
-  id: string;
+  id: TypeId<'users'>;
   email: string;
+  displayName: string;
 }

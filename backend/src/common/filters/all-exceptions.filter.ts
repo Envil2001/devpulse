@@ -60,7 +60,6 @@ export class AllExceptionsFilter implements ExceptionFilter {
       const status = exception.getStatus();
       const raw = exception.getResponse();
 
-      // class-validator возвращает объект с массивом message
       if (typeof raw === 'object' && 'message' in raw) {
         const { message } = raw as { message: unknown };
         if (Array.isArray(message)) {

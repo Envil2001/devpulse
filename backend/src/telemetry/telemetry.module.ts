@@ -6,12 +6,19 @@ import { ApiKey } from '../api-keys/entities/api-key.entity';
 import { TelemetryEvent } from './entities/telemetry-event.entity';
 import { WorkSession } from './entities/work-session.entity';
 import { ApiKeyGuard } from './guards/api-key.guard';
-import { TelemetryController } from './telemetry.controller';
-import { TelemetryQueue } from './telemetry.queue';
+import { TelemetryController } from './controllers/telemetry.controller';
+import { TelemetryQueue } from './queue/telemetry.queue';
 import { TelemetryWorker } from './telemetry.worker';
+import { ApiKeysModule } from '../api-keys/api-keys.module';
+import { UsersModule } from '../users/users.module';
+import { Project } from '../projects/entities/project.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([TelemetryEvent, WorkSession, ApiKey])],
+  imports: [
+    TypeOrmModule.forFeature([TelemetryEvent, WorkSession, ApiKey, Project]),
+    ApiKeysModule,
+    UsersModule,
+  ],
   controllers: [TelemetryController],
   providers: [TelemetryQueue, TelemetryWorker, ApiKeyGuard],
 })

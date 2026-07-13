@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Get,
   Headers,
   HttpCode,
   HttpStatus,
@@ -66,5 +67,10 @@ export class AuthController {
   public async signinVerify(@Body() dto: LoginVerifyRequestDto): Promise<{ accessToken: string }> {
     const { email, clientProof } = dto;
     return this.authService.loginVerify(email, clientProof);
+  }
+
+  @Get('demo-token')
+  public async getDemoToken() {
+    return { token: await this.authService.getDemoToken() };
   }
 }

@@ -1,93 +1,72 @@
-import {
-  BeforeInsert,
-  Column,
-  CreateDateColumn,
-  Entity,
-  Index,
-  ManyToOne,
-  PrimaryColumn,
-} from 'typeorm';
+import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 
-import { type TypeId, typeIdGenerator } from '@devpulse/lib/ids';
+import { type TypeId } from '@devpulse/lib/ids';
+import { AppBaseEntity } from '../../common/entities/app-base.entity';
 
 import { ApiKey } from '../../api-keys/entities/api-key.entity';
 import { Project } from '../../projects/entities/project.entity';
-
+import { User } from '../../users/entities/user.entity';
 import { WorkSession } from './work-session.entity';
 
-export enum TelemetryEventType {
-  HEARTBEAT = 'heartbeat',
-  FILE_OPEN = 'file_open',
-  FILE_SAVE = 'file_save',
-  FILE_SWITCH = 'file_switch',
-  IDLE_START = 'idle_start',
-  IDLE_END = 'idle_end',
-}
-
 @Entity('telemetry_events')
-@Index(['userId', 'createdAt'])
-@Index(['projectId', 'gitBranch', 'createdAt'])
-export class TelemetryEvent {
-  @PrimaryColumn({ type: 'varchar', length: 40 })
-  public id: TypeId<'telemetryEvents'>;
-
-  @BeforeInsert()
-  public generateId(): void {
-    this.id = typeIdGenerator('telemetryEvents');
-  }
-
-  @Column({
-    type: 'enum',
-    enum: TelemetryEventType,
-  })
-  public type: TelemetryEventType;
-
+@Index(['userId', 'eventTimestamp'])
+@Index(['projectId', 'gitBranch', 'eventTimestamp'])
+export class TelemetryEvent extends AppBaseEntity<'telemetryEvents'> {
   @Column({ type: 'varchar', name: 'git_branch', length: 255, nullable: true })
-  public gitBranch: string | null;
+  public gitBranch!: string | null;
 
-  @Column({ type: 'varchar', name: 'file_path', length: 500, nullable: true })
-  public filePath: string | null;
+  @Column({ name: 'event_timestamp', type: 'timestamptz' })
+  public eventTimestamp!: Date;
 
-  @Column({ type: 'varchar', length: 50, nullable: true })
-  public language: string | null;
+  @Column({ name: 'active_seconds', type: 'int', default: 0 })
+  public activeSeconds!: number;
 
-  @Column({ name: 'duration_ms', type: 'int', nullable: true })
-  public durationMs: number | null;
+  @Column({ name: 'idle_seconds', type: 'int', default: 0 })
+  public idleSeconds!: number;
 
-  @Column({ name: 'client_timestamp', type: 'timestamptz', nullable: true })
-  public clientTimestamp: Date | null;
+  @Column({ name: 'files_changed', type: 'jsonb', default: [] })
+  public filesChanged!: string[];
 
-  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
-  public createdAt: Date;
+  @Column({ name: 'file_extensions', type: 'jsonb', default: [] })
+  public fileExtensions!: string[];
 
-  @ManyToOne(() => ApiKey, (apiKey) => apiKey.telemetryEvents, {
+  @ManyToOne(() => User, {
     nullable: false,
     onDelete: 'CASCADE',
   })
-  public apiKey: ApiKey;
-
-  @Column({ name: 'api_key_id', type: 'varchar', length: 40 })
-  public apiKeyId: TypeId<'apiKeys'>;
+  @JoinColumn({ name: 'user_id' })
+  public user!: User;
 
   @Column({ name: 'user_id', type: 'varchar', length: 40 })
-  @Index()
-  public userId: TypeId<'users'>;
+  public userId!: TypeId<'users'>;
 
-  @ManyToOne(() => Project, (project) => project.telemetryEvents, {
+  @ManyToOne(() => ApiKey, (apiKey) => apiKey.telemetryEvents, {
     nullable: true,
     onDelete: 'SET NULL',
   })
-  public project: Project | null;
+  @JoinColumn({ name: 'api_key_id' })
+  public apiKey!: ApiKey | null;
+
+  @Column({ name: 'api_key_id', type: 'varchar', length: 40, nullable: true })
+  public apiKeyId!: TypeId<'apiKeys'> | null;
+
+  @ManyToOne(() => Project, {
+    nullable: true,
+    onDelete: 'SET NULL',
+  })
+  @JoinColumn({ name: 'project_id' })
+  public project!: Project | null;
 
   @Column({ name: 'project_id', type: 'varchar', length: 40, nullable: true })
-  public projectId: TypeId<'projects'> | null;
+  public projectId!: TypeId<'projects'> | null;
 
   @ManyToOne(() => WorkSession, (session) => session.events, {
     nullable: true,
-    onDelete: 'SET NULL',
+    onDelete: 'CASCADE',
   })
-  public session: WorkSession | null;
+  @JoinColumn({ name: 'session_id' })
+  public session!: WorkSession | null;
 
   @Column({ name: 'session_id', type: 'varchar', length: 40, nullable: true })
-  public sessionId: TypeId<'workSessions'> | null;
+  public sessionId!: TypeId<'workSessions'> | null;
 }
