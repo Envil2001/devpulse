@@ -3,48 +3,50 @@ import { Type } from 'class-transformer';
 import {
   IsArray,
   IsDateString,
+  IsEnum,
   IsInt,
-  IsNotEmpty,
   IsOptional,
   IsString,
   Min,
   ValidateNested,
 } from 'class-validator';
+import { type TelemetryEventDto } from '@devpulse/lib';
 
-export class TelemetryEventItemDto {
+export class TelemetryEventItemDto implements TelemetryEventDto {
+  @ApiProperty({ description: 'Event type' })
+  @IsEnum(['heartbeat', 'file_save', 'file_switch', 'idle_start', 'idle_end'])
+  type!: 'heartbeat' | 'file_save' | 'file_switch' | 'idle_start' | 'idle_end';
+
   @ApiProperty({ description: 'Git branch name (e.g., main, develop)' })
   @IsString()
-  @IsNotEmpty()
-  branch!: string;
+  @IsOptional()
+  gitBranch!: string;
 
   @ApiProperty({ description: 'Git remote origin URL (e.g. github.com/org/repo.git)' })
   @IsString()
   @IsOptional()
   gitRemoteUrl?: string;
 
-  @ApiProperty({ description: 'ISO Timestamp of the heartbeat' })
+  @ApiProperty({ description: 'File path' })
+  @IsString()
+  @IsOptional()
+  filePath?: string;
+
+  @ApiProperty({ description: 'Programming language' })
+  @IsString()
+  @IsOptional()
+  language?: string;
+
+  @ApiProperty({ description: 'Duration in milliseconds' })
+  @IsInt()
+  @Min(0)
+  @IsOptional()
+  durationMs?: number | null;
+
+  @ApiProperty({ description: 'Client timestamp' })
   @IsDateString()
-  timestamp!: string;
-
-  @ApiProperty({ description: 'Active typing seconds in the last minute' })
-  @IsInt()
-  @Min(0)
-  activeSeconds!: number;
-
-  @ApiProperty({ description: 'Idle seconds in the last minute' })
-  @IsInt()
-  @Min(0)
-  idleSeconds!: number;
-
-  @ApiProperty({ description: 'List of edited file paths' })
-  @IsArray()
-  @IsString({ each: true })
-  filesChanged!: string[];
-
-  @ApiProperty({ description: 'List of file extensions (ts, json, etc.)' })
-  @IsArray()
-  @IsString({ each: true })
-  fileExtensions!: string[];
+  @IsOptional()
+  clientTimestamp?: string;
 }
 
 export class IngestTelemetryBatchRequestDto {

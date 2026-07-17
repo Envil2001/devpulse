@@ -8,6 +8,7 @@ const execFileAsync = promisify(execFile);
 export interface GitContext {
   workspaceName: string | null;
   gitBranch: string | null;
+  gitRemoteUrl: string | null;
   workspaceFolderPath: string | null;
 }
 
@@ -22,6 +23,7 @@ function isSameContext(a: GitContext, b: GitContext): boolean {
   return (
     a.workspaceName === b.workspaceName &&
     a.gitBranch === b.gitBranch &&
+    a.gitRemoteUrl === b.gitRemoteUrl &&
     a.workspaceFolderPath === b.workspaceFolderPath
   );
 }
@@ -79,6 +81,18 @@ async function resolveGitBranch(folderPath: string): Promise<string | null> {
   }
 }
 
+async function resolveGitRemoteUrl(folderPath: string): Promise<string | null> {
+  try {
+    const { stdout } = await execFileAsync('git', ['config', '--get', 'remote.origin.url'], {
+      cwd: folderPath,
+    });
+    const url = stdout.trim();
+    return url.length > 0 ? url : null;
+  } catch {
+    return null;
+  }
+}
+
 export class GitContextProvider implements vscode.Disposable {
   private readonly disposables: Array<vscode.Disposable> = [];
   private readonly emitter = new vscode.EventEmitter<GitContext>();
@@ -91,6 +105,7 @@ export class GitContextProvider implements vscode.Disposable {
   private context: GitContext = {
     workspaceName: null,
     gitBranch: null,
+    gitRemoteUrl: null,
     workspaceFolderPath: null,
   };
 
@@ -114,19 +129,23 @@ export class GitContextProvider implements vscode.Disposable {
 
   private scheduleRefresh(): void {
     this.refreshChain = this.refreshChain.then(async () => {
-      const nextContext = await this.detectContext();
-      if (isSameContext(this.context, nextContext)) {
-        return;
-      }
+      try {
+        const nextContext = await this.detectContext();
+        if (isSameContext(this.context, nextContext)) {
+          return;
+        }
 
-      if (this.watchedWorkspaceFolderPath !== nextContext.workspaceFolderPath) {
-        this.resetGitWatchers(nextContext.workspaceFolderPath);
+        if (this.watchedWorkspaceFolderPath !== nextContext.workspaceFolderPath) {
+          this.resetGitWatchers(nextContext.workspaceFolderPath);
+        }
+        this.context = nextContext;
+        this.log?.appendLine(
+          `[git-context] workspace="${nextContext.workspaceName ?? 'n/a'}" branch="${nextContext.gitBranch ?? 'n/a'}" remote="${nextContext.gitRemoteUrl ?? 'n/a'}"`,
+        );
+        this.emitter.fire(nextContext);
+      } catch (error) {
+        this.log?.appendLine(`[git-context] refresh failed: ${String(error)}`);
       }
-      this.context = nextContext;
-      this.log?.appendLine(
-        `[git-context] workspace="${nextContext.workspaceName ?? 'n/a'}" branch="${nextContext.gitBranch ?? 'n/a'}"`,
-      );
-      this.emitter.fire(nextContext);
     });
   }
 
@@ -142,23 +161,30 @@ export class GitContextProvider implements vscode.Disposable {
     }
 
     // `git checkout` typically updates `.git/HEAD`. Watching it gives near-real-time branch changes
-    // without depending on the built-in Git extension API.
+    // without depending on the built-in Git extension API. `.git/config` covers remote URL changes.
     const headWatcher = vscode.workspace.createFileSystemWatcher(
       new vscode.RelativePattern(workspaceFolderPath, '.git/HEAD'),
     );
     const packedRefsWatcher = vscode.workspace.createFileSystemWatcher(
       new vscode.RelativePattern(workspaceFolderPath, '.git/packed-refs'),
     );
+    const configWatcher = vscode.workspace.createFileSystemWatcher(
+      new vscode.RelativePattern(workspaceFolderPath, '.git/config'),
+    );
 
     this.gitWatchers.push(
       headWatcher,
       packedRefsWatcher,
+      configWatcher,
       headWatcher.onDidChange(this.handleGitMetadataChange),
       headWatcher.onDidCreate(this.handleGitMetadataChange),
       headWatcher.onDidDelete(this.handleGitMetadataChange),
       packedRefsWatcher.onDidChange(this.handleGitMetadataChange),
       packedRefsWatcher.onDidCreate(this.handleGitMetadataChange),
       packedRefsWatcher.onDidDelete(this.handleGitMetadataChange),
+      configWatcher.onDidChange(this.handleGitMetadataChange),
+      configWatcher.onDidCreate(this.handleGitMetadataChange),
+      configWatcher.onDidDelete(this.handleGitMetadataChange),
     );
   }
 
@@ -167,11 +193,18 @@ export class GitContextProvider implements vscode.Disposable {
     const folder = isWorkspaceFolderLike(detectedFolder) ? detectedFolder : null;
     const workspaceFolderPath = folder?.uri.fsPath ?? null;
     const workspaceName = resolveWorkspaceName(folder);
-    const gitBranch = workspaceFolderPath ? await resolveGitBranch(workspaceFolderPath) : null;
+
+    const [gitBranch, gitRemoteUrl] = workspaceFolderPath
+      ? await Promise.all([
+          resolveGitBranch(workspaceFolderPath),
+          resolveGitRemoteUrl(workspaceFolderPath),
+        ])
+      : [null, null];
 
     return {
       workspaceName,
       gitBranch,
+      gitRemoteUrl,
       workspaceFolderPath,
     };
   }

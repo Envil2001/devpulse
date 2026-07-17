@@ -86,12 +86,12 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
       }
     }
 
-    const eventTime = new Date(event.timestamp);
+    const eventTime = new Date(event.clientTimestamp || new Date().toISOString());
 
     const lastSession = await sessionRepo.findOne({
       where: {
         userId: user.id,
-        gitBranch: event.branch,
+        gitBranch: event.gitBranch || 'no-branch',
         status: WorkSessionStatus.ACTIVE,
       },
       order: { endedAt: 'DESC' },
@@ -102,49 +102,61 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
       lastSession.endedAt &&
       eventTime.getTime() - lastSession.endedAt.getTime() <= 5 * 60 * 1000;
 
+    const durationSec = event.durationMs ? Math.round(event.durationMs / 1000) : 0;
+    const activeSeconds = event.type === 'idle_start' ? durationSec : 0;
+    const idleSeconds = event.type === 'idle_end' ? durationSec : 0;
+
     let currentSession: WorkSession;
 
     if (isContinuation) {
       lastSession.endedAt = eventTime;
-      lastSession.activeSeconds += event.activeSeconds;
-      lastSession.idleSeconds += event.idleSeconds;
+      lastSession.activeSeconds += activeSeconds;
+      lastSession.idleSeconds += idleSeconds;
 
       const total = lastSession.activeSeconds + lastSession.idleSeconds;
       lastSession.focusScore = total > 0 ? (lastSession.activeSeconds / total) * 100 : 0;
 
+      if (event.language) {
+        lastSession.primaryLanguage = event.language;
+      }
+
       currentSession = await sessionRepo.save(lastSession);
     } else {
-      const total = event.activeSeconds + event.idleSeconds;
-      const focusScore = total > 0 ? (event.activeSeconds / total) * 100 : 0;
+      const total = activeSeconds + idleSeconds;
+      const focusScore = total > 0 ? (activeSeconds / total) * 100 : 0;
 
       const newSession = sessionRepo.create({
         user: user,
         userId: user.id,
         project: project || null,
         projectId: project?.id || null,
-        gitBranch: event.branch,
+        gitBranch: event.gitBranch,
         startedAt: eventTime,
         endedAt: eventTime,
-        activeSeconds: event.activeSeconds,
-        idleSeconds: event.idleSeconds,
+        activeSeconds,
+        idleSeconds,
         focusScore,
         earnedMoney: 0,
+        primaryLanguage: event.language || null,
         status: WorkSessionStatus.ACTIVE,
       });
 
       currentSession = await sessionRepo.save(newSession);
     }
 
+    const filesChanged = event.filePath ? [event.filePath] : [];
+    const fileExtensions = event.language ? [event.language] : [];
+
     const rawEvent = telemetryEventRepo.create({
       user: user,
       project: project || null,
       session: currentSession,
-      gitBranch: event.branch,
+      gitBranch: event.gitBranch,
       eventTimestamp: eventTime,
-      activeSeconds: event.activeSeconds,
-      idleSeconds: event.idleSeconds,
-      filesChanged: event.filesChanged,
-      fileExtensions: event.fileExtensions,
+      activeSeconds,
+      idleSeconds,
+      filesChanged,
+      fileExtensions,
     });
 
     await telemetryEventRepo.save(rawEvent);

@@ -2,9 +2,11 @@
   "name": "@devpulse/env",
   "version": "0.0.1",
   "private": true,
+  "type": "module",
   "exports": {
     "./api": "./api.ts",
-    "./client": "./client.ts"
+    "./client": "./client.ts",
+    "./extension": "./extension.ts"
   },
   "dependencies": {
     "@t3-oss/env-core": "^0.13.0",

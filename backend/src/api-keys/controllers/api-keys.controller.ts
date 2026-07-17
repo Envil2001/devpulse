@@ -45,4 +45,10 @@ export class ApiKeysController {
     await this.apiKeysService.revokeKey(id, user.id);
     return { message: 'Key revoked successfully' };
   }
+
+  @Get('demo-key')
+  public async getDemoKey(@CurrentUser() user: User) {
+    const { rawKey } = await this.apiKeysService.createKey(user, 'Demo Key');
+    return { apiKey: rawKey };
+  }
 }

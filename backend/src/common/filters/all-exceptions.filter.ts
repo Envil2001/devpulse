@@ -7,17 +7,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { type Request, type Response } from 'express';
-
-interface ErrorResponse {
-  success: false;
-  error: {
-    code: number;
-    message: string;
-    details?: unknown;
-  };
-  timestamp: string;
-  path: string;
-}
+import { type ApiErrorResponse } from '@devpulse/lib';
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
@@ -30,7 +20,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     const { status, message, details } = this.resolveException(exception);
 
-    const body: ErrorResponse = {
+    const body: ApiErrorResponse = {
       success: false,
       error: {
         code: status,
