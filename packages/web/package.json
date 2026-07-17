@@ -3,10 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 3001",
     "build": "next build",
-    "start": "next start -p 3001",
-    "lint": "eslint"
+    "dev": "next dev -p 3001",
+    "lint": "eslint . --ext .ts,tsx --max-warnings=0",
+    "lint:fix": "eslint . --ext .ts,tsx --fix",
+    "start": "next start -p 3001"
   },
   "dependencies": {
     "lucide-react": "^1.14.0",
@@ -16,14 +17,14 @@
   },
   "devDependencies": {
     "@devpulse/env": "workspace:*",
+    "@devpulse/eslint-config": "workspace:*",
     "@devpulse/lib": "workspace:*",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.2.6",
+    "eslint": "^8.57.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5.7.3"
   }
 }

@@ -1,11 +1,10 @@
+import type { TelemetryEventDto } from '@devpulse/lib';
 import * as vscode from 'vscode';
 
 import type { ActivityMonitor, ActivityState } from '../activity-monitor.js';
 import type { GitContext, GitContextProvider } from '../git-context.js';
-
 import { TelemetryApiClient } from './api-client.js';
 import { TelemetryBufferStore } from './buffer-store.js';
-import type { TelemetryEventDto } from '@devpulse/lib';
 
 const FLUSH_INTERVAL_MS = 60_000;
 
@@ -52,11 +51,13 @@ export class TelemetryBridge implements vscode.Disposable {
         if (doc.isClosed) {
           return;
         }
+
         this.enqueue(this.createEvent('file_save', { filePath: doc.uri.fsPath }));
       }),
       vscode.window.onDidChangeActiveTextEditor((editor) => {
         const filePath = editor?.document.uri.fsPath ?? null;
         const language = editor?.document.languageId ?? null;
+
         this.enqueue(this.createEvent('file_switch', { filePath: filePath }));
       }),
       vscode.workspace.onDidChangeConfiguration((e) => {
@@ -80,6 +81,7 @@ export class TelemetryBridge implements vscode.Disposable {
     if (prev !== null && prevAt !== null && prev !== next) {
       const durationMs = Math.max(0, changedAt - prevAt);
       const eventType: 'idle_start' | 'idle_end' = next === 'idle' ? 'idle_start' : 'idle_end';
+
       this.enqueue(this.createEvent(eventType, { durationMs }));
     }
 
@@ -98,6 +100,7 @@ export class TelemetryBridge implements vscode.Disposable {
     }
 
     const boundaryTimestamp = new Date().toISOString();
+
     this.enqueue(
       this.createEvent('heartbeat', {
         durationMs: null,
@@ -151,6 +154,7 @@ export class TelemetryBridge implements vscode.Disposable {
     if (this.flushing) {
       return;
     }
+
     if (this.queue.length === 0) {
       return;
     }
@@ -158,6 +162,7 @@ export class TelemetryBridge implements vscode.Disposable {
     this.flushing = true;
     try {
       const batch = this.queue;
+
       this.log?.appendLine(`[telemetry] Sending payload: ${JSON.stringify({ events: batch })}`);
       await this.client.postEventsBatch({ events: batch });
       this.queue = [];
@@ -166,6 +171,7 @@ export class TelemetryBridge implements vscode.Disposable {
     } catch (error) {
       // Offline / missing API key / backend down: keep buffered.
       const message = error instanceof Error ? error.message : String(error);
+
       this.log?.appendLine(
         `[telemetry] flush skipped (${message}); buffered=${String(this.queue.length)}`,
       );
@@ -179,6 +185,7 @@ export class TelemetryBridge implements vscode.Disposable {
       clearInterval(this.timer);
       this.timer = undefined;
     }
+
     void this.flush();
     for (const d of this.disposables) {
       d.dispose();

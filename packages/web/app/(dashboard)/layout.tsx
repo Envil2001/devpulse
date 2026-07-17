@@ -33,6 +33,7 @@ export default function DashboardLayout({
 
   useEffect(() => {
     const token = getAccessToken();
+
     if (token === null) {
       router.replace('/login');
     }
@@ -45,25 +46,25 @@ export default function DashboardLayout({
 
   return (
     <div className="min-h-screen p-4 md:p-6">
-      <div className="mx-auto grid min-h-[calc(100vh-2rem)] max-w-[1440px] grid-cols-1 gap-4 md:grid-cols-[280px_1fr] md:gap-6">
+      <div className="max-w-360 mx-auto grid min-h-[calc(100vh-2rem)] grid-cols-1 gap-4 md:grid-cols-[280px_1fr] md:gap-6">
         <aside className="card-shell rounded-xl p-4 md:p-5">
-          <div className="rounded-lg bg-(--color-primary-soft) px-3 py-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-(--color-text-muted)">
+          <div className="bg-(--color-primary-soft) rounded-lg px-3 py-2">
+            <p className="text-(--color-text-muted) text-xs font-semibold uppercase tracking-wide">
               DevPulse
             </p>
-            <p className="text-lg font-semibold text-(--color-text)">Dashboard</p>
+            <p className="text-(--color-text) text-lg font-semibold">Dashboard</p>
           </div>
 
           <nav className="mt-5 flex flex-col gap-2">
             {navigationItems.map((item) => (
               <button
                 key={item.label}
-                type="button"
                 className={`rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors ${
                   item.active
                     ? 'bg-(--color-primary) text-white'
                     : 'text-(--color-text-muted) hover:bg-(--color-surface-muted) hover:text-(--color-text)'
                 }`}
+                type="button"
               >
                 <span className="flex items-center gap-2">
                   <item.icon size={16} strokeWidth={2} />
@@ -73,46 +74,46 @@ export default function DashboardLayout({
             ))}
           </nav>
 
-          <div className="mt-6 rounded-lg border border-(--color-border) bg-(--color-surface-muted) p-3">
-            <p className="text-xs font-medium uppercase tracking-wide text-(--color-text-muted)">
+          <div className="border-(--color-border) bg-(--color-surface-muted) mt-6 rounded-lg border p-3">
+            <p className="text-(--color-text-muted) text-xs font-medium uppercase tracking-wide">
               Workspace
             </p>
-            <p className="mt-1 text-sm font-semibold text-(--color-text)">devpulse</p>
-            <p className="mt-1 text-xs text-(--color-text-muted)">Weekly focus: 82.4%</p>
+            <p className="text-(--color-text) mt-1 text-sm font-semibold">devpulse</p>
+            <p className="text-(--color-text-muted) mt-1 text-xs">Weekly focus: 82.4%</p>
           </div>
         </aside>
 
         <section className="card-shell rounded-xl p-4 md:p-5">
-          <header className="rounded-lg border border-(--color-border) bg-(--color-surface-muted) px-4 py-3">
+          <header className="border-(--color-border) bg-(--color-surface-muted) rounded-lg border px-4 py-3">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <p className="flex items-center gap-1 text-xs font-medium uppercase tracking-wide text-(--color-text-muted)">
+                <p className="text-(--color-text-muted) flex items-center gap-1 text-xs font-medium uppercase tracking-wide">
                   <CalendarDays size={14} strokeWidth={2} />
                   Today
                 </p>
-                <h1 className="text-lg font-semibold text-(--color-text)">Engineering Dashboard</h1>
+                <h1 className="text-(--color-text) text-lg font-semibold">Engineering Dashboard</h1>
               </div>
 
               <div className="flex items-center gap-2">
                 <button
-                  type="button"
                   className="ui-button-primary inline-flex items-center gap-2 px-3 py-2 text-sm font-semibold"
+                  type="button"
                 >
                   <Plus size={16} strokeWidth={2.5} />
                   New Report
                 </button>
                 <button
-                  type="button"
                   disabled
                   className="ui-button-primary inline-flex items-center gap-2 px-3 py-2 text-sm font-semibold"
+                  type="button"
                 >
                   <Download size={16} strokeWidth={2.5} />
                   Export (disabled)
                 </button>
                 <button
+                  className="border-(--color-border) bg-(--color-surface) text-(--color-text) hover:bg-(--color-surface-muted) inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-semibold transition-colors"
                   type="button"
                   onClick={handleLogout}
-                  className="inline-flex items-center gap-2 rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2 text-sm font-semibold text-(--color-text) transition-colors hover:bg-(--color-surface-muted)"
                 >
                   <LogOut size={16} strokeWidth={2.5} />
                   Logout

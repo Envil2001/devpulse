@@ -1,9 +1,9 @@
 'use client';
 
+import { LockKeyhole, LogIn, Mail } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { LockKeyhole, LogIn, Mail } from 'lucide-react';
 
 import { ApiClientError } from '@/lib/api-client';
 import { login } from '@/lib/auth-client';
@@ -23,6 +23,7 @@ export default function LoginPage() {
 
     try {
       const auth = await login({ email, password });
+
       setAccessToken(auth.accessToken);
       router.push('/');
     } catch (submitError) {
@@ -39,60 +40,64 @@ export default function LoginPage() {
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-md items-center p-4">
       <div className="card-shell w-full rounded-xl p-5">
-        <h1 className="text-xl font-semibold text-(--color-text)">Welcome back</h1>
-        <p className="mt-1 text-sm text-(--color-text-muted)">Sign in to continue to DevPulse.</p>
+        <h1 className="text-(--color-text) text-xl font-semibold">Welcome back</h1>
+        <p className="text-(--color-text-muted) mt-1 text-sm">Sign in to continue to DevPulse.</p>
 
         <form className="mt-5 space-y-3" onSubmit={onSubmit}>
           <label className="block">
-            <span className="mb-1 inline-flex items-center gap-1 text-sm text-(--color-text-muted)">
+            <span className="text-(--color-text-muted) mb-1 inline-flex items-center gap-1 text-sm">
               <Mail size={14} />
               Email
             </span>
             <input
               required
+              className="border-(--color-border) bg-(--color-surface) text-(--color-text) focus:border-(--color-primary) w-full rounded-lg border px-3 py-2 text-sm outline-none transition-colors"
+              placeholder="you@example.com"
               type="email"
               value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              className="w-full rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2 text-sm text-(--color-text) outline-none transition-colors focus:border-(--color-primary)"
-              placeholder="you@example.com"
+              onChange={(event) => {
+                setEmail(event.target.value);
+              }}
             />
           </label>
 
           <label className="block">
-            <span className="mb-1 inline-flex items-center gap-1 text-sm text-(--color-text-muted)">
+            <span className="text-(--color-text-muted) mb-1 inline-flex items-center gap-1 text-sm">
               <LockKeyhole size={14} />
               Password
             </span>
             <input
               required
+              className="border-(--color-border) bg-(--color-surface) text-(--color-text) focus:border-(--color-primary) w-full rounded-lg border px-3 py-2 text-sm outline-none transition-colors"
               minLength={8}
+              placeholder="Enter your password"
               type="password"
               value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              className="w-full rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2 text-sm text-(--color-text) outline-none transition-colors focus:border-(--color-primary)"
-              placeholder="Enter your password"
+              onChange={(event) => {
+                setPassword(event.target.value);
+              }}
             />
           </label>
 
           {error !== null && (
-            <p className="rounded-lg bg-(--color-primary-soft) px-3 py-2 text-sm text-(--color-danger)">
+            <p className="bg-(--color-primary-soft) text-(--color-danger) rounded-lg px-3 py-2 text-sm">
               {error}
             </p>
           )}
 
           <button
-            type="submit"
-            disabled={isSubmitting}
             className="ui-button-primary inline-flex w-full items-center justify-center gap-2 px-3 py-2 text-sm font-semibold"
+            disabled={isSubmitting}
+            type="submit"
           >
             <LogIn size={16} />
             {isSubmitting ? 'Signing in...' : 'Sign in'}
           </button>
         </form>
 
-        <p className="mt-4 text-sm text-(--color-text-muted)">
+        <p className="text-(--color-text-muted) mt-4 text-sm">
           No account yet?{' '}
-          <Link href="/register" className="font-semibold text-(--color-primary)">
+          <Link className="text-(--color-primary) font-semibold" href="/register">
             Create one
           </Link>
         </p>

@@ -5,7 +5,7 @@ interface RequestOptions {
 }
 
 export abstract class BaseService {
-  protected post<TResponse, TRequest>(
+  protected async post<TResponse, TRequest>(
     path: string,
     payload: TRequest,
     options: RequestOptions = {},
@@ -13,7 +13,7 @@ export abstract class BaseService {
     return postJson<TResponse, TRequest>(path, payload, options);
   }
 
-  protected get<TResponse>(path: string, options?: RequestOptions): Promise<TResponse> {
+  protected async get<TResponse>(path: string, options?: RequestOptions): Promise<TResponse> {
     return getJson<TResponse>(path, options);
   }
 }

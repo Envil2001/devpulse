@@ -1,0 +1,576 @@
+FILE_PATH: ./backend/package.json
+{
+  "name": "backend",
+  "version": "0.0.1",
+  "private": true,
+  "description": "",
+  "license": "UNLICENSED",
+  "author": "",
+  "scripts": {
+    "build": "nest build",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "lint": "eslint . --ext .ts --max-warnings=0",
+    "lint:fix": "eslint . --ext .ts --fix",
+    "seed": "ts-node -r tsconfig-paths/register src/scripts/seed.ts",
+    "start": "nest start",
+    "start:debug": "nest start --debug --watch",
+    "start:dev": "nest start --watch",
+    "start:prod": "node dist/main"
+  },
+  "dependencies": {
+    "@devpulse/env": "workspace:*",
+    "@devpulse/lib": "workspace:*",
+    "@faker-js/faker": "^10.5.0",
+    "@nestjs/common": "^11.0.1",
+    "@nestjs/config": "^4.0.3",
+    "@nestjs/core": "^11.0.1",
+    "@nestjs/jwt": "^11.0.2",
+    "@nestjs/passport": "^11.0.5",
+    "@nestjs/platform-express": "^11.0.1",
+    "@nestjs/swagger": "^11.4.5",
+    "@nestjs/throttler": "^6.5.0",
+    "@nestjs/typeorm": "^11.0.1",
+    "bcrypt": "^6.0.0",
+    "bullmq": "^5.76.2",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.15.1",
+    "helmet": "^8.1.0",
+    "ioredis": "^5.10.1",
+    "passport": "^0.7.0",
+    "passport-jwt": "^4.0.1",
+    "passport-local": "^1.0.0",
+    "pg": "^8.20.0",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1",
+    "typeorm": "^0.3.28"
+  },
+  "devDependencies": {
+    "@devpulse/eslint-config": "workspace:*",
+    "@nestjs/cli": "^11.0.0",
+    "@nestjs/schematics": "^11.0.0",
+    "@types/bcrypt": "^6.0.0",
+    "@types/express": "^5.0.0",
+    "@types/node": "^24.0.0",
+    "@types/passport": "^1.0.17",
+    "@types/passport-jwt": "^4.0.1",
+    "@types/passport-local": "^1.0.38",
+    "eslint": "^8.57.0",
+    "ms": "3.0.0-beta.2",
+    "prettier": "^3.8.1",
+    "ts-loader": "^9.5.2",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.7.3"
+  },
+  "packageManager": "pnpm@9.14.2+sha512.6e2baf77d06b9362294152c851c4f278ede37ab1eba3a55fda317a4a17b209f4dbb973fb250a77abc463a341fcb1f17f17cfa24091c4eb319cda0d9b84278387"
+}
+-e 
+---END_OF_FILE---
+
+FILE_PATH: ./backend/tsconfig.json
+{
+  "compilerOptions": {
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "resolvePackageJsonExports": true,
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "target": "ES2023",
+    "sourceMap": true,
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "incremental": false,
+    "skipLibCheck": true,
+    "strictNullChecks": true,
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitAny": false,
+    "strictBindCallApply": false,
+    "noFallthroughCasesInSwitch": false
+  }
+}
+-e 
+---END_OF_FILE---
+
+FILE_PATH: ./backend/.eslintrc.json
+{
+  "root": true,
+  "extends": ["@devpulse/eslint-config/nestjs"],
+  "parserOptions": {
+    "project": true
+  }
+}
+-e 
+---END_OF_FILE---
+
+FILE_PATH: ./package.json
+{
+  "name": "devpulse",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "format": "prettier --write \"**/*.{ts,js,json,md}\" --ignore-path .gitignore",
+    "format:check": "prettier . --check",
+    "format:write": "prettier . --write",
+    "lint": "pnpm -r run lint",
+    "lint:fix": "pnpm -r run lint:fix"
+  },
+  "devDependencies": {
+    "@devpulse/eslint-config": "workspace:*",
+    "@typescript-eslint/eslint-plugin": "^8.46.2",
+    "@typescript-eslint/parser": "^8.46.2",
+    "eslint": "^8.57.0",
+    "prettier": "^3.8.1",
+    "prettier-plugin-packagejson": "^2.5.6",
+    "prettier-plugin-tailwindcss": "^0.6.0",
+    "turbo": "^2.0.0",
+    "typescript": "^5.7.3"
+  },
+  "packageManager": "pnpm@9.14.2+sha512.6e2baf77d06b9362294152c851c4f278ede37ab1eba3a55fda317a4a17b209f4dbb973fb250a77abc463a341fcb1f17f17cfa24091c4eb319cda0d9b84278387"
+}
+-e 
+---END_OF_FILE---
+
+FILE_PATH: ./packages/web/package.json
+{
+  "name": "web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "next build",
+    "dev": "next dev -p 3001",
+    "lint": "eslint . --max-warnings=0",
+    "lint:fix": "eslint . --fix",
+    "start": "next start -p 3001"
+  },
+  "dependencies": {
+    "lucide-react": "^1.14.0",
+    "next": "16.2.6",
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
+  },
+  "devDependencies": {
+    "@devpulse/env": "workspace:*",
+    "@devpulse/eslint-config": "workspace:*",
+    "@devpulse/lib": "workspace:*",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^8.57.0",
+    "tailwindcss": "^4",
+    "typescript": "^5.7.3"
+  }
+}
+-e 
+---END_OF_FILE---
+
+FILE_PATH: ./packages/web/tsconfig.json
+{
+  "compilerOptions": {
+    "target": "ES2017",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "react-jsx",
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {
+      "@/*": ["./*"]
+    }
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts",
+    "**/*.mts"
+  ],
+  "exclude": ["node_modules"]
+}
+-e 
+---END_OF_FILE---
+
+FILE_PATH: ./packages/web/.eslintrc.json
+{
+  "root": true,
+  "extends": ["@devpulse/eslint-config/nextjs"],
+  "parserOptions": {
+    "project": true
+  }
+}
+-e 
+---END_OF_FILE---
+
+FILE_PATH: ./packages/env/extension.ts
+import { createEnv } from '@t3-oss/env-core';
+import { z } from 'zod';
+
+export const env = createEnv({
+  server: {
+    DEVPULSE_API_URL: z.string().url(),
+    NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+  },
+  runtimeEnv: process.env,
+});
+-e 
+---END_OF_FILE---
+
+FILE_PATH: ./packages/env/api.ts
+import { createEnv } from '@t3-oss/env-core';
+import { config } from 'dotenv';
+import { resolve } from 'path';
+import { z } from 'zod';
+
+config({ path: resolve(process.cwd(), '../.env') });
+
+export const env = createEnv({
+  server: {
+    NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+
+    PORT: z.coerce.number().default(3000),
+
+    // PostgreSQL
+    POSTGRES_USER: z.string().min(1),
+    POSTGRES_PASSWORD: z.string().min(1),
+    POSTGRES_DB: z.string().min(1),
+    DATABASE_URL: z.string().url(),
+
+    // Redis
+    REDIS_URL: z.string().url(),
+
+    // JWT
+    JWT_SECRET: z.string().min(1),
+    JWT_EXPIRES_IN: z.string().default('7d'),
+  },
+
+  runtimeEnv: process.env,
+});
+-e 
+---END_OF_FILE---
+
+FILE_PATH: ./packages/env/package.json
+{
+  "name": "@devpulse/env",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./api": "./api.ts",
+    "./client": "./client.ts",
+    "./extension": "./extension.ts"
+  },
+  "scripts": {
+    "lint": "eslint . --ext .ts --max-warnings=0",
+    "lint:fix": "eslint . --ext .ts --fix"
+  },
+  "dependencies": {
+    "@t3-oss/env-core": "^0.13.0",
+    "dotenv": "^17.4.2",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@devpulse/eslint-config": "workspace:*",
+    "@types/node": "^24.12.2",
+    "eslint": "^8.57.0",
+    "prettier": "^3.8.1",
+    "typescript": "^5.7.3"
+  }
+}
+-e 
+---END_OF_FILE---
+
+FILE_PATH: ./packages/env/client.ts
+import { createEnv } from '@t3-oss/env-core';
+import { z } from 'zod';
+
+export const env = createEnv({
+  clientPrefix: 'NEXT_PUBLIC_',
+
+  client: {
+    NEXT_PUBLIC_API_URL: z.string().url(),
+  },
+
+  runtimeEnv: process.env,
+});
+-e 
+---END_OF_FILE---
+
+FILE_PATH: ./packages/env/tsconfig.json
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noEmit": true
+  },
+  "include": ["*.ts"]
+}
+-e 
+---END_OF_FILE---
+
+FILE_PATH: ./packages/env/.eslintrc.json
+{
+  "root": true,
+  "extends": ["@devpulse/eslint-config"],
+  "parserOptions": {
+    "project": true
+  }
+}
+-e 
+---END_OF_FILE---
+
+FILE_PATH: ./packages/eslint-config/package.json
+{
+  "name": "@devpulse/eslint-config",
+  "version": "0.0.0",
+  "private": true,
+  "main": "index.js",
+  "files": [
+    "index.js",
+    "shared.js",
+    "base.js",
+    "nestjs.js",
+    "nextjs.js",
+    "extension.js"
+  ],
+  "scripts": {
+    "typecheck": "echo skip"
+  },
+  "dependencies": {
+    "@next/eslint-plugin-next": "^15.5.6",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-deprecation": "^3.0.0",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-json": "^4.0.1",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-tailwind-v4": "^1.1.1",
+    "eslint-plugin-unused-imports": "^4.3.0"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.46.2",
+    "@typescript-eslint/parser": "^8.46.2",
+    "typescript": "5.8.3"
+  },
+  "peerDependencies": {
+    "eslint": "^8.57.0"
+  }
+}
+-e 
+---END_OF_FILE---
+
+FILE_PATH: ./packages/eslint-config/tsconfig.json
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "CommonJS",
+    "moduleResolution": "bundler",
+    "allowJs": true,
+    "checkJs": false,
+    "skipLibCheck": true,
+    "noEmit": true
+  },
+  "include": ["*.js"]
+}
+-e 
+---END_OF_FILE---
+
+FILE_PATH: ./packages/lib/package.json
+{
+  "name": "@devpulse/lib",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./ids": {
+      "types": "./dist/ids/index.d.ts",
+      "import": "./dist/ids/index.js",
+      "default": "./dist/ids/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "build:watch": "tsc -p tsconfig.json --watch",
+    "lint": "eslint . --ext .ts --max-warnings=0",
+    "lint:fix": "eslint . --ext .ts --fix"
+  },
+  "dependencies": {
+    "@paralleldrive/cuid2": "^2.2.2",
+    "jsrp": "^0.2.4"
+  },
+  "devDependencies": {
+    "@devpulse/eslint-config": "workspace:*",
+    "@types/jsrp": "^0.2.6",
+    "@types/node": "^24.0.0",
+    "eslint": "^8.57.0",
+    "prettier": "^3.8.1",
+    "typescript": "^5.7.3"
+  }
+}
+-e 
+---END_OF_FILE---
+
+FILE_PATH: ./packages/lib/tsconfig.json
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "strict": true,
+    "noUncheckedIndexedAccess": true
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}
+-e 
+---END_OF_FILE---
+
+FILE_PATH: ./packages/lib/.eslintrc.json
+{
+  "root": true,
+  "extends": ["@devpulse/eslint-config"],
+  "parserOptions": {
+    "project": true
+  }
+}
+-e 
+---END_OF_FILE---
+
+FILE_PATH: ./packages/vscode-extension/package.json
+{
+  "name": "devpulse.devpulse",
+  "displayName": "DevPulse",
+  "version": "0.0.1",
+  "description": "DevPulse: time-tracking and workflow analytics for developers",
+  "categories": [
+    "Other"
+  ],
+  "publisher": "devpulse",
+  "type": "module",
+  "main": "./out/extension.js",
+  "scripts": {
+    "compile": "tsc -p ./",
+    "lint": "eslint . --ext .ts --max-warnings=0",
+    "lint:fix": "eslint . --ext .ts --fix",
+    "test": "vscode-test",
+    "vscode:prepublish": "pnpm run compile",
+    "watch": "tsc -watch -p ./"
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "devpulse.devpulse.helloWorld",
+        "title": "DevPulse: Hello World"
+      },
+      {
+        "command": "devpulse.devpulse.setApiKey",
+        "title": "DevPulse: Set API Key"
+      }
+    ],
+    "configuration": {
+      "title": "DevPulse",
+      "properties": {
+        "devpulse.apiUrl": {
+          "type": "string",
+          "default": "http://localhost:3000/api/v1",
+          "description": "DevPulse backend base URL (example: http://localhost:3000/api/v1)"
+        }
+      }
+    }
+  },
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "devDependencies": {
+    "@devpulse/env": "workspace:*",
+    "@devpulse/eslint-config": "workspace:*",
+    "@devpulse/lib": "workspace:*",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "~22.19.17",
+    "@types/vscode": "^1.115.0",
+    "@vscode/test-cli": "^0.0.12",
+    "@vscode/test-electron": "^2.5.2",
+    "eslint": "^8.57.0",
+    "typescript": "^5.7.3"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  }
+}
+-e 
+---END_OF_FILE---
+
+FILE_PATH: ./packages/vscode-extension/tsconfig.json
+{
+  "compilerOptions": {
+    "module": "Node16",
+    "target": "ES2022",
+    "outDir": "out",
+    "lib": ["ES2022", "DOM"],
+    "types": ["node", "vscode", "mocha"],
+    "sourceMap": true,
+    "rootDir": "src",
+    "strict": true,
+    "moduleResolution": "Node16"
+  }
+}
+-e 
+---END_OF_FILE---
+
+FILE_PATH: ./packages/vscode-extension/.eslintrc.json
+{
+  "root": true,
+  "extends": ["@devpulse/eslint-config/extension"],
+  "parserOptions": {
+    "project": true
+  }
+}
+-e 
+---END_OF_FILE---
+
+FILE_PATH: ./.prettierrc
+{
+  "singleQuote": true,
+  "trailingComma": "all",
+  "printWidth": 100,
+  "plugins": ["prettier-plugin-tailwindcss", "prettier-plugin-packagejson"]
+}
+-e 
+---END_OF_FILE---
+
+FILE_PATH: ./pnpm-workspace.yaml
+packages:
+  - 'backend'
+  - 'packages/*'
+-e 
+---END_OF_FILE---
+

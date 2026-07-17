@@ -1,32 +1,95 @@
-import tseslint from 'typescript-eslint';
-
-import baseConfig from './base.js';
-
-/**
- * Strict config for shared utility packages — no framework, no console, maximum TS rigour.
- *
- * @param {Object}  options
- * @param {string[]} [options.ignores]
- * @param {string}  [options.tsconfigRootDir]
- * @param {Record<string, unknown>} [options.rules]
- */
-export default function sharedConfig(options = {}) {
-  const base = baseConfig({
-    ignores: options.ignores,
-    tsconfigRootDir: options.tsconfigRootDir,
-  });
-
-  return tseslint.config(
-    ...base,
+module.exports = {
+  ignorePatterns: [
+    'node_modules/',
+    'dist/',
+    'build/',
+    'out/',
+    '.eslintrc.js',
+    '.eslintrc.json',
+    'tsconfig.json',
+    'tsconfig.build.json',
+    'package.json',
+    'nest-cli.json',
+    '*.tsbuildinfo',
+    '.next/',
+    '.turbo/',
+    'next-env.d.ts',
+    '**/*.config.js',
+    '**/*.config.cjs',
+    '**/*.config.mjs',
+    '**/*.d.ts',
+  ],
+  plugins: ['import', 'unused-imports'],
+  rules: {
+    'import/no-cycle': ['error', { maxDepth: 1 }],
+    'import/order': [
+      'warn',
+      {
+        groups: ['builtin', 'external', 'internal', ['parent', 'sibling'], 'index'],
+        pathGroups: [
+          {
+            pattern: '@devpulse/**',
+            group: 'internal',
+            position: 'before',
+          },
+        ],
+        'newlines-between': 'always',
+        alphabetize: {
+          order: 'asc',
+          caseInsensitive: true,
+        },
+      },
+    ],
+    'import/no-duplicates': 'error',
+    'unused-imports/no-unused-imports': 'error',
+    'consistent-return': 'error',
+    eqeqeq: 'error',
+    'no-multi-str': 'error',
+    'no-unused-expressions': 'error',
+    'array-bracket-spacing': ['error', 'never'],
+    'object-curly-spacing': ['error', 'always'],
+    'capitalized-comments': 'off',
+    camelcase: 'error',
+    'comma-spacing': 'error',
+    'comma-style': 'error',
+    'eol-last': 'error',
+    'key-spacing': 'error',
+    'max-lines': ['error', { max: 800, skipBlankLines: true, skipComments: true }],
+    'no-lonely-if': 'error',
+    'no-multiple-empty-lines': 'error',
+    'no-negated-condition': 'error',
+    'no-trailing-spaces': 'error',
+    'no-multi-spaces': 'error',
+    'padding-line-between-statements': [
+      'error',
+      { blankLine: 'always', prev: 'import', next: '*' },
+      { blankLine: 'any', prev: 'import', next: 'import' },
+      { blankLine: 'always', prev: '*', next: 'return' },
+      { blankLine: 'always', prev: 'if', next: '*' },
+      { blankLine: 'always', prev: ['const', 'let'], next: '*' },
+      {
+        blankLine: 'any',
+        prev: ['const', 'let'],
+        next: ['const', 'let', 'var'],
+      },
+    ],
+    'prefer-object-spread': 'error',
+    'spaced-comment': 'error',
+    semi: 'error',
+    'prefer-const': 'error',
+    'prefer-destructuring': 'warn',
+    'prefer-template': 'error',
+    'rest-spread-spacing': 'error',
+    'one-var': ['error', 'never'],
+  },
+  overrides: [
     {
+      files: ['*.json', '*.jsonc', '*.json5'],
+      parser: 'espree',
+      plugins: ['json'],
       rules: {
-        'no-console': 'error',
-        '@typescript-eslint/explicit-function-return-type': 'error',
-        '@typescript-eslint/explicit-module-boundary-types': 'error',
-        '@typescript-eslint/no-explicit-any': 'error',
-
-        ...options.rules,
+        'json/*': ['error'],
       },
     },
-  );
-}
+  ],
+};

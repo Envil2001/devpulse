@@ -8,6 +8,10 @@
     "./client": "./client.ts",
     "./extension": "./extension.ts"
   },
+  "scripts": {
+    "lint": "eslint . --ext .ts --max-warnings=0",
+    "lint:fix": "eslint . --ext .ts --fix"
+  },
   "dependencies": {
     "@t3-oss/env-core": "^0.13.0",
     "dotenv": "^17.4.2",
@@ -16,8 +20,8 @@
   "devDependencies": {
     "@devpulse/eslint-config": "workspace:*",
     "@types/node": "^24.12.2",
-    "eslint": "^9.18.0",
-    "prettier": "^3.4.2",
+    "eslint": "^8.57.0",
+    "prettier": "^3.8.1",
     "typescript": "^5.7.3"
   }
 }

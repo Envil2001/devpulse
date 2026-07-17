@@ -1,5 +1,6 @@
-import { type ApiErrorResponse, type ApiSuccessResponse } from '@devpulse/lib';
 import { env } from '@devpulse/env/client';
+import { type ApiErrorResponse, type ApiSuccessResponse } from '@devpulse/lib';
+
 export class ApiClientError extends Error {
   public readonly status: number;
   public readonly details?: unknown;
@@ -30,6 +31,7 @@ async function readJson<TResponse>(response: Response): Promise<TResponse> {
     const message =
       body.success === false ? body.error.message : `Request failed (${response.status})`;
     const details = body.success === false ? body.error.details : undefined;
+
     throw new ApiClientError(message, response.status, details);
   }
 

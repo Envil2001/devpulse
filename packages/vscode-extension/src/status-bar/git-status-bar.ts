@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
-import { GitContextProvider } from '../git-context.js';
+
+import { type GitContextProvider } from '../git-context.js';
 
 export class GitStatusBar implements vscode.Disposable {
   private readonly statusBarItem: vscode.StatusBarItem;
@@ -24,6 +25,7 @@ export class GitStatusBar implements vscode.Disposable {
 
     const labelWorkspace = workspaceName ?? 'No Workspace';
     const labelBranch = gitBranch ?? 'No Git';
+
     this.statusBarItem.text = `$(repo) ${labelWorkspace}  $(git-branch) ${labelBranch}`;
 
     await vscode.commands.executeCommand('setContext', 'devpulse.workspaceName', workspaceName);

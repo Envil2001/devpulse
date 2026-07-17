@@ -1,8 +1,8 @@
-import { TelemetryEventDto, type ApiErrorResponse, type ApiSuccessResponse } from '@devpulse/lib';
+import { env } from '@devpulse/env/extension';
+import { type TelemetryEventDto, type ApiErrorResponse, type ApiSuccessResponse } from '@devpulse/lib';
 import * as vscode from 'vscode';
 
 import { DEVPULSE_API_KEY_SECRET } from '../secret-keys.js';
-import { env } from '@devpulse/env/extension';
 
 export class TelemetryApiClientError extends Error {
   public readonly status: number;
@@ -18,14 +18,17 @@ export class TelemetryApiClientError extends Error {
 
 function trimTrailingSlashes(value: string): string {
   let result = value.trim();
+
   while (result.endsWith('/')) {
     result = result.slice(0, -1);
   }
+
   return result;
 }
 
 function resolveApiBaseUrl(): string {
   const configured = vscode.workspace.getConfiguration('devpulse').get<string>('apiUrl');
+
   if (configured !== undefined && configured.trim().length > 0) {
     return trimTrailingSlashes(configured);
   }
@@ -44,6 +47,7 @@ async function readJson<TResponse>(response: Response): Promise<TResponse> {
     const message =
       body.success === false ? body.error.message : `Request failed (${String(response.status)})`;
     const details = body.success === false ? body.error.details : undefined;
+
     throw new TelemetryApiClientError(message, response.status, details);
   }
 
@@ -56,8 +60,9 @@ export class TelemetryApiClient {
     private readonly log?: vscode.OutputChannel,
   ) {}
 
-  public async postEventsBatch(payload: { events: TelemetryEventDto[] }): Promise<void> {
+  public async postEventsBatch(payload: { events: Array<TelemetryEventDto> }): Promise<void> {
     const apiKey = await this.context.secrets.get(DEVPULSE_API_KEY_SECRET);
+
     if (apiKey === undefined || apiKey.trim().length === 0) {
       throw new Error('MissingApiKey');
     }
@@ -65,6 +70,7 @@ export class TelemetryApiClient {
     const url = `${resolveApiBaseUrl()}/telemetry/events/batch`;
 
     let response: Response;
+
     try {
       response = await fetch(url, {
         method: 'POST',
@@ -88,6 +94,7 @@ export class TelemetryApiClient {
         );
         throw new Error(`TelemetryRequestFailed:${String(error.status)}`);
       }
+
       throw error;
     }
   }

@@ -1,90 +1,54 @@
-import nPlugin from 'eslint-plugin-n';
-import globals from 'globals';
-import tseslint from 'typescript-eslint';
-
-import baseConfig from './base.js';
-
-/**
- * NestJS / Node.js config — extends base + eslint-plugin-n.
- *
- * @param {Object}  options
- * @param {string[]} [options.ignores]
- * @param {string}  [options.tsconfigRootDir]
- * @param {'commonjs'|'module'} [options.sourceType]
- * @param {Record<string, unknown>} [options.rules]
- * @param {unknown[]} [options.extraConfigs]
- */
-export default function nestjsConfig(options = {}) {
-  const base = baseConfig({
-    ignores: options.ignores,
-    tsconfigRootDir: options.tsconfigRootDir,
-    globals: { ...globals.node, ...globals.jest },
-  });
-
-  const nodeConfig =
-    options.sourceType === 'module'
-      ? nPlugin.configs['flat/recommended-module']
-      : nPlugin.configs['flat/recommended-script'];
-
-  return tseslint.config(
-    ...base,
-    nodeConfig,
+module.exports = {
+  extends: './base.js',
+  env: {
+    node: true,
+  },
+  parserOptions: {
+    project: './tsconfig.json',
+  },
+  rules: {
+    '@typescript-eslint/explicit-function-return-type': ['error', { allowExpressions: true }],
+  },
+  overrides: [
     {
-      languageOptions: {
-        sourceType: options.sourceType ?? 'commonjs',
-      },
+      files: ['*.request.dto.ts'],
       rules: {
-      // Node.js async safety
-      '@typescript-eslint/no-floating-promises': 'error',
-      '@typescript-eslint/no-misused-promises': [
-        'error',
-        { checksVoidReturn: { attributes: false } },
-      ],
-
-      // NestJS DI/decorator patterns often trigger these —
-      // library typings (ThrottlerModule, PassportModule, etc.) are
-      // frequently unresolved at the type-check level, so errors here
-      // are almost always false-positives from third-party code.
-      '@typescript-eslint/no-unsafe-assignment': 'warn',
-      '@typescript-eslint/no-unsafe-call': 'warn',
-      '@typescript-eslint/no-unsafe-member-access': 'warn',
-      '@typescript-eslint/no-unsafe-return': 'warn',
-
-      // Require explicit access modifiers on class members
-      '@typescript-eslint/explicit-member-accessibility': [
-        'warn',
-        {
-          accessibility: 'explicit',
-          overrides: { constructors: 'no-public' },
-        },
-      ],
-
-      // Forbid non-null assertions like x! and class-field definite assertions like field!: T
-      'no-restricted-syntax': [
-        'error',
-        {
-          selector: 'TSNonNullExpression',
-          message: 'Non-null assertion (!) is forbidden. Use proper narrowing instead.',
-        },
-        {
-          selector: 'PropertyDefinition[definite=true]',
-          message: 'Definite assignment assertion (!) is forbidden. Use declare or initializer instead.',
-        },
-      ],
-
-      // n plugin rules that conflict with TS/NestJS tooling
-      'n/no-missing-import': 'off',
-      'n/no-unpublished-import': 'off',
-
-      // NestJS uses top-level bootstrap(), not top-level await
-      'unicorn/prefer-top-level-await': 'off',
-
-      // NestJS @Module / @Controller / @Injectable classes look "empty" to ESLint
-      '@typescript-eslint/no-extraneous-class': 'off',
-
-        ...options.rules,
+        '@typescript-eslint/naming-convention': [
+          'error',
+          {
+            selector: 'class',
+            format: ['PascalCase'],
+            custom: { regex: 'RequestDto$', match: true },
+          },
+        ],
       },
     },
-    ...(options.extraConfigs ?? []),
-  );
-}
+    {
+      files: ['*.response.dto.ts'],
+      rules: {
+        '@typescript-eslint/naming-convention': [
+          'error',
+          {
+            selector: 'class',
+            format: ['PascalCase'],
+            custom: { regex: 'ResponseDto$', match: true },
+          },
+        ],
+      },
+    },
+    {
+      files: ['*.dto.ts'],
+      excludedFiles: ['*.request.dto.ts', '*.response.dto.ts'],
+      rules: {
+        '@typescript-eslint/naming-convention': [
+          'warn',
+          {
+            selector: 'class',
+            format: ['PascalCase'],
+            custom: { regex: '(Request|Response|Internal)?Dto$', match: true },
+          },
+        ],
+      },
+    },
+  ],
+};

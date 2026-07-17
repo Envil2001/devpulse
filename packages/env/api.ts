@@ -1,6 +1,7 @@
+import { resolve } from 'path';
+
 import { createEnv } from '@t3-oss/env-core';
 import { config } from 'dotenv';
-import { resolve } from 'path';
 import { z } from 'zod';
 
 config({ path: resolve(process.cwd(), '../.env') });

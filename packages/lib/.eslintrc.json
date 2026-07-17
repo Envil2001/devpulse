@@ -1,0 +1,7 @@
+{
+  "root": true,
+  "extends": ["@devpulse/eslint-config"],
+  "parserOptions": {
+    "project": true
+  }
+}

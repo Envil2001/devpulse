@@ -1,9 +1,9 @@
 'use client';
 
+import { CircleUserRound, LockKeyhole, Mail, UserPlus } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { CircleUserRound, LockKeyhole, Mail, UserPlus } from 'lucide-react';
 
 import { ApiClientError } from '@/lib/api-client';
 import { register } from '@/lib/auth-client';
@@ -28,6 +28,7 @@ export default function RegisterPage() {
         password,
         displayName: displayName.trim().length > 0 ? displayName.trim() : undefined,
       });
+
       setAccessToken(auth.accessToken);
       router.push('/');
     } catch (submitError) {
@@ -44,75 +45,81 @@ export default function RegisterPage() {
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-md items-center p-4">
       <div className="card-shell w-full rounded-xl p-5">
-        <h1 className="text-xl font-semibold text-(--color-text)">Create your account</h1>
-        <p className="mt-1 text-sm text-(--color-text-muted)">
+        <h1 className="text-(--color-text) text-xl font-semibold">Create your account</h1>
+        <p className="text-(--color-text-muted) mt-1 text-sm">
           Start tracking your engineering focus.
         </p>
 
         <form className="mt-5 space-y-3" onSubmit={onSubmit}>
           <label className="block">
-            <span className="mb-1 inline-flex items-center gap-1 text-sm text-(--color-text-muted)">
+            <span className="text-(--color-text-muted) mb-1 inline-flex items-center gap-1 text-sm">
               <CircleUserRound size={14} />
               Display Name (optional)
             </span>
             <input
-              value={displayName}
-              onChange={(event) => setDisplayName(event.target.value)}
-              className="w-full rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2 text-sm text-(--color-text) outline-none transition-colors focus:border-(--color-primary)"
+              className="border-(--color-border) bg-(--color-surface) text-(--color-text) focus:border-(--color-primary) w-full rounded-lg border px-3 py-2 text-sm outline-none transition-colors"
               placeholder="Your name"
+              value={displayName}
+              onChange={(event) => {
+                setDisplayName(event.target.value);
+              }}
             />
           </label>
 
           <label className="block">
-            <span className="mb-1 inline-flex items-center gap-1 text-sm text-(--color-text-muted)">
+            <span className="text-(--color-text-muted) mb-1 inline-flex items-center gap-1 text-sm">
               <Mail size={14} />
               Email
             </span>
             <input
               required
+              className="border-(--color-border) bg-(--color-surface) text-(--color-text) focus:border-(--color-primary) w-full rounded-lg border px-3 py-2 text-sm outline-none transition-colors"
+              placeholder="you@example.com"
               type="email"
               value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              className="w-full rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2 text-sm text-(--color-text) outline-none transition-colors focus:border-(--color-primary)"
-              placeholder="you@example.com"
+              onChange={(event) => {
+                setEmail(event.target.value);
+              }}
             />
           </label>
 
           <label className="block">
-            <span className="mb-1 inline-flex items-center gap-1 text-sm text-(--color-text-muted)">
+            <span className="text-(--color-text-muted) mb-1 inline-flex items-center gap-1 text-sm">
               <LockKeyhole size={14} />
               Password
             </span>
             <input
               required
+              className="border-(--color-border) bg-(--color-surface) text-(--color-text) focus:border-(--color-primary) w-full rounded-lg border px-3 py-2 text-sm outline-none transition-colors"
               minLength={8}
+              placeholder="At least 8 characters"
               type="password"
               value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              className="w-full rounded-lg border border-(--color-border) bg-(--color-surface) px-3 py-2 text-sm text-(--color-text) outline-none transition-colors focus:border-(--color-primary)"
-              placeholder="At least 8 characters"
+              onChange={(event) => {
+                setPassword(event.target.value);
+              }}
             />
           </label>
 
           {error !== null && (
-            <p className="rounded-lg bg-(--color-primary-soft) px-3 py-2 text-sm text-(--color-danger)">
+            <p className="bg-(--color-primary-soft) text-(--color-danger) rounded-lg px-3 py-2 text-sm">
               {error}
             </p>
           )}
 
           <button
-            type="submit"
-            disabled={isSubmitting}
             className="ui-button-primary inline-flex w-full items-center justify-center gap-2 px-3 py-2 text-sm font-semibold"
+            disabled={isSubmitting}
+            type="submit"
           >
             <UserPlus size={16} />
             {isSubmitting ? 'Creating account...' : 'Create account'}
           </button>
         </form>
 
-        <p className="mt-4 text-sm text-(--color-text-muted)">
+        <p className="text-(--color-text-muted) mt-4 text-sm">
           Already registered?{' '}
-          <Link href="/login" className="font-semibold text-(--color-primary)">
+          <Link className="text-(--color-primary) font-semibold" href="/login">
             Sign in
           </Link>
         </p>

@@ -43,14 +43,17 @@ function isWorkspaceFolderLike(value: unknown): value is WorkspaceFolderLike {
 
 function resolveWorkspaceFolder(): vscode.WorkspaceFolder | undefined {
   const activeEditor = vscode.window.activeTextEditor;
+
   if (activeEditor !== undefined) {
     const folder = vscode.workspace.getWorkspaceFolder(activeEditor.document.uri);
+
     if (folder !== undefined) {
       return folder;
     }
   }
 
   const [firstWorkspace] = vscode.workspace.workspaceFolders ?? [];
+
   return firstWorkspace;
 }
 
@@ -72,9 +75,11 @@ async function resolveGitBranch(folderPath: string): Promise<string | null> {
       cwd: folderPath,
     });
     const branch = stdout.trim();
+
     if (branch.length === 0 || branch === 'HEAD') {
       return null;
     }
+
     return branch;
   } catch {
     return null;
@@ -87,6 +92,7 @@ async function resolveGitRemoteUrl(folderPath: string): Promise<string | null> {
       cwd: folderPath,
     });
     const url = stdout.trim();
+
     return url.length > 0 ? url : null;
   } catch {
     return null;
@@ -109,7 +115,7 @@ export class GitContextProvider implements vscode.Disposable {
     workspaceFolderPath: null,
   };
 
-  readonly onDidChangeContext = this.emitter.event;
+  public readonly onDidChangeContext = this.emitter.event;
 
   constructor(private readonly log?: vscode.OutputChannel) {
     this.disposables.push(
@@ -123,7 +129,7 @@ export class GitContextProvider implements vscode.Disposable {
     this.scheduleRefresh();
   }
 
-  get currentContext(): GitContext {
+  public get currentContext(): GitContext {
     return this.context;
   }
 
@@ -131,6 +137,7 @@ export class GitContextProvider implements vscode.Disposable {
     this.refreshChain = this.refreshChain.then(async () => {
       try {
         const nextContext = await this.detectContext();
+
         if (isSameContext(this.context, nextContext)) {
           return;
         }
@@ -138,6 +145,7 @@ export class GitContextProvider implements vscode.Disposable {
         if (this.watchedWorkspaceFolderPath !== nextContext.workspaceFolderPath) {
           this.resetGitWatchers(nextContext.workspaceFolderPath);
         }
+
         this.context = nextContext;
         this.log?.appendLine(
           `[git-context] workspace="${nextContext.workspaceName ?? 'n/a'}" branch="${nextContext.gitBranch ?? 'n/a'}" remote="${nextContext.gitRemoteUrl ?? 'n/a'}"`,
@@ -209,7 +217,7 @@ export class GitContextProvider implements vscode.Disposable {
     };
   }
 
-  dispose(): void {
+  public dispose(): void {
     this.resetGitWatchers(null);
     for (const d of this.disposables) {
       d.dispose();

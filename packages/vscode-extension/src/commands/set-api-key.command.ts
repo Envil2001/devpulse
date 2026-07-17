@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+
 import { DEVPULSE_API_KEY_SECRET } from '../secret-keys.js';
 
 const COMMAND_ID = 'devpulse.devpulse.setApiKey';
@@ -14,6 +15,7 @@ export function registerSetApiKeyCommand(context: vscode.ExtensionContext): vsco
         if (!value.trim()) {
           return 'API key cannot be empty';
         }
+
         return null;
       },
     });
