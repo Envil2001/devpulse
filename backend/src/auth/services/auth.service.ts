@@ -21,6 +21,7 @@ import { User } from '../../users/entities/user.entity';
 import { UserEncryption } from '../../users/entities/user.encryption';
 import { LoginBeginRequestDto } from '../dto/requests/login-begin-request.dto';
 import { generateSrpServerKey, TypeId, verifySrpClientProof } from '@devpulse/lib';
+import { SignUpCompleteResponseDto } from '../dto/response/sign-up-complete.response.dto';
 
 @Injectable()
 export class AuthService {
@@ -115,7 +116,10 @@ export class AuthService {
     };
   }
 
-  public async signUpComplete(dto: CompleteSignupRequestDto, signUpToken: string): Promise<any> {
+  public async signUpComplete(
+    dto: CompleteSignupRequestDto,
+    signUpToken: string,
+  ): Promise<SignUpCompleteResponseDto> {
     const {
       salt,
       verifier,

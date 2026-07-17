@@ -18,6 +18,7 @@ import { VerifySignUpResponseDto } from '../dto/response/verify-signup-response.
 import { CompleteSignupRequestDto } from '../dto/requests/complete-signup-request.dto';
 import { LoginBeginRequestDto } from '../dto/requests/login-begin-request.dto';
 import { LoginVerifyRequestDto } from '../dto/requests/login-verify-request.dto';
+import { SignUpCompleteResponseDto } from '../dto/response/sign-up-complete.response.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -43,7 +44,7 @@ export class AuthController {
   public async signupComplete(
     @Body() dto: CompleteSignupRequestDto,
     @Headers('authorization') authHeader: string,
-  ): Promise<any> {
+  ): Promise<SignUpCompleteResponseDto> {
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       throw new UnauthorizedException('Missing signup token');
     }

@@ -1,4 +1,4 @@
-import { TypeId } from '@devpulse/lib';
+import { TypeId, typeIdGenerator } from '@devpulse/lib';
 import { Injectable, Logger } from '@nestjs/common';
 import * as crypto from 'crypto';
 import { User } from '../../users/entities/user.entity';
@@ -16,9 +16,10 @@ export class ApiKeysService {
     const rawKey = `dp_live_${randomBytes}`;
 
     const keyHash = crypto.createHash('sha256').update(rawKey).digest('hex');
-    const keyPrefix = rawKey.substring(0, 15);
+    const keyPrefix = rawKey.substring(0, 12);
 
     const newKey = this.apiKeysRepository.create({
+      id: typeIdGenerator('apiKeys'),
       name,
       keyHash,
       keyPrefix,

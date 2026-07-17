@@ -5,7 +5,7 @@ import type { GitContext, GitContextProvider } from '../git-context.js';
 
 import { TelemetryApiClient } from './api-client.js';
 import { TelemetryBufferStore } from './buffer-store.js';
-import { type TelemetryEventPayload } from './types.js';
+import type { TelemetryEventDto } from '@devpulse/lib';
 
 const FLUSH_INTERVAL_MS = 60_000;
 
@@ -15,12 +15,13 @@ export class TelemetryBridge implements vscode.Disposable {
   private readonly bufferStore = new TelemetryBufferStore();
 
   private timer: ReturnType<typeof setInterval> | undefined;
-  private queue: Array<TelemetryEventPayload> = [];
+  private queue: Array<TelemetryEventDto> = [];
   private flushing = false;
 
   private lastActivityState: ActivityState | null = null;
   private lastActivityChangeAtMs: number | null = null;
   private lastObservedGitBranch: string | null = null;
+  private lastObservedGitRemoteUrl: string | null = null;
 
   constructor(
     private readonly context: vscode.ExtensionContext,
@@ -32,16 +33,17 @@ export class TelemetryBridge implements vscode.Disposable {
   }
 
   public async start(): Promise<void> {
-    this.queue = this.bufferStore.load(this.context);
+    this.queue = [];
+    // this.queue = this.bufferStore.load(this.context);
 
-    // Ensure state is initialized so the first transition produces sensible durations.
     this.lastActivityState = this.activityMonitor.currentState;
     this.lastActivityChangeAtMs = Date.now();
     this.lastObservedGitBranch = this.gitContextProvider.currentContext.gitBranch;
+    this.lastObservedGitRemoteUrl = this.gitContextProvider.currentContext.gitRemoteUrl;
 
     this.disposables.push(
-      this.activityMonitor.onDidChangeActivityState((state) => {
-        this.onActivityTransition(state);
+      this.activityMonitor.onDidChangeActivityState(({ state, changedAt }) => {
+        this.onActivityTransition(state, changedAt);
       }),
       this.gitContextProvider.onDidChangeContext((nextContext) => {
         this.onGitContextTransition(nextContext);
@@ -50,14 +52,12 @@ export class TelemetryBridge implements vscode.Disposable {
         if (doc.isClosed) {
           return;
         }
-        this.enqueue(
-          this.createEvent('file_save', { filePath: doc.uri.fsPath, language: doc.languageId }),
-        );
+        this.enqueue(this.createEvent('file_save', { filePath: doc.uri.fsPath }));
       }),
       vscode.window.onDidChangeActiveTextEditor((editor) => {
         const filePath = editor?.document.uri.fsPath ?? null;
         const language = editor?.document.languageId ?? null;
-        this.enqueue(this.createEvent('file_switch', { filePath, language }));
+        this.enqueue(this.createEvent('file_switch', { filePath: filePath }));
       }),
       vscode.workspace.onDidChangeConfiguration((e) => {
         if (e.affectsConfiguration('devpulse.apiUrl')) {
@@ -70,41 +70,39 @@ export class TelemetryBridge implements vscode.Disposable {
       void this.flush();
     }, FLUSH_INTERVAL_MS);
 
-    // Initial heartbeat helps validate wiring.
     this.enqueue(this.createEvent('heartbeat', { durationMs: null }));
     await this.flush();
   }
-
-  private onActivityTransition(next: ActivityState): void {
-    const now = Date.now();
+  private onActivityTransition(next: ActivityState, changedAt: number): void {
     const prev = this.lastActivityState;
     const prevAt = this.lastActivityChangeAtMs;
 
     if (prev !== null && prevAt !== null && prev !== next) {
-      const durationMs = Math.max(0, now - prevAt);
+      const durationMs = Math.max(0, changedAt - prevAt);
       const eventType: 'idle_start' | 'idle_end' = next === 'idle' ? 'idle_start' : 'idle_end';
       this.enqueue(this.createEvent(eventType, { durationMs }));
     }
 
     this.lastActivityState = next;
-    this.lastActivityChangeAtMs = now;
+    this.lastActivityChangeAtMs = changedAt;
   }
 
   private onGitContextTransition(nextContext: GitContext): void {
     const previousBranch = this.lastObservedGitBranch;
+    const previousRemoteUrl = this.lastObservedGitRemoteUrl;
     const nextBranch = nextContext.gitBranch;
+    const nextRemoteUrl = nextContext.gitRemoteUrl;
 
-    if (previousBranch === nextBranch) {
+    if (previousBranch === nextBranch && previousRemoteUrl === nextRemoteUrl) {
       return;
     }
 
-    // Emit explicit boundaries so backend aggregation splits time across branches
-    // even when checkout happens between minute ticks.
     const boundaryTimestamp = new Date().toISOString();
     this.enqueue(
       this.createEvent('heartbeat', {
         durationMs: null,
         gitBranch: previousBranch,
+        gitRemoteUrl: previousRemoteUrl,
         clientTimestamp: boundaryTimestamp,
       }),
     );
@@ -112,30 +110,39 @@ export class TelemetryBridge implements vscode.Disposable {
       this.createEvent('heartbeat', {
         durationMs: null,
         gitBranch: nextBranch,
+        gitRemoteUrl: nextRemoteUrl,
         clientTimestamp: boundaryTimestamp,
       }),
     );
 
     this.lastObservedGitBranch = nextBranch;
+    this.lastObservedGitRemoteUrl = nextRemoteUrl;
   }
 
   private createEvent(
-    type: TelemetryEventPayload['type'],
-    partial: Partial<Omit<TelemetryEventPayload, 'type'>>,
-  ): TelemetryEventPayload {
-    const { gitBranch } = this.gitContextProvider.currentContext;
+    type: 'heartbeat' | 'file_save' | 'file_switch' | 'idle_start' | 'idle_end',
+    partial: {
+      durationMs?: number | null;
+      filePath?: string | null;
+      clientTimestamp?: string;
+      gitBranch?: string | null;
+      gitRemoteUrl?: string | null;
+    } = {},
+  ): TelemetryEventDto {
+    const { gitBranch, gitRemoteUrl } = this.gitContextProvider.currentContext;
 
     return {
       type,
-      gitBranch: partial.gitBranch ?? gitBranch,
-      filePath: partial.filePath ?? null,
-      language: partial.language ?? null,
-      durationMs: partial.durationMs ?? null,
+      gitBranch: (partial.gitBranch ?? gitBranch) || 'unknown',
+      gitRemoteUrl: partial.gitRemoteUrl ?? gitRemoteUrl ?? undefined,
       clientTimestamp: partial.clientTimestamp ?? new Date().toISOString(),
+      durationMs: partial.durationMs,
+      filePath: partial.filePath ?? undefined,
+      language: partial.filePath ? partial.filePath.split('.').pop() || undefined : undefined,
     };
   }
 
-  private enqueue(event: TelemetryEventPayload): void {
+  private enqueue(event: TelemetryEventDto): void {
     this.queue.push(event);
     void this.bufferStore.save(this.context, this.queue);
   }
@@ -151,6 +158,7 @@ export class TelemetryBridge implements vscode.Disposable {
     this.flushing = true;
     try {
       const batch = this.queue;
+      this.log?.appendLine(`[telemetry] Sending payload: ${JSON.stringify({ events: batch })}`);
       await this.client.postEventsBatch({ events: batch });
       this.queue = [];
       await this.bufferStore.save(this.context, this.queue);

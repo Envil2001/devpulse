@@ -4,13 +4,16 @@
   "description": "DevPulse: time-tracking and workflow analytics for developers",
   "version": "0.0.1",
   "publisher": "devpulse",
+  "type": "module",
   "engines": {
     "vscode": "^1.85.0"
   },
   "categories": [
     "Other"
   ],
-  "activationEvents": ["onStartupFinished"],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
@@ -43,14 +46,16 @@
     "test": "vscode-test"
   },
   "devDependencies": {
+    "@devpulse/lib": "workspace:*",
+    "@devpulse/env": "workspace:*",
     "@devpulse/eslint-config": "workspace:*",
-    "@types/vscode": "^1.115.0",
     "@types/mocha": "^10.0.10",
-    "@types/node": "22.x",
-    "typescript-eslint": "^8.56.1",
+    "@types/node": "~22.19.17",
+    "@types/vscode": "^1.115.0",
+    "@vscode/test-cli": "^0.0.12",
+    "@vscode/test-electron": "^2.5.2",
     "eslint": "^9.39.3",
     "typescript": "^5.9.3",
-    "@vscode/test-cli": "^0.0.12",
-    "@vscode/test-electron": "^2.5.2"
+    "typescript-eslint": "^8.56.1"
   }
 }

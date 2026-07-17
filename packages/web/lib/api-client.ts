@@ -1,23 +1,5 @@
-const DEFAULT_API_BASE_URL = 'http://localhost:3000/api/v1';
-
-interface SuccessResponse<T> {
-  success: true;
-  data: T;
-  timestamp: string;
-  path: string;
-}
-
-interface ErrorResponse {
-  success: false;
-  error: {
-    code: number;
-    message: string;
-    details?: unknown;
-  };
-  timestamp: string;
-  path: string;
-}
-
+import { type ApiErrorResponse, type ApiSuccessResponse } from '@devpulse/lib';
+import { env } from '@devpulse/env/client';
 export class ApiClientError extends Error {
   public readonly status: number;
   public readonly details?: unknown;
@@ -28,10 +10,6 @@ export class ApiClientError extends Error {
     this.status = status;
     this.details = details;
   }
-}
-
-function resolveApiBaseUrl(): string {
-  return process.env.NEXT_PUBLIC_API_BASE_URL ?? DEFAULT_API_BASE_URL;
 }
 
 interface RequestOptions {
@@ -46,10 +24,11 @@ function buildHeaders(options: RequestOptions): HeadersInit {
 }
 
 async function readJson<TResponse>(response: Response): Promise<TResponse> {
-  const body = (await response.json()) as SuccessResponse<TResponse> | ErrorResponse;
+  const body = (await response.json()) as ApiSuccessResponse<TResponse> | ApiErrorResponse;
 
   if (!response.ok || body.success === false) {
-    const message = body.success === false ? body.error.message : `Request failed (${response.status})`;
+    const message =
+      body.success === false ? body.error.message : `Request failed (${response.status})`;
     const details = body.success === false ? body.error.details : undefined;
     throw new ApiClientError(message, response.status, details);
   }
@@ -62,7 +41,7 @@ export async function postJson<TResponse, TRequest>(
   payload: TRequest,
   options: RequestOptions = {},
 ): Promise<TResponse> {
-  const response = await fetch(`${resolveApiBaseUrl()}${path}`, {
+  const response = await fetch(`${env.NEXT_PUBLIC_API_URL}${path}`, {
     method: 'POST',
     headers: buildHeaders(options),
     body: JSON.stringify(payload),
@@ -75,7 +54,7 @@ export async function getJson<TResponse>(
   path: string,
   options: RequestOptions = {},
 ): Promise<TResponse> {
-  const response = await fetch(`${resolveApiBaseUrl()}${path}`, {
+  const response = await fetch(`${env.NEXT_PUBLIC_API_URL}${path}`, {
     method: 'GET',
     headers: buildHeaders(options),
   });
