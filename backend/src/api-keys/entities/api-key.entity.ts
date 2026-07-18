@@ -18,13 +18,13 @@ import { AppBaseEntity } from '../../common/entities/app-base.entity';
 
 @Entity('api_keys')
 export class ApiKey extends AppBaseEntity<'apiKeys'> {
-  @Column({ length: 100 })
+  @Column({ length: 100, type: 'varchar' })
   name!: string;
 
-  @Column({ name: 'key_hash', unique: true, length: 255, select: false })
+  @Column({ name: 'key_hash', unique: true, length: 255, select: false, type: 'varchar' })
   keyHash!: string;
 
-  @Column({ name: 'key_prefix', length: 12 })
+  @Column({ name: 'key_prefix', length: 12, type: 'varchar' })
   keyPrefix!: string;
 
   @Column({ name: 'last_used_at', type: 'timestamptz', nullable: true })

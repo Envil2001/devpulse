@@ -1,3 +1,5 @@
+import 'reflect-metadata';
+
 import { env } from '@devpulse/env/api';
 import 'reflect-metadata';
 import { DataSource } from 'typeorm';
