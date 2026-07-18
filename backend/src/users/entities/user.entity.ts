@@ -10,6 +10,7 @@ import { UserEncryption } from './user.encryption';
 export class User extends AppBaseEntity<'users'> {
   @Column({
     unique: true,
+    type: 'varchar',
     length: 255,
   })
   email!: string;
@@ -27,6 +28,7 @@ export class User extends AppBaseEntity<'users'> {
 
   @Column({
     name: 'is_active',
+    type: 'boolean',
     default: true,
   })
   isActive!: boolean;

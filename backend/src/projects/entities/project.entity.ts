@@ -6,10 +6,10 @@ import { User } from '../../users/entities/user.entity';
 
 @Entity('projects')
 export class Project extends AppBaseEntity<'projects'> {
-  @Column({ name: 'git_remote_url', unique: true })
+  @Column({ name: 'git_remote_url', unique: true, type: 'text' })
   gitRemoteUrl!: string;
 
-  @Column({ length: 100 })
+  @Column({ length: 100, type: 'varchar' })
   name!: string;
 
   @OneToMany(() => WorkSession, (session) => session.project)
