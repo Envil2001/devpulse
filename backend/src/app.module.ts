@@ -16,7 +16,7 @@ import { TelemetryModule } from './telemetry/telemetry.module';
 import { User } from './users/entities/user.entity';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { UserEncryption } from './users/entities/user.encryption';
+import { UserEncryption } from './users/entities/user-encryption.entity';
 import { env } from '@devpulse/env/api';
 import { RedisModule } from './redis/redis.module';
 

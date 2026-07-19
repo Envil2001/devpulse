@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Inter, Martian_Mono } from 'next/font/google';
 import './globals.css';
+import { AuthContextProvider } from '@/contexts/auth-context';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -26,7 +27,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${inter.variable} ${martianMono.variable}`}>
-      <body className="bg-neutral-950 text-neutral-100 antialiased">{children}</body>
+      <body className="bg-neutral-950 text-neutral-100 antialiased">
+        <AuthContextProvider>{children}</AuthContextProvider>
+      </body>
     </html>
   );
 }

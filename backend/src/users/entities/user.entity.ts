@@ -4,7 +4,7 @@ import { ApiKey } from '../../api-keys/entities/api-key.entity';
 import { Project } from '../../projects/entities/project.entity';
 import { WorkSession } from '../../telemetry/entities/work-session.entity';
 import { AppBaseEntity } from '../../common/entities/app-base.entity';
-import { UserEncryption } from './user.encryption';
+import { UserEncryption } from './user-encryption.entity';
 
 @Entity('users')
 export class User extends AppBaseEntity<'users'> {

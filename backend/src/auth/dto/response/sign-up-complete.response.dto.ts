@@ -9,5 +9,4 @@ export class SignUpCompleteUserDto {
 export class SignUpCompleteResponseDto {
   message!: string;
   user!: SignUpCompleteUserDto;
-  accessToken!: string;
 }
