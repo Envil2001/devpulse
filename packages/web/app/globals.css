@@ -1,58 +1,110 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
-:root {
-  --color-bg: #f3f6fc;
-  --color-surface: #ffffff;
-  --color-surface-muted: #f8fafd;
-  --color-border: #d6deeb;
-  --color-text: #0f172a;
-  --color-text-muted: #5f6f89;
+@theme {
+  --font-inter: var(--font-inter, sans-serif);
+  --font-martian: var(--font-martian, monospace);
+  --font-supply: ui-monospace, SFMono-Regular, monospace;
 
-  --color-primary: #4f46e5;
-  --color-primary-hover: #4338ca;
-  --color-primary-active: #3730a3;
-  --color-primary-soft: #e0e7ff;
+  /* Нейтральные (База) */
+  --color-neutral-100: #ffffff; /* White */
+  --color-neutral-200: #d0d0da; /* Light telegray */
+  --color-neutral-300: #b3b3c5; /* Very light magenta blue */
+  --color-neutral-400: #96969d; /* Mother-of-pearl light gray */
+  --color-neutral-600: #5b5b65; /* Marengo */
+  --color-neutral-700: #424141; /* Platinum Gray */
+  --color-neutral-800: #3d464d; /* Space */
+  --color-neutral-900: #0f0f13; /* Very dark gray */
+  --color-neutral-950: #000000; /* Black */
 
-  --color-success: #16a34a;
-  --color-warning: #d97706;
-  --color-danger: #dc2626;
+  /* Зеленые (Успех, Активность) */
+  --color-green-spring: #15ffab;
+  --color-green-cyan: #00fff0;
+  --color-green-turquoise: #56efc3;
+  --color-green-thrush: #00cec9;
+  --color-green-persian: #01b894;
+  --color-green-malachite: #2acf56;
+  --color-green-screaming: #77ff60;
 
-  --color-disabled-bg: #e9eef7;
-  --color-disabled-text: #96a3b8;
+  /* Синие и Фиолетовые (Бренд, Акценты) */
+  --color-blue-frosty: #0ac5ef;
+  --color-blue-azure: #1796ec;
+  --color-blue-aqua: #0a84e3;
+  --color-blue-electric: #3a86fe;
+
+  --color-purple-aspid: #6d5ce8;
+  --color-purple-blue: #8338ec;
+  --color-purple-amethyst: #6741b1;
+  --color-purple-dark: #5214a9;
+  --color-purple-magenta: #db03f2;
+
+  /* Красные, Оранжевые, Желтые (Ошибки, Статус) */
+  --color-red-fluor: #e90703;
+  --color-red-coral: #ff3c3c;
+
+  --color-pink-deep: #ff006e;
+  --color-pink-cherry: #e43a8d;
+  --color-pink-french: #f0337f;
+
+  --color-orange-signal: #fa5607;
+  --color-orange-yellow: #e96e12;
+
+  --color-yellow-amber: #ffbe0c;
+  --color-yellow-laser: #fffc00;
 }
 
-@theme inline {
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+@layer utilities {
+  .h4 {
+    @apply font-inter font-bold text-2xl leading-4 tracking-[-0.9%];
+  }
+  .h5 {
+    @apply font-martian font-medium text-2xl leading-[34.6px] tracking-[0%];
+  }
+  .h6 {
+    @apply font-martian font-medium text-2xl leading-[34px] tracking-[-3%];
+  }
+
+  .body1 {
+    @apply font-inter font-normal text-sm leading-4 tracking-[-0.9%];
+  }
+
+  .body2 {
+    @apply font-inter font-bold text-sm leading-4 tracking-[-0.9%];
+  }
+
+  .desc {
+    @apply font-inter font-normal text-xs leading-7 tracking-[-0.9%];
+  }
+  .indicator {
+    @apply font-inter font-bold text-xs leading-7 tracking-[-0.9%];
+  }
+
+  .title1 {
+    @apply font-supply font-normal text-xl leading-[100%] tracking-[-5%];
+  }
+  .title2 {
+    @apply font-inter font-bold text-base leading-7 tracking-[-0.9%];
+  }
+  .title3 {
+    @apply font-supply font-normal text-base leading-[100%] tracking-[-5%];
+  }
+  .title4 {
+    @apply font-inter font-semibold text-base leading-4 tracking-[-0.9%];
+  }
+
+  .custom {
+    @apply font-inter font-normal text-sm leading-4 tracking-[0%];
+  }
+  .details {
+    @apply font-supply font-normal text-xs leading-[100%] tracking-[0%];
+  }
+  .mini {
+    @apply font-inter font-semibold text-[9px] leading-[100%] tracking-[6%] uppercase;
+  }
 }
 
-body {
-  background: var(--color-bg);
-  color: var(--color-text);
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
-}
-
-.card-shell {
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
-}
-
-.ui-button-primary {
-  border-radius: 0.75rem;
-  background: var(--color-primary);
-  color: #ffffff;
-}
-
-.ui-button-primary:hover {
-  background: var(--color-primary-hover);
-}
-
-.ui-button-primary:active {
-  background: var(--color-primary-active);
-}
-
-.ui-button-primary:disabled {
-  background: var(--color-disabled-bg);
-  color: var(--color-disabled-text);
-  cursor: not-allowed;
+@layer base {
+  body {
+    background-color: var(--color-neutral-950);
+    color: var(--color-neutral-100);
+  }
 }
