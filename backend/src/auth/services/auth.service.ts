@@ -1,8 +1,10 @@
 import {
   BadRequestException,
   Injectable,
+  InternalServerErrorException,
   Logger,
   NotFoundException,
+  OnModuleInit,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -18,16 +20,18 @@ import { VerifySignUpRequestDto } from '../dto/requests/verify-signup-request.dt
 import { CompleteSignupRequestDto } from '../dto/requests/complete-signup-request.dto';
 import { DataSource } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
-import { UserEncryption } from '../../users/entities/user.encryption';
+import { UserEncryption } from '../../users/entities/user-encryption.entity';
 import { LoginBeginRequestDto } from '../dto/requests/login-begin-request.dto';
-import { generateSrpServerKey, TypeId, verifySrpClientProof } from '@devpulse/lib';
+import { generateSrpServerKey, TypeId, typeIdGenerator, verifySrpClientProof } from '@devpulse/lib';
 import { SignUpCompleteResponseDto } from '../dto/response/sign-up-complete.response.dto';
+import * as crypto from 'crypto';
+import { Response } from 'express';
+import { env } from '@devpulse/env/api';
 
 @Injectable()
-export class AuthService {
+export class AuthService implements OnModuleInit {
   private readonly logger = new Logger(AuthService.name);
   private disposableDomains: Set<string> = new Set();
-  private domainsLoaded: boolean = false;
 
   constructor(
     private readonly usersService: UsersService,
@@ -35,6 +39,10 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly dataSource: DataSource,
   ) {}
+
+  async onModuleInit() {
+    await this.loadDisposableDomains();
+  }
 
   public async signupBegin(dto: BeginSignupRequestDto): Promise<MessageResponseDto> {
     const { email, displayName } = dto;
@@ -70,17 +78,21 @@ export class AuthService {
       return { message: successMessage };
     }
 
+    const verificationCode = crypto.randomInt(100000, 999999).toString();
+
+    const redisKey = `signup_code:${email}`;
+    const payload = { code: verificationCode, displayName };
+
     try {
-      // TODO: generate a verification code more protected way, e.g., using a secure random generator
-      const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-
-      const redisKey = `signup_code:${email}`;
-      const payload = { code: verificationCode, displayName };
       await this.redisService.set(redisKey, payload, 600);
-
       this.logger.debug(`Generated verification code for ${email}: ${verificationCode}`);
+      // TODO: Implement email sending functionality here. For now, we just log the code.
+      // await this.emailService.sendVerificationCode(email, verificationCode);
     } catch (error) {
-      this.logger.error(`Error occurred while generating verification code for ${email}: ${error}`);
+      this.logger.error(`Error saving verification code for ${email}: ${error}`);
+      throw new InternalServerErrorException(
+        'Could not generate verification code. Please try again.',
+      );
     }
 
     return { message: successMessage };
@@ -119,6 +131,7 @@ export class AuthService {
   public async signUpComplete(
     dto: CompleteSignupRequestDto,
     signUpToken: string,
+    res: Response,
   ): Promise<SignUpCompleteResponseDto> {
     const {
       salt,
@@ -148,19 +161,17 @@ export class AuthService {
     const { email, displayName } = decodedToken;
 
     return await this.dataSource.transaction(async (manager) => {
-      const existingUser = await manager.findOne(User, {
-        where: { email, displayName },
-      });
-
-      if (existingUser) {
-        this.logger.warn(`Attempt to complete signup for existing user: ${email}`);
-        throw new BadRequestException('User already exists');
+      const existingByEmail = await manager.findOne(User, { where: { email } });
+      const existingByName = await manager.findOne(User, { where: { displayName } });
+      if (existingByEmail || existingByName) {
+        throw new BadRequestException('User with this email or display name already exists');
       }
 
       const userRepo = manager.getRepository(User);
       const encryptionRepo = manager.getRepository(UserEncryption);
 
       const newUser = userRepo.create({
+        id: typeIdGenerator('users'),
         email,
         displayName,
       });
@@ -168,6 +179,7 @@ export class AuthService {
       const savedUser = await userRepo.save(newUser);
 
       const newEncryption = encryptionRepo.create({
+        id: typeIdGenerator('encryption'),
         user: savedUser,
         iv,
         salt,
@@ -190,6 +202,14 @@ export class AuthService {
       });
 
       this.logger.debug(`Access token generated for user: ${email}`);
+
+      res.cookie('access_token', accessToken, {
+        httpOnly: true,
+        secure: env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+        path: '/',
+      });
       return {
         message: 'Registration completed successfully',
         user: {
@@ -197,7 +217,6 @@ export class AuthService {
           email: savedUser.email,
           displayName: savedUser.displayName,
         },
-        accessToken,
       };
     });
   }
@@ -224,9 +243,8 @@ export class AuthService {
     const loginSession = {
       userId: user.id,
       clientPublicKey,
+      serverPublicKey,
       serverPrivateKey,
-      salt: user.encryption.salt,
-      verifier: user.encryption.verifier,
     };
 
     await this.redisService.set(`login_session:${email}`, loginSession, 300);
@@ -237,15 +255,18 @@ export class AuthService {
     };
   }
 
-  public async loginVerify(email: string, clientProof: string): Promise<{ accessToken: string }> {
+  public async loginVerify(
+    email: string,
+    clientProof: string,
+    res: Response,
+  ): Promise<{ accessToken: string }> {
     this.logger.log(`Verifying login for email: ${email}`);
 
     const loginSession = await this.redisService.get<{
       userId: TypeId<'users'>;
       clientPublicKey: string;
+      serverPublicKey: string;
       serverPrivateKey: string;
-      salt: string;
-      verifier: string;
     }>(`login_session:${email}`);
 
     if (!loginSession) {
@@ -253,12 +274,25 @@ export class AuthService {
       throw new BadRequestException('No active login session found');
     }
 
-    const { userId, clientPublicKey, serverPrivateKey, salt, verifier } = loginSession;
+    const { userId, clientPublicKey, serverPublicKey } = loginSession;
+
+    const user = await this.usersService.findById(userId);
+    if (!user || !user.encryption) {
+      this.logger.error(`User or encryption data not found for ID: ${userId}`);
+      throw new BadRequestException('User data not found');
+    }
+
+    const { salt, verifier } = user.encryption;
+
+    if (!salt || !verifier) {
+      this.logger.error(`Salt or verifier is null for user ID: ${userId}`);
+      throw new BadRequestException('Invalid user encryption data');
+    }
 
     const isValidProof = await verifySrpClientProof(
       salt,
       verifier,
-      serverPrivateKey,
+      serverPublicKey,
       clientPublicKey,
       clientProof,
     );
@@ -266,13 +300,6 @@ export class AuthService {
     if (!isValidProof) {
       this.logger.warn(`Invalid client proof for email: ${email}`);
       throw new UnauthorizedException('Invalid client proof');
-    }
-
-    const user = await this.usersService.findById(userId);
-
-    if (!user) {
-      this.logger.error(`User not found for ID: ${userId}`);
-      throw new BadRequestException('User not found');
     }
 
     const accessToken = this.jwtService.sign({
@@ -284,7 +311,25 @@ export class AuthService {
     await this.redisService.del(`login_session:${email}`);
 
     this.logger.log(`Login successful for email: ${email}`);
+    res.cookie('access_token', accessToken, {
+      httpOnly: true,
+      secure: env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      path: '/',
+    });
+
     return { accessToken };
+  }
+
+  public async logout(res: Response) {
+    res.clearCookie('access_token', {
+      httpOnly: true,
+      secure: env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+    });
+    return { message: 'Logged out successfully' };
   }
 
   public async getDemoToken() {
@@ -308,32 +353,18 @@ export class AuthService {
         .filter((e) => e.length > 0 && !e.startsWith('#'));
 
       this.disposableDomains = new Set(domains);
-
-      this.domainsLoaded = true;
-
-      this.logger.log(
-        `Loaded ${this.disposableDomains.size} disposable email domains from ${filePath}`,
-      );
-    } catch {
+      this.logger.log(`Loaded ${this.disposableDomains.size} disposable email domains.`);
+    } catch (error) {
       this.logger.warn(
-        'Could not load disposable email domains. Proceeding without disposable email checks.',
+        'Could not load disposable email domains. Proceeding without checks.',
+        error,
       );
-      this.domainsLoaded = true;
     }
   }
 
   private async isDisposableEmail(email: string): Promise<boolean> {
-    if (!this.domainsLoaded) {
-      await this.loadDisposableDomains();
-    }
-
     const [, domain] = email.split('@');
-
-    if (!domain) {
-      this.logger.warn(`Invalid email format: ${email}`);
-      return false;
-    }
-
+    if (!domain) return false;
     return this.disposableDomains.has(domain.toLowerCase());
   }
 }

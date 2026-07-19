@@ -7,7 +7,7 @@ import { typeIdGenerator } from '@devpulse/lib';
 import { faker } from '@faker-js/faker';
 
 import { User } from '../users/entities/user.entity';
-import { UserEncryption } from '../users/entities/user.encryption';
+import { UserEncryption } from '../users/entities/user-encryption.entity';
 import { WorkSession, WorkSessionStatus } from '../telemetry/entities/work-session.entity';
 import { Project } from '../projects/entities/project.entity';
 import { ApiKey } from '../api-keys/entities/api-key.entity';

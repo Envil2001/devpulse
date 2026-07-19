@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { LayoutDashboard, FolderKanban, History, Wallet, Settings, LogOut } from 'lucide-react';
 import { cn } from '@/utils/cn';
+import { useAuth } from '@/contexts/auth-context';
 
 const navItems = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
@@ -15,6 +16,20 @@ const navItems = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { user, logout } = useAuth();
+
+  const getInitials = (displayName: string) => {
+    return displayName
+      .split(' ')
+      .map((word) => word[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  const handleLogout = () => {
+    logout();
+  };
 
   return (
     <aside className="flex h-full w-full flex-col bg-neutral-900 px-4 py-6">
@@ -56,14 +71,17 @@ export function Sidebar() {
       </nav>
 
       <div className="mt-auto border-t border-neutral-800 pt-4">
-        <button className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-neutral-400 transition-colors hover:bg-neutral-800/50 hover:text-neutral-200">
+        <button
+          onClick={handleLogout}
+          className="group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 transition-colors hover:bg-neutral-800/50"
+        >
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-purple-blue/20 body2 text-purple-blue">
-            JD
+            {user ? getInitials(user.displayName) : 'U'}
           </div>
 
           <div className="flex flex-1 flex-col items-start text-left">
-            <span className="body2 text-neutral-100">John Doe</span>
-            <span className="mini text-neutral-500">Pro Plan</span>
+            <span className="body2 text-neutral-100">{user ? user.displayName : 'Guest'}</span>
+            <span className="mini text-neutral-500">{user ? 'Pro Plan' : 'Not logged in'}</span>
           </div>
 
           <LogOut className="h-4 w-4 text-neutral-600 transition-colors group-hover:text-red-fluor" />

@@ -1,5 +1,6 @@
 import { type ApiErrorResponse, type ApiSuccessResponse } from '@devpulse/lib';
 import { env } from '@devpulse/env/client';
+
 export class ApiClientError extends Error {
   public readonly status: number;
   public readonly details?: unknown;
@@ -14,13 +15,6 @@ export class ApiClientError extends Error {
 
 interface RequestOptions {
   authToken?: string;
-}
-
-function buildHeaders(options: RequestOptions): HeadersInit {
-  return {
-    'Content-Type': 'application/json',
-    ...(options.authToken !== undefined ? { Authorization: `Bearer ${options.authToken}` } : {}),
-  };
 }
 
 async function readJson<TResponse>(response: Response): Promise<TResponse> {
@@ -43,7 +37,11 @@ export async function postJson<TResponse, TRequest>(
 ): Promise<TResponse> {
   const response = await fetch(`${env.NEXT_PUBLIC_API_URL}${path}`, {
     method: 'POST',
-    headers: buildHeaders(options),
+    headers: {
+      'Content-Type': 'application/json',
+      ...(options.authToken ? { Authorization: `Bearer ${options.authToken}` } : {}),
+    },
+    credentials: 'include',
     body: JSON.stringify(payload),
   });
 
@@ -56,7 +54,11 @@ export async function getJson<TResponse>(
 ): Promise<TResponse> {
   const response = await fetch(`${env.NEXT_PUBLIC_API_URL}${path}`, {
     method: 'GET',
-    headers: buildHeaders(options),
+    headers: {
+      'Content-Type': 'application/json',
+      ...(options.authToken ? { Authorization: `Bearer ${options.authToken}` } : {}),
+    },
+    credentials: 'include',
   });
 
   return readJson<TResponse>(response);

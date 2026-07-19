@@ -8,5 +8,9 @@ export const env = createEnv({
     NEXT_PUBLIC_API_URL: z.string().url(),
   },
 
-  runtimeEnv: process.env,
+  runtimeEnv: {
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+  },
+
+  emptyStringAsUndefined: true,
 });

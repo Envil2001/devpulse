@@ -13,6 +13,11 @@
       "import": "./dist/ids/index.js",
       "types": "./dist/ids/index.d.ts",
       "default": "./dist/ids/index.js"
+    },
+    "./auth": {
+      "import": "./dist/auth/srp/index.js",
+      "types": "./dist/auth/srp/index.d.ts",
+      "default": "./dist/auth/srp/index.js"
     }
   },
   "scripts": {
@@ -20,13 +25,13 @@
     "build:watch": "tsc -p tsconfig.json --watch"
   },
   "dependencies": {
+    "@noble/hashes": "^2.2.0",
     "@paralleldrive/cuid2": "^2.2.2",
-    "jsrp": "^0.2.4"
+    "tweetnacl": "^1.0.3"
   },
   "devDependencies": {
-    "@types/jsrp": "^0.2.6",
     "@devpulse/eslint-config": "workspace:*",
-    "@types/node": "^24.0.0",
+    "@types/node": "^24.12.2",
     "eslint": "^9.18.0",
     "prettier": "^3.4.2",
     "typescript": "^5.7.3"
