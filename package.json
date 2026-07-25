@@ -3,7 +3,9 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
+    "typecheck": "pnpm -r typecheck",
     "lint": "pnpm -r lint",
+    "build": "pnpm -r build",
     "format": "prettier --write \"**/*.{ts,js,json,md}\" --ignore-path .gitignore"
   },
   "devDependencies": {
