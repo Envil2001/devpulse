@@ -34,13 +34,12 @@ export class TelemetryBridge implements vscode.Disposable {
   }
 
   public async start(): Promise<void> {
-    this.queue = [];
-    // this.queue = this.bufferStore.load(this.context);
+    this.queue = this.bufferStore.load(this.context);
 
-    this.lastActivityState = this.activityMonitor.currentState;
-    this.lastActivityChangeAtMs = Date.now();
-    this.lastObservedGitBranch = this.gitContextProvider.currentContext.gitBranch;
-    this.lastObservedGitRemoteUrl = this.gitContextProvider.currentContext.gitRemoteUrl;
+    this.lastActivityState = this.activityMonitor.currentState; // active
+    this.lastActivityChangeAtMs = Date.now(); // 1697040000000
+    this.lastObservedGitBranch = this.gitContextProvider.currentContext.gitBranch; // main
+    this.lastObservedGitRemoteUrl = this.gitContextProvider.currentContext.gitRemoteUrl; // https://github.com/devpulse/devpulse.git
 
     this.disposables.push(
       this.activityMonitor.onDidChangeActivityState(({ state, changedAt }) => {
@@ -53,12 +52,20 @@ export class TelemetryBridge implements vscode.Disposable {
         if (doc.isClosed) {
           return;
         }
-        this.enqueue(this.createEvent('file_save', { filePath: doc.uri.fsPath }));
+        this.enqueue(
+          this.createEvent('file_save', {
+            filePath: this.toRelativePath(doc.uri),
+            language: doc.languageId,
+          }),
+        );
       }),
       vscode.window.onDidChangeActiveTextEditor((editor) => {
-        const filePath = editor?.document.uri.fsPath ?? null;
-        // const language = editor?.document.languageId ?? null;
-        this.enqueue(this.createEvent('file_switch', { filePath: filePath }));
+        this.enqueue(
+          this.createEvent('file_switch', {
+            filePath: editor === undefined ? null : this.toRelativePath(editor.document.uri),
+            language: editor === undefined ? null : editor.document.languageId,
+          }),
+        );
       }),
       vscode.workspace.onDidChangeConfiguration((e) => {
         if (e.affectsConfiguration('devpulse.apiUrl')) {
@@ -74,6 +81,11 @@ export class TelemetryBridge implements vscode.Disposable {
     this.enqueue(this.createEvent('heartbeat', { durationMs: null }));
     await this.flush();
   }
+
+  private toRelativePath(uri: vscode.Uri): string {
+    return vscode.workspace.asRelativePath(uri, false);
+  }
+
   private onActivityTransition(next: ActivityState, changedAt: number): void {
     const prev = this.lastActivityState;
     const prevAt = this.lastActivityChangeAtMs;
@@ -125,6 +137,7 @@ export class TelemetryBridge implements vscode.Disposable {
     partial: {
       durationMs?: number | null;
       filePath?: string | null;
+      language?: string | null;
       clientTimestamp?: string;
       gitBranch?: string | null;
       gitRemoteUrl?: string | null;
@@ -139,7 +152,7 @@ export class TelemetryBridge implements vscode.Disposable {
       clientTimestamp: partial.clientTimestamp ?? new Date().toISOString(),
       durationMs: partial.durationMs,
       filePath: partial.filePath ?? undefined,
-      language: partial.filePath ? (partial.filePath.split('.').pop() ?? undefined) : undefined,
+      language: partial.language ?? undefined,
     };
   }
 
