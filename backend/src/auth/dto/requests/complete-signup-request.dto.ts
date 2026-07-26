@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class CompleteSignupRequestDto {
   @IsString()
@@ -36,4 +36,9 @@ export class CompleteSignupRequestDto {
   @IsString()
   @IsNotEmpty()
   public protectedKeyTag!: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  public timezone?: string;
 }

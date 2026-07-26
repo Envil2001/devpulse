@@ -92,8 +92,12 @@ export default function RegisterPage() {
       const signupToken = verifyRes.signupToken;
 
       const cryptoPayload = await buildSignupCryptoPayload(password);
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-      const completeRes = await authService.signupComplete(cryptoPayload, signupToken);
+      const completeRes = await authService.signupComplete(
+        { ...cryptoPayload, timezone },
+        signupToken,
+      );
 
       login(completeRes.user);
       router.push('/');

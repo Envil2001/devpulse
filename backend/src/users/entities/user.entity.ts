@@ -34,6 +34,14 @@ export class User extends AppBaseEntity<'users'> {
   })
   public isActive!: boolean;
 
+  @Column({
+    type: 'varchar',
+    length: 100,
+    nullable: true,
+    default: 'UTC',
+  })
+  public timezone!: string | null;
+
   @OneToMany(() => ApiKey, (apiKey) => apiKey.user, { cascade: true })
   public apiKeys!: Array<ApiKey>;
 

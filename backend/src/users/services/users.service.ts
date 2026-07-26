@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 
 import { type TypeId } from '@devpulse/lib/ids';
 
@@ -31,5 +31,18 @@ export class UsersService {
   public async save(user: User): Promise<User> {
     this.logger.log(`Saving user: ${user.email}`);
     return this.userRepository.save(user);
+  }
+
+  public async update(
+    userId: TypeId<'users'>,
+    updates: Partial<Pick<User, 'displayName' | 'timezone'>>,
+  ): Promise<User> {
+    await this.userRepository.update(userId, updates);
+    const updated = await this.findById(userId);
+    if (!updated) {
+      throw new NotFoundException('User not found');
+    }
+    this.logger.log(`Updated user ${userId}`);
+    return updated;
   }
 }

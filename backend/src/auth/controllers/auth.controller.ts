@@ -88,6 +88,7 @@ export class AuthController {
       id: user.id,
       email: user.email,
       displayName: user.displayName,
+      timezone: user.timezone,
     };
   }
 

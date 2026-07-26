@@ -2,12 +2,18 @@
 
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { getJson, postJson } from '@/lib/api-client';
+import { getJson, patchJson, postJson } from '@/lib/api-client';
 
-interface User {
+export interface User {
   id: string;
   email: string;
   displayName: string;
+  timezone: string | null;
+}
+
+interface UpdateProfileDto {
+  displayName?: string;
+  timezone?: string;
 }
 
 interface AuthContextType {
@@ -16,6 +22,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (user: User) => void;
   logout: () => Promise<void>;
+  updateProfile: (dto: UpdateProfileDto) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -52,9 +59,13 @@ export function AuthContextProvider({ children }: { children: React.ReactNode })
       console.error('Logout error (server-side):', error);
     } finally {
       setUser(null);
-
       router.replace('/login');
     }
+  };
+
+  const updateProfile = async (dto: UpdateProfileDto) => {
+    const updated = await patchJson<User, UpdateProfileDto>('/users/me', dto);
+    setUser(updated);
   };
 
   return (
@@ -65,6 +76,7 @@ export function AuthContextProvider({ children }: { children: React.ReactNode })
         isLoading,
         login,
         logout,
+        updateProfile,
       }}
     >
       {children}
