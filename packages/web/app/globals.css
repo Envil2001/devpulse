@@ -60,7 +60,7 @@
     @apply font-martian font-medium text-2xl leading-[34.6px] tracking-[0%];
   }
   .h6 {
-    @apply font-martian font-medium text-2xl leading-[34px] tracking-[-3%];
+    @apply font-martian font-medium text-2xl leading-8.5 tracking-[-3%];
   }
 
   .body1 {
