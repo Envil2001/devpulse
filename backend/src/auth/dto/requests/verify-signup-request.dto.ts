@@ -7,7 +7,7 @@ export class VerifySignUpRequestDto {
   })
   @IsNotEmpty()
   @IsEmail()
-  email!: string;
+  public email!: string;
 
   @ApiProperty({
     description: "The verification code sent to the user's email.",
@@ -15,5 +15,5 @@ export class VerifySignUpRequestDto {
   @IsNotEmpty()
   @IsString()
   @Length(6, 6, { message: 'Verification code must be exactly 6 characters long' })
-  code!: string;
+  public code!: string;
 }

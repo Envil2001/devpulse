@@ -1,17 +1,17 @@
-import 'reflect-metadata';
+import { faker } from '@faker-js/faker';
+import { DataSource } from 'typeorm';
 
 import { env } from '@devpulse/env/api';
-import 'reflect-metadata';
-import { DataSource } from 'typeorm';
 import { typeIdGenerator } from '@devpulse/lib';
-import { faker } from '@faker-js/faker';
 
+import { ApiKey } from '../api-keys/entities/api-key.entity';
+import { Project } from '../projects/entities/project.entity';
+import { TelemetryEvent } from '../telemetry/entities/telemetry-event.entity';
+import { WorkSession, WorkSessionStatus } from '../telemetry/entities/work-session.entity';
 import { User } from '../users/entities/user.entity';
 import { UserEncryption } from '../users/entities/user-encryption.entity';
-import { WorkSession, WorkSessionStatus } from '../telemetry/entities/work-session.entity';
-import { Project } from '../projects/entities/project.entity';
-import { ApiKey } from '../api-keys/entities/api-key.entity';
-import { TelemetryEvent } from '../telemetry/entities/telemetry-event.entity';
+
+import 'reflect-metadata';
 
 const AppDataSource = new DataSource({
   type: 'postgres',
@@ -21,7 +21,7 @@ const AppDataSource = new DataSource({
   logging: false,
 });
 
-async function runSeed() {
+async function runSeed(): Promise<void> {
   console.log('🌱 Starting Database Seeder...');
 
   try {
@@ -35,9 +35,7 @@ async function runSeed() {
     console.log('🧹 Cleaning up old data...');
 
     await sessionRepo.createQueryBuilder().delete().execute();
-
     await projectRepo.createQueryBuilder().delete().execute();
-
     await userRepo.delete({ email: 'demo@devpulse.com' });
 
     console.log('✨ Cleaned up successfully.');
@@ -61,7 +59,7 @@ async function runSeed() {
     const savedProject = await projectRepo.save(demoProject);
     console.log(`📁 Created Demo Project: ${savedProject.name}`);
 
-    const sessionsToInsert: WorkSession[] = [];
+    const sessionsToInsert: Array<WorkSession> = [];
     const branches = ['feat/login', 'fix/bug-123', 'chore/update-deps'];
     const languages = ['TypeScript', 'Python', 'Go'];
     const now = new Date();
@@ -69,7 +67,7 @@ async function runSeed() {
     for (let i = 0; i < 100; i++) {
       const randomDate = faker.date.recent({ days: 30, refDate: now });
       const durationMinutes = faker.number.int({ min: 5, max: 120 });
-      const endDate = new Date(randomDate.getTime() + durationMinutes * 60000);
+      const endDate = new Date(randomDate.getTime() + durationMinutes * 60_000);
 
       const totalSeconds = durationMinutes * 60;
       const activePercentage = faker.number.float({ min: 0.3, max: 0.9 });
@@ -101,14 +99,35 @@ async function runSeed() {
     await sessionRepo.save(sessionsToInsert);
     console.log(`📊 Inserted 100 Work Sessions.`);
     console.log('✅ Seeding completed successfully!');
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('❌ Seeder Error:', error);
+
+    const errorMessage = error instanceof Error ? error.message : String(error);
+
+    throw new Error(`Seeding failed: ${errorMessage}`);
   } finally {
     if (AppDataSource.isInitialized) {
       await AppDataSource.destroy();
     }
-    process.exit(0);
   }
 }
 
-runSeed();
+async function main(): Promise<void> {
+  try {
+    await runSeed();
+  } catch (error: unknown) {
+    console.error('❌ Fatal error:', error);
+
+    const errorMessage = error instanceof Error ? error.message : String(error);
+
+    console.error(`Error details: ${errorMessage}`);
+    process.exitCode = 1;
+  }
+}
+
+main().catch((error: unknown) => {
+  console.error('❌ Unhandled error:', error);
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  console.error(`Error details: ${errorMessage}`);
+  process.exitCode = 1;
+});

@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import { type TypeId } from '@devpulse/lib';
+
 import { ApiKey } from '../entities/api-key.entity';
 
 @Injectable()
@@ -20,7 +21,7 @@ export class ApiKeysRepository {
     return this.repository.create(entityLike);
   }
 
-  public async findByUserId(userId: TypeId<'users'>): Promise<ApiKey[]> {
+  public async findByUserId(userId: TypeId<'users'>): Promise<Array<ApiKey>> {
     return this.repository.find({
       where: { userId },
       order: { createdAt: 'DESC' },

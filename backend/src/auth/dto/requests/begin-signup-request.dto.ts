@@ -24,12 +24,12 @@ export class BeginSignupRequestDto {
     message: 'displayName can only contain letters, numbers and underscores',
   })
   @NotContains(' ', { message: 'displayName cannot contain spaces' })
-  displayName!: string;
+  public displayName!: string;
 
   @ApiProperty({
     description: 'The email address of the user.',
   })
   @IsNotEmpty()
   @IsEmail()
-  email!: string;
+  public email!: string;
 }

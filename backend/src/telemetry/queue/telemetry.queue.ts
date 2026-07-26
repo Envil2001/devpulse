@@ -1,14 +1,15 @@
 import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Queue } from 'bullmq';
-import { TelemetryEventItemDto } from '../dto/request/ingest-telemetry-batch-request.dto';
-import { RedisService } from '../../redis/services/redis.service';
-import { TypeId } from '@devpulse/lib';
 import Redis from 'ioredis';
+
+import { TypeId } from '@devpulse/lib';
+
 import { BULL_REDIS_CLIENT } from '../../redis/redis.module';
+import { TelemetryEventItemDto } from '../dto/request/ingest-telemetry-batch-request.dto';
 
 export interface TelemetryJobData {
   userId: TypeId<'users'>;
-  events: TelemetryEventItemDto[];
+  events: Array<TelemetryEventItemDto>;
 }
 
 @Injectable()
@@ -18,7 +19,7 @@ export class TelemetryQueue implements OnModuleInit {
 
   constructor(@Inject(BULL_REDIS_CLIENT) private readonly redisConnection: Redis) {}
 
-  public async onModuleInit(): Promise<void> {
+  public onModuleInit(): void {
     this.queue = new Queue<TelemetryJobData>('telemetry-ingestion', {
       connection: this.redisConnection,
     });
@@ -26,7 +27,7 @@ export class TelemetryQueue implements OnModuleInit {
 
   public async addEventsJob(
     userId: TypeId<'users'>,
-    events: TelemetryEventItemDto[],
+    events: Array<TelemetryEventItemDto>,
   ): Promise<void> {
     await this.queue.add(
       'process-batch',

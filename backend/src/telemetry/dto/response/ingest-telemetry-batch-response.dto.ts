@@ -2,11 +2,11 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class IngestTelemetryBatchResponseDto {
   @ApiProperty()
-  success!: boolean;
+  public success!: boolean;
 
   @ApiProperty()
-  processedCount!: number;
+  public processedCount!: number;
 
   @ApiProperty()
-  message!: string;
+  public message!: string;
 }

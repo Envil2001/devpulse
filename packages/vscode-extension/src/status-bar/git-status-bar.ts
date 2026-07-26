@@ -1,12 +1,13 @@
 import * as vscode from 'vscode';
-import { GitContextProvider } from '../git-context.js';
+
+import { type GitContextProvider } from '../git-context.js';
 
 export class GitStatusBar implements vscode.Disposable {
   private readonly statusBarItem: vscode.StatusBarItem;
   private readonly changeSubscription: vscode.Disposable;
 
   constructor(private readonly gitContextProvider: GitContextProvider) {
-    this.statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 10000);
+    this.statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 10_000);
     this.statusBarItem.name = 'DevPulse Git Status';
     this.statusBarItem.tooltip = 'Current Git Branch';
     this.changeSubscription = this.gitContextProvider.onDidChangeContext(() => {

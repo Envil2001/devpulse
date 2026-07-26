@@ -1,12 +1,13 @@
-import { Controller, UseGuards, Get, HttpCode, HttpStatus, Query } from '@nestjs/common';
+import { Controller, Get, HttpCode, HttpStatus, Query, UseGuards } from '@nestjs/common';
+
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
-import { GetAnalyticsRangeRequestDto } from '../dto/request/get-analytics-range-request.dto';
-import { GetAnalyticsDashboardResponseDto } from '../dto/response/get-analytics-dashboard-response.dto';
-import { AnalyticsService } from '../services/analytics.service';
-import { GetAnalyticsTimeseriesResponseDto } from '../dto/response/get-analytics-timeseries-response.dto';
-import { GetAnalyticsBranchesResponseDto } from '../dto/response/get-analytics-branches-response.dto';
 import { type AuthenticatedUser } from '../../auth/interfaces/jwt-payload.interface';
+import { GetAnalyticsRangeRequestDto } from '../dto/request/get-analytics-range-request.dto';
+import { GetAnalyticsBranchesResponseDto } from '../dto/response/get-analytics-branches-response.dto';
+import { GetAnalyticsDashboardResponseDto } from '../dto/response/get-analytics-dashboard-response.dto';
+import { GetAnalyticsTimeseriesResponseDto } from '../dto/response/get-analytics-timeseries-response.dto';
+import { AnalyticsService } from '../services/analytics.service';
 
 @Controller('analytics')
 @UseGuards(JwtAuthGuard)

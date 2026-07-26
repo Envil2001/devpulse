@@ -2,17 +2,17 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class ApiKeyResponseDto {
   @ApiProperty()
-  id!: string;
+  public id!: string;
 
   @ApiProperty()
-  name!: string;
+  public name!: string;
 
   @ApiProperty()
-  keyPrefix!: string;
+  public keyPrefix!: string;
 
   @ApiProperty()
-  lastUsedAt!: Date | null;
+  public lastUsedAt!: Date | null;
 
   @ApiProperty()
-  createdAt!: Date;
+  public createdAt!: Date;
 }

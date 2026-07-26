@@ -7,13 +7,14 @@ import {
   Logger,
 } from '@nestjs/common';
 import { type Request, type Response } from 'express';
+
 import { type ApiErrorResponse } from '@devpulse/lib';
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
   private readonly logger = new Logger(AllExceptionsFilter.name);
 
-  catch(exception: unknown, host: ArgumentsHost): void {
+  public catch(exception: unknown, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
     const request = ctx.getRequest<Request>();
     const response = ctx.getResponse<Response>();
@@ -51,7 +52,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
       const raw = exception.getResponse();
 
       if (typeof raw === 'object' && 'message' in raw) {
-        const { message } = raw as { message: unknown };
+        const { message } = raw;
         if (Array.isArray(message)) {
           return {
             status,

@@ -1,10 +1,10 @@
 import * as vscode from 'vscode';
 
+import { registerCommands } from './commands/index.js';
+import { GitStatusBar } from './status-bar/git-status-bar.js';
 import { TelemetryBridge } from './telemetry/telemetry-bridge.js';
 import { ActivityMonitor } from './activity-monitor.js';
 import { GitContextProvider } from './git-context.js';
-import { GitStatusBar } from './status-bar/git-status-bar.js';
-import { registerCommands } from './commands/index.js';
 
 export function activate(context: vscode.ExtensionContext): void {
   console.log('DevPulse extension is now active!');

@@ -1,4 +1,4 @@
-import { TypeId } from '@devpulse/lib';
+import { type TypeId } from '@devpulse/lib';
 
 export interface AuthenticatedUser {
   id: TypeId<'users'>;

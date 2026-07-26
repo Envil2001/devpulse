@@ -23,17 +23,13 @@ export default function extensionConfig(options = {}) {
     globals: { ...globals.node, ...VSCODE_GLOBALS },
   });
 
-  return tseslint.config(
-    ...base,
-    {
-      rules: {
-        'no-console': 'off',
-        '@typescript-eslint/no-explicit-any': 'warn',
-        'unicorn/no-process-exit': 'off',
-        'unicorn/prefer-top-level-await': 'off',
+  return tseslint.config(...base, {
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'warn',
+      'unicorn/no-process-exit': 'off',
+      'unicorn/prefer-top-level-await': 'off',
 
-        ...options.rules,
-      },
+      ...options.rules,
     },
-  );
+  });
 }

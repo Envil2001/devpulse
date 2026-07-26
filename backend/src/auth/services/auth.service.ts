@@ -1,3 +1,7 @@
+import * as crypto from 'node:crypto';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+
 import {
   BadRequestException,
   Injectable,
@@ -8,30 +12,29 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import fs from 'fs/promises';
-import path from 'path';
-import { UsersService } from '../../users/services/users.service';
-import { BeginSignupRequestDto } from '../dto/requests/begin-signup-request.dto';
+import { Response } from 'express';
+import { DataSource } from 'typeorm';
+
+import { env } from '@devpulse/env/api';
+import { generateSrpServerKey, TypeId, typeIdGenerator, verifySrpClientProof } from '@devpulse/lib';
+
 import { MessageResponseDto } from '../../common/dto/message-response.dto';
 import { RedisService } from '../../redis/services/redis.service';
-import { bannedWords, blockedUsernames, reservedUsernames } from '../constants/banned-names';
-import { VerifySignUpResponseDto } from '../dto/response/verify-signup-response.dto';
-import { VerifySignUpRequestDto } from '../dto/requests/verify-signup-request.dto';
-import { CompleteSignupRequestDto } from '../dto/requests/complete-signup-request.dto';
-import { DataSource } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { UserEncryption } from '../../users/entities/user-encryption.entity';
+import { UsersService } from '../../users/services/users.service';
+import { bannedWords, blockedUsernames, reservedUsernames } from '../constants/banned-names';
+import { BeginSignupRequestDto } from '../dto/requests/begin-signup-request.dto';
+import { CompleteSignupRequestDto } from '../dto/requests/complete-signup-request.dto';
 import { LoginBeginRequestDto } from '../dto/requests/login-begin-request.dto';
-import { generateSrpServerKey, TypeId, typeIdGenerator, verifySrpClientProof } from '@devpulse/lib';
+import { VerifySignUpRequestDto } from '../dto/requests/verify-signup-request.dto';
 import { SignUpCompleteResponseDto } from '../dto/response/sign-up-complete.response.dto';
-import * as crypto from 'crypto';
-import { Response } from 'express';
-import { env } from '@devpulse/env/api';
+import { VerifySignUpResponseDto } from '../dto/response/verify-signup-response.dto';
 
 @Injectable()
 export class AuthService implements OnModuleInit {
   private readonly logger = new Logger(AuthService.name);
-  private disposableDomains: Set<string> = new Set();
+  private disposableDomains = new Set<string>();
 
   constructor(
     private readonly usersService: UsersService,
@@ -40,7 +43,7 @@ export class AuthService implements OnModuleInit {
     private readonly dataSource: DataSource,
   ) {}
 
-  async onModuleInit() {
+  public async onModuleInit(): Promise<void> {
     await this.loadDisposableDomains();
   }
 
@@ -50,7 +53,7 @@ export class AuthService implements OnModuleInit {
 
     this.logger.log(`Starting signup process for email: ${email}`);
 
-    const isDisposableEmail = await this.isDisposableEmail(email);
+    const isDisposableEmail = this.isDisposableEmail(email);
 
     if (isDisposableEmail) {
       this.logger.warn(`Signup attempt with disposable email: ${email}`);
@@ -78,7 +81,7 @@ export class AuthService implements OnModuleInit {
       return { message: successMessage };
     }
 
-    const verificationCode = crypto.randomInt(100000, 999999).toString();
+    const verificationCode = crypto.randomInt(100_000, 999_999).toString();
 
     const redisKey = `signup_code:${email}`;
     const payload = { code: verificationCode, displayName };
@@ -89,7 +92,7 @@ export class AuthService implements OnModuleInit {
       // TODO: Implement email sending functionality here. For now, we just log the code.
       // await this.emailService.sendVerificationCode(email, verificationCode);
     } catch (error) {
-      this.logger.error(`Error saving verification code for ${email}: ${error}`);
+      this.logger.error(`Error saving verification code for ${email}: ${String(error)}`);
       throw new InternalServerErrorException(
         'Could not generate verification code. Please try again.',
       );
@@ -106,7 +109,7 @@ export class AuthService implements OnModuleInit {
     const redisKey = `signup_code:${email}`;
     const storedData = await this.redisService.get<{ code: string; displayName: string }>(redisKey);
 
-    if (!storedData || storedData.code !== code) {
+    if (storedData?.code !== code) {
       this.logger.warn(`Invalid or expired verification code for email: ${email}`);
       throw new BadRequestException('Invalid or expired verification code');
     }
@@ -154,7 +157,7 @@ export class AuthService implements OnModuleInit {
         throw new UnauthorizedException('Invalid signup token');
       }
     } catch (error) {
-      this.logger.warn(`Invalid or expired signup token: ${error}`);
+      this.logger.warn(`Invalid or expired signup token: ${String(error)}`);
       throw new UnauthorizedException('Invalid or expired signup token');
     }
 
@@ -230,7 +233,7 @@ export class AuthService implements OnModuleInit {
 
     const user = await this.usersService.findByEmail(email);
 
-    if (!user || !user.encryption || !user.encryption.salt || !user.encryption.verifier) {
+    if (!user?.encryption.salt || !user.encryption.verifier) {
       this.logger.warn(`Login attempt for non-existent email: ${email}`);
       throw new BadRequestException('User does not exist');
     }
@@ -277,7 +280,7 @@ export class AuthService implements OnModuleInit {
     const { userId, clientPublicKey, serverPublicKey } = loginSession;
 
     const user = await this.usersService.findById(userId);
-    if (!user || !user.encryption) {
+    if (!user?.encryption) {
       this.logger.error(`User or encryption data not found for ID: ${userId}`);
       throw new BadRequestException('User data not found');
     }
@@ -322,7 +325,7 @@ export class AuthService implements OnModuleInit {
     return { accessToken };
   }
 
-  public async logout(res: Response) {
+  public logout(res: Response): MessageResponseDto {
     res.clearCookie('access_token', {
       httpOnly: true,
       secure: env.NODE_ENV === 'production',
@@ -332,7 +335,7 @@ export class AuthService implements OnModuleInit {
     return { message: 'Logged out successfully' };
   }
 
-  public async getDemoToken() {
+  public async getDemoToken(): Promise<string> {
     const user = await this.usersService.findByEmail('demo@devpulse.com');
     if (!user) throw new NotFoundException();
 
@@ -346,23 +349,23 @@ export class AuthService implements OnModuleInit {
   private async loadDisposableDomains(): Promise<void> {
     try {
       const filePath = path.join(process.cwd(), 'disposable_emails.txt');
-      const disposableEmailsText = await fs.readFile(filePath, 'utf-8');
+      const disposableEmailsText = await fs.readFile(filePath, 'utf8');
       const domains = disposableEmailsText
         .split('\n')
         .map((line) => line.trim())
         .filter((e) => e.length > 0 && !e.startsWith('#'));
 
       this.disposableDomains = new Set(domains);
-      this.logger.log(`Loaded ${this.disposableDomains.size} disposable email domains.`);
+      this.logger.log(`Loaded ${String(this.disposableDomains.size)} disposable email domains.`);
     } catch (error) {
       this.logger.warn(
         'Could not load disposable email domains. Proceeding without checks.',
-        error,
+        String(error),
       );
     }
   }
 
-  private async isDisposableEmail(email: string): Promise<boolean> {
+  private isDisposableEmail(email: string): boolean {
     const [, domain] = email.split('@');
     if (!domain) return false;
     return this.disposableDomains.has(domain.toLowerCase());

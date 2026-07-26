@@ -1,16 +1,18 @@
-import { IdTypePrefixes, type TypeId } from '@devpulse/lib';
 import { BaseEntity, CreateDateColumn, PrimaryColumn, UpdateDateColumn } from 'typeorm';
 
+import { type IdTypePrefixes, type TypeId } from '@devpulse/lib';
+
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
 export abstract class AppBaseEntity<Prefix extends IdTypePrefixes> extends BaseEntity {
   @PrimaryColumn({
     type: 'varchar',
     length: 48,
   })
-  id!: TypeId<Prefix>;
+  public id!: TypeId<Prefix>;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
-  createdAt!: Date;
+  public createdAt!: Date;
 
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
-  updatedAt!: Date;
+  public updatedAt!: Date;
 }

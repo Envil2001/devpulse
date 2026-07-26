@@ -1,14 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { User } from '../entities/user.entity';
 import { Repository } from 'typeorm';
+
 import { TypeId } from '@devpulse/lib';
+
+import { User } from '../entities/user.entity';
 
 @Injectable()
 export class UserRepository {
   constructor(
     @InjectRepository(User)
-    private repository: Repository<User>,
+    private readonly repository: Repository<User>,
   ) {}
 
   public async findByEmail(email: string): Promise<User | null> {

@@ -2,13 +2,13 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class BranchDataPointDto {
   @ApiProperty()
-  branchName!: string;
+  public branchName!: string;
 
   @ApiProperty()
-  activeSeconds!: number;
+  public activeSeconds!: number;
 }
 
 export class GetAnalyticsBranchesResponseDto {
   @ApiProperty({ type: [BranchDataPointDto] })
-  branches!: BranchDataPointDto[];
+  public branches!: Array<BranchDataPointDto>;
 }

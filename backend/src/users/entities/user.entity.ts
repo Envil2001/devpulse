@@ -1,9 +1,10 @@
 import { Column, Entity, OneToMany, OneToOne } from 'typeorm';
 
 import { ApiKey } from '../../api-keys/entities/api-key.entity';
+import { AppBaseEntity } from '../../common/entities/app-base.entity';
 import { Project } from '../../projects/entities/project.entity';
 import { WorkSession } from '../../telemetry/entities/work-session.entity';
-import { AppBaseEntity } from '../../common/entities/app-base.entity';
+
 import { UserEncryption } from './user-encryption.entity';
 
 @Entity('users')
@@ -13,10 +14,10 @@ export class User extends AppBaseEntity<'users'> {
     type: 'varchar',
     length: 255,
   })
-  email!: string;
+  public email!: string;
 
   @OneToOne(() => UserEncryption, (encryption) => encryption.user, { cascade: true })
-  encryption!: UserEncryption;
+  public encryption!: UserEncryption;
 
   @Column({
     type: 'varchar',
@@ -24,21 +25,21 @@ export class User extends AppBaseEntity<'users'> {
     length: 100,
     nullable: true,
   })
-  displayName!: string;
+  public displayName!: string;
 
   @Column({
     name: 'is_active',
     type: 'boolean',
     default: true,
   })
-  isActive!: boolean;
+  public isActive!: boolean;
 
   @OneToMany(() => ApiKey, (apiKey) => apiKey.user, { cascade: true })
-  apiKeys!: ApiKey[];
+  public apiKeys!: Array<ApiKey>;
 
   @OneToMany(() => Project, (project) => project.user, { cascade: true })
-  projects!: Project[];
+  public projects!: Array<Project>;
 
   @OneToMany(() => WorkSession, (session) => session.user, { cascade: true })
-  workSessions!: WorkSession[];
+  public workSessions!: Array<WorkSession>;
 }

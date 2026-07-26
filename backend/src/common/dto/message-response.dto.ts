@@ -6,5 +6,5 @@ export class MessageResponseDto {
     description: 'Human-readable response message',
   })
   @IsString()
-  message!: string;
+  public message!: string;
 }

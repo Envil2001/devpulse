@@ -1,16 +1,15 @@
 import { Module } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import type { StringValue } from 'ms';
+
+import { env } from '@devpulse/env/api';
 
 import { UsersModule } from '../users/users.module';
 
 import { AuthController } from './controllers/auth.controller';
 import { AuthService } from './services/auth.service';
-import { env } from '@devpulse/env/api';
 import { JwtStrategy } from './strategies/jwt.strategy';
-
 @Module({
   imports: [
     UsersModule,

@@ -1,43 +1,45 @@
 import { Column, Entity, JoinColumn, OneToOne } from 'typeorm';
+
 import { AppBaseEntity } from '../../common/entities/app-base.entity';
+
 import { User } from './user.entity';
 
 @Entity('user_encryption')
 export class UserEncryption extends AppBaseEntity<'encryption'> {
   @OneToOne(() => User, (user) => user.encryption, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'userId' })
-  user!: User;
+  public user!: User;
 
   @Column({ type: 'text', nullable: true })
-  clientPublicKey: string | null = null;
+  public clientPublicKey: string | null = null;
 
   @Column({ type: 'text', nullable: true })
-  serverPrivateKey: string | null = null;
+  public serverPrivateKey: string | null = null;
 
   @Column({ type: 'text', nullable: true })
-  salt: string | null = null;
+  public salt: string | null = null;
 
   @Column({ type: 'text', nullable: true })
-  verifier: string | null = null;
+  public verifier: string | null = null;
 
   @Column({ type: 'text', nullable: true })
-  publicKey: string | null = null;
+  public publicKey: string | null = null;
 
   @Column({ type: 'text', nullable: true })
-  encryptedPrivateKey: string | null = null;
+  public encryptedPrivateKey: string | null = null;
 
   @Column({ type: 'text', nullable: true })
-  iv: string | null = null;
+  public iv: string | null = null;
 
   @Column({ type: 'text', nullable: true })
-  tag: string | null = null;
+  public tag: string | null = null;
 
   @Column({ type: 'text', nullable: true })
-  protectedKey: string | null = null;
+  public protectedKey: string | null = null;
 
   @Column({ type: 'text', nullable: true })
-  protectedKeyIV: string | null = null;
+  public protectedKeyIV: string | null = null;
 
   @Column({ type: 'text', nullable: true })
-  protectedKeyTag: string | null = null;
+  public protectedKeyTag: string | null = null;
 }
