@@ -1,4 +1,5 @@
 {
+  "$schema": "https://json.schemastore.org/package.json",
   "name": "devpulse.devpulse",
   "displayName": "DevPulse",
   "description": "DevPulse: time-tracking and workflow analytics for developers",
@@ -43,6 +44,7 @@
     "watch": "tsc -watch -p ./",
     "pretest": "pnpm run compile && pnpm run lint",
     "lint": "eslint src",
+    "typecheck": "tsc --noEmit",
     "test": "vscode-test"
   },
   "devDependencies": {
