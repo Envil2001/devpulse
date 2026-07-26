@@ -10,27 +10,55 @@ export function activate(context: vscode.ExtensionContext): void {
   console.log('DevPulse extension is now active!');
 
   const outputChannel = vscode.window.createOutputChannel('DevPulse');
-  const activityMonitor = new ActivityMonitor();
-  const gitContextProvider = new GitContextProvider();
-  const telemetryBridge = new TelemetryBridge(
-    context,
-    activityMonitor,
-    gitContextProvider,
-    outputChannel,
-  );
-  void telemetryBridge.start();
 
-  const gitStatusBar = new GitStatusBar(gitContextProvider);
-  void gitStatusBar.show();
+  context.subscriptions.push(outputChannel, ...registerCommands(context));
 
-  context.subscriptions.push(
-    outputChannel,
-    activityMonitor,
-    gitContextProvider,
-    telemetryBridge,
-    gitStatusBar,
-    ...registerCommands(context),
-  );
+  let isTelemetryStarted = false;
+
+  const startTelemetry = (): void => {
+    if (isTelemetryStarted) {
+      return;
+    }
+
+    isTelemetryStarted = true;
+
+    const activityMonitor = new ActivityMonitor();
+    const gitContextProvider = new GitContextProvider();
+    const telemetryBridge = new TelemetryBridge(
+      context,
+      activityMonitor,
+      gitContextProvider,
+      outputChannel,
+    );
+    void telemetryBridge.start();
+
+    const gitStatusBar = new GitStatusBar(gitContextProvider);
+    void gitStatusBar.show();
+
+    context.subscriptions.push(
+      outputChannel,
+      activityMonitor,
+      gitContextProvider,
+      telemetryBridge,
+      gitStatusBar,
+    );
+
+    outputChannel.appendLine('[info] Workspace is trusted. Telemetry started.');
+  };
+
+  if (vscode.workspace.isTrusted) {
+    startTelemetry();
+  } else {
+    outputChannel.appendLine(
+      '[warn] Workspace is UNTRUSTED. Telemetry is paused to protect your data.',
+    );
+
+    context.subscriptions.push(
+      vscode.workspace.onDidGrantWorkspaceTrust(() => {
+        startTelemetry();
+      }),
+    );
+  }
 }
 
 export function deactivate(): void {
