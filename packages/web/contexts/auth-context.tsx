@@ -30,7 +30,7 @@ export function AuthContextProvider({ children }: { children: React.ReactNode })
       try {
         const userData = await getJson<User>('/auth/me');
         setUser(userData);
-      } catch (error) {
+      } catch {
         setUser(null);
         console.log('Not authenticated');
       } finally {

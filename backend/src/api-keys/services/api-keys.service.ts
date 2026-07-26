@@ -1,6 +1,9 @@
-import { TypeId, typeIdGenerator } from '@devpulse/lib';
+import * as crypto from 'node:crypto';
+
 import { Injectable, Logger } from '@nestjs/common';
-import * as crypto from 'crypto';
+
+import { TypeId, typeIdGenerator } from '@devpulse/lib';
+
 import { User } from '../../users/entities/user.entity';
 import { ApiKey } from '../entities/api-key.entity';
 import { ApiKeysRepository } from '../repository/api-keys.repository';
@@ -16,7 +19,7 @@ export class ApiKeysService {
     const rawKey = `dp_live_${randomBytes}`;
 
     const keyHash = crypto.createHash('sha256').update(rawKey).digest('hex');
-    const keyPrefix = rawKey.substring(0, 12);
+    const keyPrefix = rawKey.slice(0, 12);
 
     const newKey = this.apiKeysRepository.create({
       id: typeIdGenerator('apiKeys'),
@@ -32,7 +35,7 @@ export class ApiKeysService {
     return { rawKey, keyEntity: savedKey };
   }
 
-  public async getUserKeys(userId: TypeId<'users'>): Promise<ApiKey[]> {
+  public async getUserKeys(userId: TypeId<'users'>): Promise<Array<ApiKey>> {
     return this.apiKeysRepository.findByUserId(userId);
   }
 
@@ -50,11 +53,9 @@ export class ApiKeysService {
       return null;
     }
 
-    this.apiKeysRepository
-      .updateLastUsedAt(apiKey.id)
-      .catch((err: Error) =>
-        this.logger.error(`Failed to update lastUsedAt for key ${apiKey.id}`, err.stack),
-      );
+    this.apiKeysRepository.updateLastUsedAt(apiKey.id).catch((error: unknown) => {
+      this.logger.error(`Failed to update lastUsedAt for key ${apiKey.id}`, String(error));
+    });
 
     return apiKey.user;
   }

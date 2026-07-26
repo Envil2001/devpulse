@@ -1,8 +1,14 @@
-import { TelemetryEventDto, type ApiErrorResponse, type ApiSuccessResponse } from '@devpulse/lib';
 import * as vscode from 'vscode';
 
-import { DEVPULSE_API_KEY_SECRET } from '../secret-keys.js';
 import { env } from '@devpulse/env/extension';
+import {
+  type ApiErrorResponse,
+  type ApiResponse,
+  type ApiSuccessResponse,
+  type TelemetryEventDto,
+} from '@devpulse/lib';
+
+import { DEVPULSE_API_KEY_SECRET } from '../secret-keys.js';
 
 export class TelemetryApiClientError extends Error {
   public readonly status: number;
@@ -30,24 +36,23 @@ function resolveApiBaseUrl(): string {
     return trimTrailingSlashes(configured);
   }
 
-  if (env.DEVPULSE_API_URL !== undefined && env.DEVPULSE_API_URL.trim().length > 0) {
-    return trimTrailingSlashes(env.DEVPULSE_API_URL);
-  }
-
   return env.DEVPULSE_API_URL;
 }
 
 async function readJson<TResponse>(response: Response): Promise<TResponse> {
-  const body = (await response.json()) as ApiSuccessResponse<TResponse> | ApiErrorResponse;
+  const body = (await response.json()) as ApiResponse<TResponse>;
 
-  if (!response.ok || body.success === false) {
-    const message =
-      body.success === false ? body.error.message : `Request failed (${String(response.status)})`;
-    const details = body.success === false ? body.error.details : undefined;
-    throw new TelemetryApiClientError(message, response.status, details);
+  if (!response.ok) {
+    const errorBody = body as ApiErrorResponse;
+    throw new TelemetryApiClientError(
+      errorBody.error.message,
+      response.status,
+      errorBody.error.details,
+    );
   }
 
-  return body.data;
+  const successBody = body as ApiSuccessResponse<TResponse>;
+  return successBody.data;
 }
 
 export class TelemetryApiClient {
@@ -56,7 +61,7 @@ export class TelemetryApiClient {
     private readonly log?: vscode.OutputChannel,
   ) {}
 
-  public async postEventsBatch(payload: { events: TelemetryEventDto[] }): Promise<void> {
+  public async postEventsBatch(payload: { events: Array<TelemetryEventDto> }): Promise<void> {
     const apiKey = await this.context.secrets.get(DEVPULSE_API_KEY_SECRET);
     if (apiKey === undefined || apiKey.trim().length === 0) {
       throw new Error('MissingApiKey');
@@ -80,7 +85,7 @@ export class TelemetryApiClient {
     }
 
     try {
-      await readJson<void>(response);
+      await readJson<null>(response);
     } catch (error) {
       if (error instanceof TelemetryApiClientError) {
         this.log?.appendLine(

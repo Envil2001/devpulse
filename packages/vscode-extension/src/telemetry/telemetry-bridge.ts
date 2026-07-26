@@ -1,11 +1,12 @@
 import * as vscode from 'vscode';
 
+import type { TelemetryEventDto } from '@devpulse/lib';
+
 import type { ActivityMonitor, ActivityState } from '../activity-monitor.js';
 import type { GitContext, GitContextProvider } from '../git-context.js';
 
 import { TelemetryApiClient } from './api-client.js';
 import { TelemetryBufferStore } from './buffer-store.js';
-import type { TelemetryEventDto } from '@devpulse/lib';
 
 const FLUSH_INTERVAL_MS = 60_000;
 
@@ -56,7 +57,7 @@ export class TelemetryBridge implements vscode.Disposable {
       }),
       vscode.window.onDidChangeActiveTextEditor((editor) => {
         const filePath = editor?.document.uri.fsPath ?? null;
-        const language = editor?.document.languageId ?? null;
+        // const language = editor?.document.languageId ?? null;
         this.enqueue(this.createEvent('file_switch', { filePath: filePath }));
       }),
       vscode.workspace.onDidChangeConfiguration((e) => {
@@ -133,12 +134,12 @@ export class TelemetryBridge implements vscode.Disposable {
 
     return {
       type,
-      gitBranch: (partial.gitBranch ?? gitBranch) || 'unknown',
+      gitBranch: partial.gitBranch ?? gitBranch ?? 'unknown',
       gitRemoteUrl: partial.gitRemoteUrl ?? gitRemoteUrl ?? undefined,
       clientTimestamp: partial.clientTimestamp ?? new Date().toISOString(),
       durationMs: partial.durationMs,
       filePath: partial.filePath ?? undefined,
-      language: partial.filePath ? partial.filePath.split('.').pop() || undefined : undefined,
+      language: partial.filePath ? (partial.filePath.split('.').pop() ?? undefined) : undefined,
     };
   }
 

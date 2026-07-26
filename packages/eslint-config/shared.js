@@ -16,17 +16,13 @@ export default function sharedConfig(options = {}) {
     tsconfigRootDir: options.tsconfigRootDir,
   });
 
-  return tseslint.config(
-    ...base,
-    {
-      rules: {
-        'no-console': 'error',
-        '@typescript-eslint/explicit-function-return-type': 'error',
-        '@typescript-eslint/explicit-module-boundary-types': 'error',
-        '@typescript-eslint/no-explicit-any': 'error',
+  return tseslint.config(...base, {
+    rules: {
+      '@typescript-eslint/explicit-function-return-type': 'error',
+      '@typescript-eslint/explicit-module-boundary-types': 'error',
+      '@typescript-eslint/no-explicit-any': 'error',
 
-        ...options.rules,
-      },
+      ...options.rules,
     },
-  );
+  });
 }

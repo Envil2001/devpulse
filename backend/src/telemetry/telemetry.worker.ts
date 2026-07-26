@@ -1,18 +1,18 @@
 import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository, EntityManager } from 'typeorm';
-import { Worker, Job } from 'bullmq';
-
-import { TelemetryJobData } from './queue/telemetry.queue';
-import { RedisService } from '../redis/services/redis.service';
-import { WorkSession, WorkSessionStatus } from './entities/work-session.entity';
-import { Project } from '../projects/entities/project.entity';
-import { UserRepository } from '../users/repositories/users.repository';
-import { TelemetryEventItemDto } from './dto/request/ingest-telemetry-batch-request.dto';
-import { User } from '../users/entities/user.entity';
-import { TelemetryEvent } from './entities/telemetry-event.entity';
+import { Job, Worker } from 'bullmq';
 import Redis from 'ioredis/built/Redis';
+import { DataSource, EntityManager, Repository } from 'typeorm';
+
+import { Project } from '../projects/entities/project.entity';
 import { BULL_REDIS_CLIENT } from '../redis/redis.module';
+import { User } from '../users/entities/user.entity';
+import { UserRepository } from '../users/repositories/users.repository';
+
+import { TelemetryEventItemDto } from './dto/request/ingest-telemetry-batch-request.dto';
+import { TelemetryEvent } from './entities/telemetry-event.entity';
+import { WorkSession, WorkSessionStatus } from './entities/work-session.entity';
+import { TelemetryJobData } from './queue/telemetry.queue';
 
 @Injectable()
 export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
@@ -32,7 +32,7 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
     private readonly telemetryEventRepo: Repository<TelemetryEvent>,
   ) {}
 
-  public async onModuleInit(): Promise<void> {
+  public onModuleInit(): void {
     this.worker = new Worker<TelemetryJobData>(
       'telemetry-ingestion',
       async (job: Job<TelemetryJobData>) => {
@@ -80,13 +80,13 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
       if (!project) {
         project = projectRepo.create({
           gitRemoteUrl: event.gitRemoteUrl,
-          name: event.gitRemoteUrl.split('/').pop()?.replace('.git', '') || 'Unknown',
+          name: event.gitRemoteUrl.split('/').pop()?.replace('.git', '') ?? 'Unknown',
         });
         project = await projectRepo.save(project);
       }
     }
 
-    const eventTime = new Date(event.clientTimestamp || new Date().toISOString());
+    const eventTime = new Date(event.clientTimestamp ?? new Date().toISOString());
 
     const lastSession = await sessionRepo.findOne({
       where: {
@@ -98,9 +98,7 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
     });
 
     const isContinuation =
-      lastSession &&
-      lastSession.endedAt &&
-      eventTime.getTime() - lastSession.endedAt.getTime() <= 5 * 60 * 1000;
+      lastSession?.endedAt && eventTime.getTime() - lastSession.endedAt.getTime() <= 5 * 60 * 1000;
 
     const durationSec = event.durationMs ? Math.round(event.durationMs / 1000) : 0;
     const activeSeconds = event.type === 'idle_start' ? durationSec : 0;
@@ -128,8 +126,8 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
       const newSession = sessionRepo.create({
         user: user,
         userId: user.id,
-        project: project || null,
-        projectId: project?.id || null,
+        project: project ?? null,
+        projectId: project?.id ?? null,
         gitBranch: event.gitBranch,
         startedAt: eventTime,
         endedAt: eventTime,
@@ -137,7 +135,7 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
         idleSeconds,
         focusScore,
         earnedMoney: 0,
-        primaryLanguage: event.language || null,
+        primaryLanguage: event.language ?? null,
         status: WorkSessionStatus.ACTIVE,
       });
 
@@ -149,7 +147,7 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
 
     const rawEvent = telemetryEventRepo.create({
       user: user,
-      project: project || null,
+      project: project ?? null,
       session: currentSession,
       gitBranch: event.gitBranch,
       eventTimestamp: eventTime,

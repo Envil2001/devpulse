@@ -3,37 +3,37 @@ import { IsNotEmpty, IsString } from 'class-validator';
 export class CompleteSignupRequestDto {
   @IsString()
   @IsNotEmpty()
-  salt!: string;
+  public salt!: string;
 
   @IsString()
   @IsNotEmpty()
-  verifier!: string;
+  public verifier!: string;
 
   @IsString()
   @IsNotEmpty()
-  publicKey!: string;
+  public publicKey!: string;
 
   @IsString()
   @IsNotEmpty()
-  encryptedPrivateKey!: string;
+  public encryptedPrivateKey!: string;
 
   @IsString()
   @IsNotEmpty()
-  iv!: string;
+  public iv!: string;
 
   @IsString()
   @IsNotEmpty()
-  tag!: string;
+  public tag!: string;
 
   @IsString()
   @IsNotEmpty()
-  protectedKey!: string;
+  public protectedKey!: string;
 
   @IsString()
   @IsNotEmpty()
-  protectedKeyIV!: string;
+  public protectedKeyIV!: string;
 
   @IsString()
   @IsNotEmpty()
-  protectedKeyTag!: string;
+  public protectedKeyTag!: string;
 }

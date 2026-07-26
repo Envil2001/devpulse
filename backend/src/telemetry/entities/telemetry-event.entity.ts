@@ -1,11 +1,12 @@
 import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 
 import { type TypeId } from '@devpulse/lib/ids';
-import { AppBaseEntity } from '../../common/entities/app-base.entity';
 
 import { ApiKey } from '../../api-keys/entities/api-key.entity';
+import { AppBaseEntity } from '../../common/entities/app-base.entity';
 import { Project } from '../../projects/entities/project.entity';
 import { User } from '../../users/entities/user.entity';
+
 import { WorkSession } from './work-session.entity';
 
 @Entity('telemetry_events')
@@ -25,10 +26,10 @@ export class TelemetryEvent extends AppBaseEntity<'telemetryEvents'> {
   public idleSeconds!: number;
 
   @Column({ name: 'files_changed', type: 'jsonb', default: [] })
-  public filesChanged!: string[];
+  public filesChanged!: Array<string>;
 
   @Column({ name: 'file_extensions', type: 'jsonb', default: [] })
-  public fileExtensions!: string[];
+  public fileExtensions!: Array<string>;
 
   @ManyToOne(() => User, {
     nullable: false,

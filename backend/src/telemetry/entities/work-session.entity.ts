@@ -1,9 +1,11 @@
 import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
-import { type TypeId } from '@devpulse/lib/ids';
-import { AppBaseEntity } from '../../common/entities/app-base.entity';
 
+import { type TypeId } from '@devpulse/lib/ids';
+
+import { AppBaseEntity } from '../../common/entities/app-base.entity';
 import { Project } from '../../projects/entities/project.entity';
 import { User } from '../../users/entities/user.entity';
+
 import { TelemetryEvent } from './telemetry-event.entity';
 
 export enum WorkSessionStatus {

@@ -1,11 +1,13 @@
-import { env } from '@devpulse/env/api';
-import { TypeId } from '@devpulse/lib';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
+import { Request } from 'express';
 import { ExtractJwt, Strategy } from 'passport-jwt';
+
+import { env } from '@devpulse/env/api';
+import { TypeId } from '@devpulse/lib';
+
 import { UsersService } from '../../users/services/users.service';
 import { AuthenticatedUser } from '../interfaces/jwt-payload.interface';
-import { Request } from 'express';
 
 interface JwtPayload {
   sub: TypeId<'users'>;
@@ -19,7 +21,8 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
         (request: Request) => {
-          return request?.cookies?.['access_token'];
+          const cookies = request.cookies as { access_token?: string };
+          return cookies.access_token ?? null;
         },
         ExtractJwt.fromAuthHeaderAsBearerToken(),
       ]),
@@ -28,7 +31,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     });
   }
 
-  async validate(payload: JwtPayload): Promise<AuthenticatedUser> {
+  public async validate(payload: JwtPayload): Promise<AuthenticatedUser> {
     const user = await this.usersService.findById(payload.sub);
     if (!user) {
       throw new UnauthorizedException('User not found');

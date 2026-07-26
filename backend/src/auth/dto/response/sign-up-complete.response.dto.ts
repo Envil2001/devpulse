@@ -1,12 +1,12 @@
-import { TypeId } from '@devpulse/lib';
+import { type TypeId } from '@devpulse/lib';
 
 export class SignUpCompleteUserDto {
-  id!: TypeId<'users'>;
-  email!: string;
-  displayName!: string;
+  public id!: TypeId<'users'>;
+  public email!: string;
+  public displayName!: string;
 }
 
 export class SignUpCompleteResponseDto {
-  message!: string;
-  user!: SignUpCompleteUserDto;
+  public message!: string;
+  public user!: SignUpCompleteUserDto;
 }

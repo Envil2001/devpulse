@@ -1,6 +1,6 @@
 'use client';
 
-export default function ProjectDetailPage({ params }: { params: { id: string } }) {
+export default function ProjectDetailPage({}: { params: { id: string } }) {
   return (
     <div className="flex flex-col gap-6">
       <div>

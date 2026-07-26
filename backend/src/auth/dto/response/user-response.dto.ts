@@ -1,0 +1,7 @@
+import { type TypeId } from '@devpulse/lib';
+
+export class UserResponseDto {
+  public id!: TypeId<'users'>;
+  public email!: string;
+  public displayName!: string;
+}

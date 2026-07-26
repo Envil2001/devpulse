@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+
 import { DEVPULSE_API_KEY_SECRET } from '../secret-keys.js';
 
 const COMMAND_ID = 'devpulse.devpulse.setApiKey';

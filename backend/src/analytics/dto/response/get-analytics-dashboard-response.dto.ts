@@ -2,17 +2,17 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class GetAnalyticsDashboardResponseDto {
   @ApiProperty({ description: 'Total active coding time in seconds' })
-  totalActiveSeconds!: number;
+  public totalActiveSeconds!: number;
 
   @ApiProperty({ description: 'Total money earned in user currency' })
-  totalEarnedMoney!: number;
+  public totalEarnedMoney!: number;
 
   @ApiProperty({ description: 'Average focus score (0-100%)' })
-  averageFocusScore!: number;
+  public averageFocusScore!: number;
 
   @ApiProperty({ description: 'Number of active/completed work sessions' })
-  totalSessionsCount!: number;
+  public totalSessionsCount!: number;
 
   @ApiProperty({ description: 'Most used programming language' })
-  topLanguage!: string | null;
+  public topLanguage!: string | null;
 }

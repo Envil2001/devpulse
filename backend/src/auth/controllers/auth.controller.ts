@@ -8,24 +8,27 @@ import {
   Post,
   Req,
   Res,
-  UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+import type { Request, Response } from 'express';
 
-import { AuthService } from '../services/auth.service';
+import { env } from '@devpulse/env/api';
+
 import { AuthThrottle } from '../../common/decorators/throtte.decorators';
-import { BeginSignupRequestDto } from '../dto/requests/begin-signup-request.dto';
 import { MessageResponseDto } from '../../common/dto/message-response.dto';
-import { VerifySignUpRequestDto } from '../dto/requests/verify-signup-request.dto';
-import { VerifySignUpResponseDto } from '../dto/response/verify-signup-response.dto';
+import { User } from '../../users/entities/user.entity';
+import { BeginSignupRequestDto } from '../dto/requests/begin-signup-request.dto';
 import { CompleteSignupRequestDto } from '../dto/requests/complete-signup-request.dto';
 import { LoginBeginRequestDto } from '../dto/requests/login-begin-request.dto';
 import { LoginVerifyRequestDto } from '../dto/requests/login-verify-request.dto';
+import { VerifySignUpRequestDto } from '../dto/requests/verify-signup-request.dto';
+import { DemoTokenResponseDto } from '../dto/response/demo-token-response.dto';
+import { LoginVerifyResponseDto } from '../dto/response/login-verify-response.dto';
 import { SignUpCompleteResponseDto } from '../dto/response/sign-up-complete.response.dto';
-import type { Response, Request } from 'express';
-import { AuthGuard } from '@nestjs/passport';
-import { User } from '../../users/entities/user.entity';
-import { env } from '@devpulse/env/api';
+import { UserResponseDto } from '../dto/response/user-response.dto';
+import { VerifySignUpResponseDto } from '../dto/response/verify-signup-response.dto';
+import { AuthService } from '../services/auth.service';
 
 @Controller('auth')
 export class AuthController {
@@ -51,7 +54,7 @@ export class AuthController {
   public async signinVerify(
     @Body() dto: LoginVerifyRequestDto,
     @Res({ passthrough: true }) res: Response,
-  ): Promise<{ accessToken: string }> {
+  ): Promise<LoginVerifyResponseDto> {
     const { email, clientProof } = dto;
     return this.authService.loginVerify(email, clientProof, res);
   }
@@ -63,15 +66,15 @@ export class AuthController {
     @Body() dto: CompleteSignupRequestDto,
     @Headers('authorization') authHeader: string,
     @Res({ passthrough: true }) res: Response,
-  ) {
-    const signUpToken = authHeader?.replace('Bearer ', '');
+  ): Promise<SignUpCompleteResponseDto> {
+    const signUpToken = authHeader.replace('Bearer ', '');
     return this.authService.signUpComplete(dto, signUpToken, res);
   }
 
   @Post('signin/begin')
   @AuthThrottle()
   @HttpCode(HttpStatus.OK)
-  public async signin(
+  public async signinBegin(
     @Body() dto: LoginBeginRequestDto,
   ): Promise<{ salt: string; serverPublicKey: string }> {
     return this.authService.loginBegin(dto);
@@ -79,7 +82,7 @@ export class AuthController {
 
   @Get('me')
   @UseGuards(AuthGuard('jwt'))
-  async getMe(@Req() req: Request) {
+  public getMe(@Req() req: Request): UserResponseDto {
     const user = req.user as User;
     return {
       id: user.id,
@@ -89,7 +92,7 @@ export class AuthController {
   }
 
   @Post('logout')
-  async logout(@Res({ passthrough: true }) res: Response) {
+  public logout(@Res({ passthrough: true }) res: Response): MessageResponseDto {
     res.clearCookie('access_token', {
       httpOnly: true,
       secure: env.NODE_ENV === 'production',
@@ -100,7 +103,7 @@ export class AuthController {
   }
 
   @Get('demo-token')
-  public async getDemoToken() {
+  public async getDemoToken(): Promise<DemoTokenResponseDto> {
     return { token: await this.authService.getDemoToken() };
   }
 }

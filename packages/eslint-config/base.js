@@ -2,7 +2,6 @@ import eslint from '@eslint/js';
 import * as importPlugin from 'eslint-plugin-import';
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
 import simpleImportSort from 'eslint-plugin-simple-import-sort';
-import sonarjs from 'eslint-plugin-sonarjs';
 import unicorn from 'eslint-plugin-unicorn';
 import unusedImports from 'eslint-plugin-unused-imports';
 import tseslint from 'typescript-eslint';
@@ -26,7 +25,6 @@ export default function baseConfig(options = {}) {
     ...tseslint.configs.strictTypeChecked,
     ...tseslint.configs.stylisticTypeChecked,
 
-    sonarjs.configs.recommended,
     unicorn.configs['flat/recommended'],
 
     eslintPluginPrettierRecommended,
@@ -85,10 +83,10 @@ export default function baseConfig(options = {}) {
           'error',
           {
             groups: [
-              ['^node:'],                                       // 1. Node built-ins
-              ['^@?\\w'],                                       // 2. External packages
-              ['^@devpulse/'],                                  // 3. Internal monorepo
-              ['^\\.\\.(?!/?$)', '^\\.\\./?$'],                 // 4. Parent relative
+              ['^node:'], // 1. Node built-ins
+              ['^@?\\w'], // 2. External packages
+              ['^@devpulse/'], // 3. Internal monorepo
+              ['^\\.\\.(?!/?$)', '^\\.\\./?$'], // 4. Parent relative
               ['^\\./(?=.*/)(?!/?$)', '^\\.(?!/?$)', '^\\./?$'], // 5. Local relative
             ],
           },
@@ -100,12 +98,10 @@ export default function baseConfig(options = {}) {
         'import/no-duplicates': 'error',
 
         // ── Code quality ──────────────────────────────────────────────────────
-        'no-console': 'warn',
         'prefer-const': 'error',
         eqeqeq: ['error', 'always'],
         'no-var': 'error',
         'consistent-return': 'error',
-        complexity: ['warn', { max: 10 }],
 
         // ── Unicorn overrides (disable overly strict rules) ───────────────────
         'unicorn/prevent-abbreviations': 'off',

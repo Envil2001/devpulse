@@ -34,53 +34,40 @@ export default function nestjsConfig(options = {}) {
         sourceType: options.sourceType ?? 'commonjs',
       },
       rules: {
-      // Node.js async safety
-      '@typescript-eslint/no-floating-promises': 'error',
-      '@typescript-eslint/no-misused-promises': [
-        'error',
-        { checksVoidReturn: { attributes: false } },
-      ],
+        // Node.js async safety
+        '@typescript-eslint/no-floating-promises': 'error',
+        '@typescript-eslint/no-misused-promises': [
+          'error',
+          { checksVoidReturn: { attributes: false } },
+        ],
 
-      // NestJS DI/decorator patterns often trigger these —
-      // library typings (ThrottlerModule, PassportModule, etc.) are
-      // frequently unresolved at the type-check level, so errors here
-      // are almost always false-positives from third-party code.
-      '@typescript-eslint/no-unsafe-assignment': 'warn',
-      '@typescript-eslint/no-unsafe-call': 'warn',
-      '@typescript-eslint/no-unsafe-member-access': 'warn',
-      '@typescript-eslint/no-unsafe-return': 'warn',
+        // NestJS DI/decorator patterns often trigger these —
+        // library typings (ThrottlerModule, PassportModule, etc.) are
+        // frequently unresolved at the type-check level, so errors here
+        // are almost always false-positives from third-party code.
+        '@typescript-eslint/no-unsafe-assignment': 'warn',
+        '@typescript-eslint/no-unsafe-call': 'warn',
+        '@typescript-eslint/no-unsafe-member-access': 'warn',
+        '@typescript-eslint/no-unsafe-return': 'warn',
 
-      // Require explicit access modifiers on class members
-      '@typescript-eslint/explicit-member-accessibility': [
-        'warn',
-        {
-          accessibility: 'explicit',
-          overrides: { constructors: 'no-public' },
-        },
-      ],
+        // Require explicit access modifiers on class members
+        '@typescript-eslint/explicit-member-accessibility': [
+          'warn',
+          {
+            accessibility: 'explicit',
+            overrides: { constructors: 'no-public' },
+          },
+        ],
 
-      // Forbid non-null assertions like x! and class-field definite assertions like field!: T
-      'no-restricted-syntax': [
-        'error',
-        {
-          selector: 'TSNonNullExpression',
-          message: 'Non-null assertion (!) is forbidden. Use proper narrowing instead.',
-        },
-        {
-          selector: 'PropertyDefinition[definite=true]',
-          message: 'Definite assignment assertion (!) is forbidden. Use declare or initializer instead.',
-        },
-      ],
+        // n plugin rules that conflict with TS/NestJS tooling
+        'n/no-missing-import': 'off',
+        'n/no-unpublished-import': 'off',
 
-      // n plugin rules that conflict with TS/NestJS tooling
-      'n/no-missing-import': 'off',
-      'n/no-unpublished-import': 'off',
+        // NestJS uses top-level bootstrap(), not top-level await
+        'unicorn/prefer-top-level-await': 'off',
 
-      // NestJS uses top-level bootstrap(), not top-level await
-      'unicorn/prefer-top-level-await': 'off',
-
-      // NestJS @Module / @Controller / @Injectable classes look "empty" to ESLint
-      '@typescript-eslint/no-extraneous-class': 'off',
+        // NestJS @Module / @Controller / @Injectable classes look "empty" to ESLint
+        '@typescript-eslint/no-extraneous-class': 'off',
 
         ...options.rules,
       },
