@@ -1,4 +1,4 @@
-import { getJson, postJson } from './api-client';
+import { deleteJson, getJson, postJson } from './api-client';
 
 interface RequestOptions {
   authToken?: string;
@@ -15,5 +15,9 @@ export abstract class BaseService {
 
   protected get<TResponse>(path: string, options?: RequestOptions): Promise<TResponse> {
     return getJson<TResponse>(path, options);
+  }
+
+  protected delete<TResponse>(path: string, options?: RequestOptions): Promise<TResponse> {
+    return deleteJson<TResponse>(path, options);
   }
 }

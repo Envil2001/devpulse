@@ -63,3 +63,19 @@ export async function getJson<TResponse>(
 
   return readJson<TResponse>(response);
 }
+
+export async function deleteJson<TResponse>(
+  path: string,
+  options: RequestOptions = {},
+): Promise<TResponse> {
+  const response = await fetch(`${env.NEXT_PUBLIC_API_URL}${path}`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(options.authToken ? { Authorization: `Bearer ${options.authToken}` } : {}),
+    },
+    credentials: 'include',
+  });
+
+  return readJson<TResponse>(response);
+}
