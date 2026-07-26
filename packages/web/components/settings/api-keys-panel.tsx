@@ -52,7 +52,7 @@ export function ApiKeysPanel() {
   return (
     <div className="rounded-xl bg-neutral-900 p-6">
       <div className="mb-4 flex items-center justify-between">
-        <p className="mini text-neutral-400">API KEYS</p>
+        <p className="h4 text-neutral-100 uppercase">API KEYS</p>
         <Button onClick={() => setCreateOpen(true)}>Create new key</Button>
       </div>
 

@@ -146,6 +146,7 @@ export class AuthService implements OnModuleInit {
       protectedKey,
       protectedKeyIV,
       protectedKeyTag,
+      timezone,
     } = dto;
     let decodedToken: { email: string; displayName: string; purpose: string };
 
@@ -177,6 +178,7 @@ export class AuthService implements OnModuleInit {
         id: typeIdGenerator('users'),
         email,
         displayName,
+        timezone: timezone ?? 'UTC',
       });
 
       const savedUser = await userRepo.save(newUser);
@@ -219,6 +221,7 @@ export class AuthService implements OnModuleInit {
           id: savedUser.id,
           email: savedUser.email,
           displayName: savedUser.displayName,
+          timezone: savedUser.timezone,
         },
       };
     });

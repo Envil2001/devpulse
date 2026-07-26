@@ -4,6 +4,7 @@ export interface User {
   id: string;
   email: string;
   displayName: string;
+  timezone: string | null;
 }
 
 interface BeginSignupRequest {
@@ -30,6 +31,7 @@ interface CompleteSignupRequest {
   protectedKey: string;
   protectedKeyIV: string;
   protectedKeyTag: string;
+  timezone?: string;
 }
 
 interface CompleteSignupResponse {

@@ -4,4 +4,5 @@ export class UserResponseDto {
   public id!: TypeId<'users'>;
   public email!: string;
   public displayName!: string;
+  public timezone!: string | null;
 }
