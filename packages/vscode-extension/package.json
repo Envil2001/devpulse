@@ -33,7 +33,8 @@
         "devpulse.apiUrl": {
           "type": "string",
           "default": "http://localhost:3000/api/v1",
-          "description": "DevPulse backend base URL (example: http://localhost:3000/api/v1)"
+          "description": "DevPulse backend base URL (example: http://localhost:3000/api/v1)",
+          "scope": "machine"
         }
       }
     }
