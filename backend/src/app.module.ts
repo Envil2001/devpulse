@@ -12,6 +12,7 @@ import { ApiKeysModule } from './api-keys/api-keys.module';
 import { ApiKey } from './api-keys/entities/api-key.entity';
 import { AuthModule } from './auth/auth.module';
 import { Project } from './projects/entities/project.entity';
+import { ProjectsModule } from './projects/projects.module';
 import { RedisModule } from './redis/redis.module';
 import { TelemetryEvent } from './telemetry/entities/telemetry-event.entity';
 import { WorkSession } from './telemetry/entities/work-session.entity';
@@ -59,6 +60,7 @@ const throttlerProvider: Provider = {
     AuthModule,
     ApiKeysModule,
     TelemetryModule,
+    ProjectsModule,
     AnalyticsModule,
   ],
   controllers: [AppController],
