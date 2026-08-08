@@ -19,11 +19,11 @@
   "contributes": {
     "commands": [
       {
-        "command": "devpulse.devpulse.helloWorld",
+        "command": "devpulse.helloWorld",
         "title": "DevPulse: Hello World"
       },
       {
-        "command": "devpulse.devpulse.setApiKey",
+        "command": "devpulse.setApiKey",
         "title": "DevPulse: Set API Key"
       }
     ],

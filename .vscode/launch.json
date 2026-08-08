@@ -1,0 +1,17 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "DevPulse: Debug Extension",
+      "type": "extensionHost",
+      "request": "launch",
+      "args": ["--extensionDevelopmentPath=${workspaceFolder}/packages/vscode-extension"],
+      "outFiles": ["${workspaceFolder}/packages/vscode-extension/out/**/*.js"],
+      "preLaunchTask": "build-extension",
+      "env": {
+        "DEVPULSE_API_URL": "http://localhost:3000/api/v1",
+        "NODE_ENV": "development"
+      }
+    }
+  ]
+}
