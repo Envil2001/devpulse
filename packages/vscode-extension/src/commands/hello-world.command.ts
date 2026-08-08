@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-const COMMAND_ID = 'devpulse.devpulse.helloWorld';
+const COMMAND_ID = 'devpulse.helloWorld';
 
 export function registerHelloWorldCommand(): vscode.Disposable {
   return vscode.commands.registerCommand(COMMAND_ID, () => {
