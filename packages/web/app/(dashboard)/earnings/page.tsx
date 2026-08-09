@@ -22,9 +22,12 @@ export default function EarningsPage() {
 function EarningsContent({ user }: { user: User }) {
   const { updateProfile } = useAuth();
 
+  const safeRate = user.hourlyRate ?? 0;
+  const safeCurrency = user.currency ?? 'USD';
+
   const [rateType, setRateType] = useState<'hourly' | 'monthly'>('hourly');
-  const [rateInput, setRateInput] = useState<string>(user.hourlyRate.toString());
-  const [currencyInput, setCurrencyInput] = useState<string>(user.currency);
+  const [rateInput, setRateInput] = useState<string>(safeRate.toString());
+  const [currencyInput, setCurrencyInput] = useState<string>(safeCurrency);
   const [isSaving, setIsSaving] = useState(false);
 
   const { data: stats30d, isLoading: isLoading30d } = useDashboardStats('30d');
@@ -54,14 +57,11 @@ function EarningsContent({ user }: { user: User }) {
     }
   };
 
-  const baseRate = user.hourlyRate;
-  const currency = user.currency;
-
   const activeHoursThisMonth = Number(((stats30d?.totalActiveSeconds ?? 0) / 3600).toFixed(1));
   const activeHoursThisWeek = Number(((stats7d?.totalActiveSeconds ?? 0) / 3600).toFixed(1));
 
-  const earnedThisMonth = activeHoursThisMonth * baseRate;
-  const earnedThisWeek = activeHoursThisWeek * baseRate;
+  const earnedThisMonth = activeHoursThisMonth * safeRate;
+  const earnedThisWeek = activeHoursThisWeek * safeRate;
 
   return (
     <div className="flex flex-col gap-6">
@@ -141,7 +141,7 @@ function EarningsContent({ user }: { user: User }) {
               ? '...'
               : `${earnedThisWeek.toLocaleString('en-US', {
                   maximumFractionDigits: 0,
-                })} ${currency}`}
+                })} ${safeCurrency}`}
           </p>
           <p className="desc mt-1 text-neutral-500">
             {isLoading7d ? '...' : `${activeHoursThisWeek}h active`}
@@ -155,7 +155,7 @@ function EarningsContent({ user }: { user: User }) {
               ? '...'
               : `${earnedThisMonth.toLocaleString('en-US', {
                   maximumFractionDigits: 0,
-                })} ${currency}`}
+                })} ${safeCurrency}`}
           </p>
           <p className="desc mt-1 text-neutral-500">
             {isLoading30d ? '...' : `${activeHoursThisMonth}h active`}
@@ -165,7 +165,7 @@ function EarningsContent({ user }: { user: User }) {
         <div className="rounded-xl bg-neutral-900 p-5">
           <p className="body1 text-neutral-400">Effective hourly</p>
           <p className="h5 mt-2 text-neutral-100">
-            {baseRate.toLocaleString('en-US', { maximumFractionDigits: 2 })} {currency}
+            {safeRate.toLocaleString('en-US', { maximumFractionDigits: 2 })} {safeCurrency}
           </p>
           <p className="desc mt-1 text-neutral-500">Based on your saved rate</p>
         </div>

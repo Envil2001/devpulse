@@ -35,8 +35,15 @@ export class UsersService {
 
   public async update(
     userId: TypeId<'users'>,
-    updates: Partial<Pick<User, 'displayName' | 'timezone'>>,
+    updates: Partial<Pick<User, 'displayName' | 'timezone' | 'hourlyRate' | 'currency'>>,
   ): Promise<User> {
+    if (updates.displayName) {
+      const existing = await this.userRepository.findByDisplayName(updates.displayName);
+      if (existing && existing.id !== userId) {
+        throw new Error('Display name is already taken');
+      }
+    }
+
     await this.userRepository.update(userId, updates);
     const updated = await this.findById(userId);
     if (!updated) {

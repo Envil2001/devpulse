@@ -97,7 +97,11 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
 
     let project: Project | null = null;
     if (event.gitRemoteUrl) {
-      project = await projectRepo.findOneBy({ gitRemoteUrl: event.gitRemoteUrl });
+      project = await projectRepo.findOneBy({
+        gitRemoteUrl: event.gitRemoteUrl,
+        userId: user.id,
+      });
+
       if (!project) {
         project = projectRepo.create({
           gitRemoteUrl: event.gitRemoteUrl,
@@ -138,14 +142,22 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
       const total = lastSession.activeSeconds + lastSession.idleSeconds;
       lastSession.focusScore = total > 0 ? (lastSession.activeSeconds / total) * 100 : 0;
 
+      lastSession.earnedMoney = (lastSession.activeSeconds / 3600) * user.hourlyRate;
+
       if (event.language) {
         lastSession.primaryLanguage = event.language;
       }
 
       currentSession = await sessionRepo.save(lastSession);
     } else {
+      if (lastSession) {
+        lastSession.status = WorkSessionStatus.CLOSED;
+        await sessionRepo.save(lastSession);
+      }
+
       const total = activeSeconds + idleSeconds;
       const focusScore = total > 0 ? (activeSeconds / total) * 100 : 0;
+      const earnedMoney = (activeSeconds / 3600) * user.hourlyRate;
 
       const newSession = sessionRepo.create({
         user: user,
@@ -158,7 +170,7 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
         activeSeconds,
         idleSeconds,
         focusScore,
-        earnedMoney: 0,
+        earnedMoney,
         primaryLanguage: event.language ?? null,
         status: WorkSessionStatus.ACTIVE,
       });

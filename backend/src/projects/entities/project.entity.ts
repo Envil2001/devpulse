@@ -1,4 +1,4 @@
-import { Column, Entity, ManyToOne, OneToMany } from 'typeorm';
+import { Column, Entity, ManyToOne, OneToMany, Unique } from 'typeorm';
 
 import { type TypeId } from '@devpulse/lib';
 
@@ -7,8 +7,9 @@ import { WorkSession } from '../../telemetry/entities/work-session.entity';
 import { User } from '../../users/entities/user.entity';
 
 @Entity('projects')
+@Unique(['gitRemoteUrl', 'userId'])
 export class Project extends AppBaseEntity<'projects'> {
-  @Column({ name: 'git_remote_url', unique: true, type: 'text' })
+  @Column({ name: 'git_remote_url', type: 'text' })
   public gitRemoteUrl!: string;
 
   @Column({ length: 100, type: 'varchar' })

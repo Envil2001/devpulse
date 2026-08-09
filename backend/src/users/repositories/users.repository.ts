@@ -15,16 +15,17 @@ export class UserRepository {
 
   public async findByEmail(email: string): Promise<User | null> {
     return this.repository.findOne({
-      where: { email },
+      where: { email: email.toLowerCase().trim() },
       relations: ['encryption'],
     });
   }
 
   public async findByDisplayName(displayName: string): Promise<User | null> {
-    return this.repository.findOne({
-      where: { displayName },
-      relations: ['encryption'],
-    });
+    return this.repository
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.encryption', 'encryption')
+      .where('LOWER(user.display_name) = LOWER(:displayName)', { displayName })
+      .getOne();
   }
 
   public async findById(id: TypeId<'users'>): Promise<User | null> {
@@ -36,12 +37,13 @@ export class UserRepository {
 
   public async existsByEmail(email: string): Promise<boolean> {
     const user = await this.repository.findOne({
-      where: { email },
+      where: { email: email.toLowerCase().trim() },
     });
     return !!user;
   }
 
   public async save(user: User): Promise<User> {
+    user.email = user.email.toLowerCase().trim();
     return this.repository.save(user);
   }
 
