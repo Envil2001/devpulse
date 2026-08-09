@@ -5,6 +5,7 @@ import { Repository } from 'typeorm';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { type AuthenticatedUser } from '../../auth/interfaces/jwt-payload.interface';
+import { TelemetryThrottle } from '../../common/decorators/throtte.decorators';
 import { User } from '../../users/entities/user.entity';
 import { IngestTelemetryBatchRequestDto } from '../dto/request/ingest-telemetry-batch-request.dto';
 import { IngestTelemetryBatchResponseDto } from '../dto/response/ingest-telemetry-batch-response.dto';
@@ -33,6 +34,7 @@ export class TelemetryController {
 
   @Post('events/batch')
   @UseGuards(ApiKeyGuard)
+  @TelemetryThrottle()
   @HttpCode(HttpStatus.OK)
   public async ingestBatch(
     @CurrentUser() user: User,

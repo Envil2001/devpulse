@@ -81,6 +81,8 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
         project = projectRepo.create({
           gitRemoteUrl: event.gitRemoteUrl,
           name: event.gitRemoteUrl.split('/').pop()?.replace('.git', '') ?? 'Unknown',
+          user,
+          userId: user.id,
         });
         project = await projectRepo.save(project);
       }
