@@ -24,6 +24,8 @@ export const env = createEnv({
     // JWT
     JWT_SECRET: z.string().min(1),
     JWT_EXPIRES_IN: z.string().default('7d'),
+
+    CORS_ORIGIN: z.string().default('http://localhost:3001'),
   },
 
   runtimeEnv: process.env,

@@ -16,7 +16,12 @@ import { Response } from 'express';
 import { DataSource } from 'typeorm';
 
 import { env } from '@devpulse/env/api';
-import { generateSrpServerKey, TypeId, typeIdGenerator, verifySrpClientProof } from '@devpulse/lib';
+import {
+  generateServerEphemeralKeyPair,
+  TypeId,
+  typeIdGenerator,
+  verifyClientLoginProof,
+} from '@devpulse/lib';
 
 import { MessageResponseDto } from '../../common/dto/message-response.dto';
 import { RedisService } from '../../redis/services/redis.service';
@@ -241,10 +246,8 @@ export class AuthService implements OnModuleInit {
       throw new BadRequestException('User does not exist');
     }
 
-    const { pubKey: serverPublicKey, privateKey: serverPrivateKey } = await generateSrpServerKey(
-      user.encryption.salt,
-      user.encryption.verifier,
-    );
+    const { pubKey: serverPublicKey, privateKey: serverPrivateKey } =
+      generateServerEphemeralKeyPair(user.encryption.salt, user.encryption.verifier);
 
     const loginSession = {
       userId: user.id,
@@ -295,7 +298,7 @@ export class AuthService implements OnModuleInit {
       throw new BadRequestException('Invalid user encryption data');
     }
 
-    const isValidProof = await verifySrpClientProof(
+    const isValidProof = verifyClientLoginProof(
       salt,
       verifier,
       serverPublicKey,

@@ -132,14 +132,23 @@ export class AnalyticsService {
 
   public async getBranchesDistribution(
     userId: TypeId<'users'>,
-    _query: GetAnalyticsRangeRequestDto,
+    query: GetAnalyticsRangeRequestDto,
   ): Promise<GetAnalyticsBranchesResponseDto> {
-    const rawData = await this.sessionRepo
+    const qb = this.sessionRepo
       .createQueryBuilder('session')
       .select('session.git_branch', 'branchName')
       .addSelect('SUM(session.active_seconds)', 'activeSeconds')
       .where('session.user_id = :userId', { userId })
-      .andWhere('session.git_branch IS NOT NULL')
+      .andWhere('session.git_branch IS NOT NULL');
+
+    if (query.startDate) {
+      qb.andWhere('session.started_at >= :startDate', { startDate: query.startDate });
+    }
+    if (query.endDate) {
+      qb.andWhere('session.started_at <= :endDate', { endDate: query.endDate });
+    }
+
+    const rawData = await qb
       .groupBy('session.git_branch')
       .orderBy('"activeSeconds"', 'DESC')
       .limit(10)

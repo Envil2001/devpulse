@@ -1,15 +1,13 @@
 import { hmac } from '@noble/hashes/hmac.js';
 import { sha256 } from '@noble/hashes/sha2.js';
 import { utf8ToBytes } from '@noble/hashes/utils.js';
-import nacl_factory from 'tweetnacl';
-
-const nacl = (nacl_factory as any).default || nacl_factory;
+import nacl from 'tweetnacl';
 
 const toBase64 = (arr: Uint8Array): string => {
   if (typeof Buffer !== 'undefined') {
     return Buffer.from(arr).toString('base64');
   }
-  const binString = Array.from(arr, (byte) => String.fromCharCode(byte)).join('');
+  const binString = Array.from(arr, (byte) => String.fromCodePoint(byte)).join('');
   return btoa(binString);
 };
 
@@ -18,10 +16,16 @@ const fromBase64 = (base64: string): Uint8Array => {
     return new Uint8Array(Buffer.from(base64, 'base64'));
   }
   const binString = atob(base64);
-  return Uint8Array.from(binString, (char) => char.charCodeAt(0));
+  return Uint8Array.from(binString, (char) => char.codePointAt(0) ?? 0);
 };
 
-export async function generateSrpServerKey(_salt: string, _verifier: string) {
+export function generateServerEphemeralKeyPair(
+  _salt: string,
+  _verifier: string,
+): {
+  pubKey: string;
+  privateKey: string;
+} {
   const serverPair = nacl.box.keyPair();
 
   return {
@@ -30,13 +34,13 @@ export async function generateSrpServerKey(_salt: string, _verifier: string) {
   };
 }
 
-export async function verifySrpClientProof(
+export function verifyClientLoginProof(
   _salt: string,
   verifier: string,
   serverPublicKey: string,
   clientPublicKey: string,
   clientProof: string,
-): Promise<boolean> {
+): boolean {
   try {
     const message = utf8ToBytes(`${clientPublicKey}${serverPublicKey}`);
     const key = fromBase64(verifier);
@@ -45,7 +49,7 @@ export async function verifySrpClientProof(
     const expectedProof = toBase64(expectedProofBytes);
 
     return clientProof === expectedProof;
-  } catch (e) {
+  } catch {
     return false;
   }
 }
