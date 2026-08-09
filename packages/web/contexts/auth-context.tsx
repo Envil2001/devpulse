@@ -9,11 +9,15 @@ export interface User {
   email: string;
   displayName: string;
   timezone: string | null;
+  hourlyRate: number;
+  currency: string;
 }
 
 interface UpdateProfileDto {
   displayName?: string;
   timezone?: string;
+  hourlyRate?: number;
+  currency?: string;
 }
 
 interface AuthContextType {

@@ -53,6 +53,8 @@ const throttlerProvider: Provider = {
         url: env.DATABASE_URL,
         entities: [User, UserEncryption, ApiKey, Project, TelemetryEvent, WorkSession],
         synchronize: env.NODE_ENV !== 'production',
+        migrations: [__dirname + '/db/migrations/*{.ts,.js}'],
+        migrationsRun: env.NODE_ENV === 'production',
       }),
     }),
 

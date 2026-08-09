@@ -14,7 +14,11 @@
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "lint": "eslint \"src/**/*.ts\" --fix",
-    "seed": "tsx --tsconfig tsconfig.json src/scripts/seed.ts"
+    "seed": "tsx --tsconfig tsconfig.json src/scripts/seed.ts",
+    "typeorm": "typeorm-ts-node-commonjs",
+    "migration:run": "tsx node_modules/typeorm/cli.js migration:run -d src/db/data-source.ts",
+    "migration:generate": "tsx node_modules/typeorm/cli.js migration:generate -d src/db/data-source.ts",
+    "migration:revert": "tsx node_modules/typeorm/cli.js migration:revert -d src/db/data-source.ts"
   },
   "dependencies": {
     "@devpulse/env": "workspace:*",

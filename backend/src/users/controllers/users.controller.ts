@@ -31,6 +31,8 @@ export class UsersController {
       email: user.email,
       displayName: user.displayName,
       timezone: user.timezone,
+      hourlyRate: user.hourlyRate,
+      currency: user.currency,
     };
   }
 }

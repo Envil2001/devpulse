@@ -1,20 +1,67 @@
 'use client';
 
 import { useState } from 'react';
+import { useAuth, type User } from '@/contexts/auth-context';
+import { useDashboardStats } from '@/hooks/use-analytics';
+import { Button } from '@/components/ui/button';
 
 export default function EarningsPage() {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading || !user) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center p-12 text-neutral-500">
+        <p className="animate-pulse">Loading earnings profile...</p>
+      </div>
+    );
+  }
+
+  return <EarningsContent user={user} />;
+}
+
+function EarningsContent({ user }: { user: User }) {
+  const { updateProfile } = useAuth();
+
   const [rateType, setRateType] = useState<'hourly' | 'monthly'>('hourly');
-  const [rate, setRate] = useState(45);
-  const [currency, setCurrency] = useState('$');
+  const [rateInput, setRateInput] = useState<string>(user.hourlyRate.toString());
+  const [currencyInput, setCurrencyInput] = useState<string>(user.currency);
+  const [isSaving, setIsSaving] = useState(false);
 
-  const activeHoursThisMonth = 142.3;
-  const activeHoursThisWeek = 24.6;
+  const { data: stats30d, isLoading: isLoading30d } = useDashboardStats('30d');
+  const { data: stats7d, isLoading: isLoading7d } = useDashboardStats('7d');
 
-  const earnedThisMonth =
-    rateType === 'hourly' ? activeHoursThisMonth * rate : (activeHoursThisMonth / 160) * rate;
+  const handleRateTypeChange = (newType: 'hourly' | 'monthly') => {
+    if (newType === rateType) return;
 
-  const earnedThisWeek =
-    rateType === 'hourly' ? activeHoursThisWeek * rate : (activeHoursThisWeek / 160) * rate;
+    setRateType(newType);
+    const numericRate = parseFloat(rateInput) || 0;
+
+    if (newType === 'monthly') {
+      setRateInput((numericRate * 160).toString());
+    } else {
+      setRateInput((numericRate / 160).toString());
+    }
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      const numericRate = parseFloat(rateInput) || 0;
+      const hourlyRate = rateType === 'hourly' ? numericRate : numericRate / 160;
+      await updateProfile({ hourlyRate, currency: currencyInput });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const baseRate = user.hourlyRate;
+  const currency = user.currency;
+
+  const activeHoursThisMonth = Number(((stats30d?.totalActiveSeconds ?? 0) / 3600).toFixed(1));
+  const activeHoursThisWeek = Number(((stats7d?.totalActiveSeconds ?? 0) / 3600).toFixed(1));
+
+  const earnedThisMonth = activeHoursThisMonth * baseRate;
+  const earnedThisWeek = activeHoursThisWeek * baseRate;
 
   return (
     <div className="flex flex-col gap-6">
@@ -33,17 +80,21 @@ export default function EarningsPage() {
             <label className="desc text-neutral-400">Type</label>
             <div className="flex rounded-lg bg-neutral-800 p-1">
               <button
-                onClick={() => setRateType('hourly')}
-                className={`rounded-md px-4 py-1.5 text-sm ${
-                  rateType === 'hourly' ? 'bg-neutral-100 text-neutral-950' : 'text-neutral-400'
+                onClick={() => handleRateTypeChange('hourly')}
+                className={`rounded-md px-4 py-1.5 text-sm transition-colors ${
+                  rateType === 'hourly'
+                    ? 'bg-neutral-100 text-neutral-950'
+                    : 'text-neutral-400 hover:text-neutral-200'
                 }`}
               >
                 Hourly
               </button>
               <button
-                onClick={() => setRateType('monthly')}
-                className={`rounded-md px-4 py-1.5 text-sm ${
-                  rateType === 'monthly' ? 'bg-neutral-100 text-neutral-950' : 'text-neutral-400'
+                onClick={() => handleRateTypeChange('monthly')}
+                className={`rounded-md px-4 py-1.5 text-sm transition-colors ${
+                  rateType === 'monthly'
+                    ? 'bg-neutral-100 text-neutral-950'
+                    : 'text-neutral-400 hover:text-neutral-200'
                 }`}
               >
                 Monthly
@@ -57,52 +108,66 @@ export default function EarningsPage() {
             </label>
             <div className="flex items-center gap-2">
               <select
-                value={currency}
-                onChange={(e) => setCurrency(e.target.value)}
-                className="rounded-lg bg-neutral-800 px-3 py-2 text-neutral-100"
+                value={currencyInput}
+                onChange={(e) => setCurrencyInput(e.target.value)}
+                className="rounded-lg bg-neutral-800 px-3 py-2.5 text-sm text-neutral-100 outline-none focus:ring-2 focus:ring-blue-electric"
               >
-                <option value="$">$</option>
-                <option value="€">€</option>
-                <option value="₽">₽</option>
+                <option value="USD">USD ($)</option>
+                <option value="EUR">EUR (€)</option>
+                <option value="GBP">GBP (£)</option>
+                <option value="RUB">RUB (₽)</option>
               </select>
               <input
                 type="number"
-                value={rate}
-                onChange={(e) => setRate(Number(e.target.value))}
-                className="w-32 rounded-lg bg-neutral-800 px-3 py-2 text-neutral-100 outline-none focus:ring-2 focus:ring-green-spring"
+                value={rateInput}
+                onChange={(e) => setRateInput(e.target.value)}
+                min="0"
+                step="0.1"
+                className="w-32 rounded-lg bg-neutral-800 px-3 py-2 text-sm text-neutral-100 outline-none focus:ring-2 focus:ring-blue-electric"
               />
+              <Button size="sm" onClick={handleSave} disabled={isSaving}>
+                {isSaving ? 'Saving...' : 'Save'}
+              </Button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Results */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <div className="rounded-xl bg-neutral-900 p-5">
           <p className="body1 text-neutral-400">This week</p>
           <p className="h5 mt-2 text-neutral-100">
-            {currency}
-            {earnedThisWeek.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+            {isLoading7d
+              ? '...'
+              : `${earnedThisWeek.toLocaleString('en-US', {
+                  maximumFractionDigits: 0,
+                })} ${currency}`}
           </p>
-          <p className="desc mt-1 text-neutral-500">{activeHoursThisWeek}h active</p>
+          <p className="desc mt-1 text-neutral-500">
+            {isLoading7d ? '...' : `${activeHoursThisWeek}h active`}
+          </p>
         </div>
 
         <div className="rounded-xl bg-neutral-900 p-5">
-          <p className="body1 text-neutral-400">This month</p>
+          <p className="body1 text-neutral-400">This month (30d)</p>
           <p className="h5 mt-2 text-green-spring">
-            {currency}
-            {earnedThisMonth.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+            {isLoading30d
+              ? '...'
+              : `${earnedThisMonth.toLocaleString('en-US', {
+                  maximumFractionDigits: 0,
+                })} ${currency}`}
           </p>
-          <p className="desc mt-1 text-neutral-500">{activeHoursThisMonth}h active</p>
+          <p className="desc mt-1 text-neutral-500">
+            {isLoading30d ? '...' : `${activeHoursThisMonth}h active`}
+          </p>
         </div>
 
         <div className="rounded-xl bg-neutral-900 p-5">
           <p className="body1 text-neutral-400">Effective hourly</p>
           <p className="h5 mt-2 text-neutral-100">
-            {currency}
-            {rateType === 'hourly' ? rate : (rate / 160).toFixed(1)}
+            {baseRate.toLocaleString('en-US', { maximumFractionDigits: 2 })} {currency}
           </p>
-          <p className="desc mt-1 text-neutral-500">based on your rate</p>
+          <p className="desc mt-1 text-neutral-500">Based on your saved rate</p>
         </div>
       </div>
     </div>

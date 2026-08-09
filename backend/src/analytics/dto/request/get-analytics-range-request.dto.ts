@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsDateString, IsOptional } from 'class-validator';
+import { IsDateString, IsOptional, IsString } from 'class-validator';
 
 export class GetAnalyticsRangeRequestDto {
   @ApiPropertyOptional({ description: 'Start date (ISO format)' })
@@ -11,4 +11,9 @@ export class GetAnalyticsRangeRequestDto {
   @IsOptional()
   @IsDateString()
   public endDate?: string;
+
+  @ApiPropertyOptional({ description: 'Filter by Project ID' })
+  @IsOptional()
+  @IsString()
+  public projectId?: string;
 }

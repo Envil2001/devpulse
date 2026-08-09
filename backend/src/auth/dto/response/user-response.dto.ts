@@ -5,4 +5,6 @@ export class UserResponseDto {
   public email!: string;
   public displayName!: string;
   public timezone!: string | null;
+  public hourlyRate!: number;
+  public currency!: string;
 }

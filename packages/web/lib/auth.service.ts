@@ -5,8 +5,9 @@ export interface User {
   email: string;
   displayName: string;
   timezone: string | null;
+  hourlyRate: number;
+  currency: string;
 }
-
 interface BeginSignupRequest {
   displayName: string;
   email: string;

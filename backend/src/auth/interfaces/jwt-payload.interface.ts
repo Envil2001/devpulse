@@ -5,4 +5,6 @@ export interface AuthenticatedUser {
   email: string;
   displayName: string;
   timezone: string | null;
+  hourlyRate: number;
+  currency: string;
 }

@@ -51,6 +51,9 @@ export class AnalyticsService {
       .createQueryBuilder('session')
       .where('session.user_id = :userId', { userId });
 
+    if (query.projectId) {
+      qb.andWhere('session.project_id = :projectId', { projectId: query.projectId });
+    }
     if (query.startDate) {
       qb.andWhere('session.started_at >= :startDate', { startDate: query.startDate });
     }
@@ -65,12 +68,24 @@ export class AnalyticsService {
       .addSelect('COUNT(session.id)', 'totalSessionsCount')
       .getRawOne<DashboardStatsRaw>();
 
-    const topLanguageResult = await this.sessionRepo
+    const qbLang = this.sessionRepo
       .createQueryBuilder('session')
       .select('session.primary_language', 'language')
       .addSelect('SUM(session.active_seconds)', 'totalTime')
       .where('session.user_id = :userId', { userId })
-      .andWhere('session.primary_language IS NOT NULL')
+      .andWhere('session.primary_language IS NOT NULL');
+
+    if (query.projectId) {
+      qbLang.andWhere('session.project_id = :projectId', { projectId: query.projectId });
+    }
+    if (query.startDate) {
+      qbLang.andWhere('session.started_at >= :startDate', { startDate: query.startDate });
+    }
+    if (query.endDate) {
+      qbLang.andWhere('session.started_at <= :endDate', { endDate: query.endDate });
+    }
+
+    const topLanguageResult = await qbLang
       .groupBy('session.primary_language')
       .orderBy('"totalTime"', 'DESC')
       .limit(1)
@@ -95,6 +110,9 @@ export class AnalyticsService {
       .createQueryBuilder('session')
       .where('session.user_id = :userId', { userId });
 
+    if (query.projectId) {
+      qb.andWhere('session.project_id = :projectId', { projectId: query.projectId });
+    }
     if (query.startDate) {
       qb.andWhere('session.started_at >= :startDate', { startDate: query.startDate });
     }
@@ -141,6 +159,9 @@ export class AnalyticsService {
       .where('session.user_id = :userId', { userId })
       .andWhere('session.git_branch IS NOT NULL');
 
+    if (query.projectId) {
+      qb.andWhere('session.project_id = :projectId', { projectId: query.projectId });
+    }
     if (query.startDate) {
       qb.andWhere('session.started_at >= :startDate', { startDate: query.startDate });
     }

@@ -227,6 +227,8 @@ export class AuthService implements OnModuleInit {
           email: savedUser.email,
           displayName: savedUser.displayName,
           timezone: savedUser.timezone,
+          hourlyRate: savedUser.hourlyRate,
+          currency: savedUser.currency,
         },
       };
     });
