@@ -1,4 +1,6 @@
-import { Controller, Get, HttpCode, HttpStatus, UseGuards } from '@nestjs/common';
+import { Controller, Get, HttpCode, HttpStatus, Param, UseGuards } from '@nestjs/common';
+
+import { type TypeId } from '@devpulse/lib';
 
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
@@ -16,5 +18,14 @@ export class ProjectsController {
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<Array<ProjectSummaryDto>> {
     return this.projectsService.getUserProjects(user.id);
+  }
+
+  @Get(':id')
+  @HttpCode(HttpStatus.OK)
+  public async getProject(
+    @Param('id') id: TypeId<'projects'>,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<ProjectSummaryDto> {
+    return this.projectsService.getProjectById(user.id, id);
   }
 }

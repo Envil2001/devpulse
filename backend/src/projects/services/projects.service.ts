@@ -1,10 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import { TypeId } from '@devpulse/lib';
 
 import { WorkSession } from '../../telemetry/entities/work-session.entity';
+import { Project } from '../entities/project.entity';
 
 export interface ProjectSummaryDto {
   id: string;
@@ -31,6 +32,8 @@ export class ProjectsService {
   constructor(
     @InjectRepository(WorkSession)
     private readonly sessionRepo: Repository<WorkSession>,
+    @InjectRepository(Project)
+    private readonly projectRepo: Repository<Project>,
   ) {}
 
   public async getUserProjects(userId: TypeId<'users'>): Promise<Array<ProjectSummaryDto>> {
@@ -73,5 +76,41 @@ export class ProjectsService {
         lastActive: lastActiveIso,
       };
     });
+  }
+
+  public async getProjectById(
+    userId: TypeId<'users'>,
+    projectId: TypeId<'projects'>,
+  ): Promise<ProjectSummaryDto> {
+    const project = await this.projectRepo.findOne({ where: { id: projectId, userId } });
+
+    if (!project) {
+      throw new NotFoundException('Project not found');
+    }
+
+    const rawProject = await this.sessionRepo
+      .createQueryBuilder('session')
+      .select('SUM(session.activeSeconds)', 'activeSeconds')
+      .addSelect('AVG(session.focusScore)', 'avgFocus')
+      .addSelect('COUNT(session.id)', 'sessionsCount')
+      .addSelect('MAX(session.endedAt)', 'lastActive')
+      .where('session.userId = :userId', { userId })
+      .andWhere('session.projectId = :projectId', { projectId })
+      .getRawOne<RawProjectQueryResult>();
+
+    const activeSeconds = Number(rawProject?.activeSeconds ?? 0);
+    const hours = Math.floor(activeSeconds / 3600);
+    const minutes = Math.floor((activeSeconds % 3600) / 60);
+    const hoursStr = hours.toString();
+    const minutesStr = minutes.toString();
+    return {
+      id: project.id,
+      name: project.name,
+      remote: project.gitRemoteUrl,
+      activeTime: hours > 0 ? `${hoursStr}h ${minutesStr}m` : `${minutesStr}m`,
+      focusScore: Math.round(Number(rawProject?.avgFocus ?? 0)),
+      sessions: Number(rawProject?.sessionsCount ?? 0),
+      lastActive: rawProject?.lastActive ? new Date(rawProject.lastActive).toISOString() : null,
+    };
   }
 }

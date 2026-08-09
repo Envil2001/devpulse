@@ -42,6 +42,12 @@ export class User extends AppBaseEntity<'users'> {
   })
   public timezone!: string | null;
 
+  @Column({ name: 'hourly_rate', type: 'real', default: 0 })
+  public hourlyRate!: number;
+
+  @Column({ type: 'varchar', length: 10, default: 'USD' })
+  public currency!: string;
+
   @OneToMany(() => ApiKey, (apiKey) => apiKey.user, { cascade: true })
   public apiKeys!: Array<ApiKey>;
 

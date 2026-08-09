@@ -1,4 +1,4 @@
-import { IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsNumber, IsOptional, IsString, MaxLength, Min } from 'class-validator';
 
 export class UpdateUserRequestDto {
   @IsOptional()
@@ -10,4 +10,14 @@ export class UpdateUserRequestDto {
   @IsString()
   @MaxLength(100)
   public timezone?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  public hourlyRate?: number;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(10)
+  public currency?: string;
 }

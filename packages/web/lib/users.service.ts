@@ -4,6 +4,8 @@ import { BaseService } from './base.service';
 export interface UpdateUserDto {
   displayName?: string;
   timezone?: string;
+  hourlyRate?: number;
+  currency?: string;
 }
 
 export class UsersService extends BaseService {
