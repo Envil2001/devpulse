@@ -5,4 +5,8 @@ export class AppService {
   public getHello(): string {
     return 'Hello World!';
   }
+
+  public postHello(): string {
+    return 'Hello POST!';
+  }
 }

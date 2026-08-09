@@ -1,6 +1,8 @@
 import { type ApiErrorResponse, type ApiSuccessResponse } from '@devpulse/lib';
 import { env } from '@devpulse/env/client';
 
+export type QueryParams = Record<string, string | number | boolean | null | undefined>;
+
 export class ApiClientError extends Error {
   public readonly status: number;
   public readonly details?: unknown;
@@ -15,6 +17,10 @@ export class ApiClientError extends Error {
 
 interface RequestOptions {
   authToken?: string;
+}
+
+interface GetOptions extends RequestOptions {
+  params?: QueryParams;
 }
 
 async function readJson<TResponse>(response: Response): Promise<TResponse> {
@@ -50,9 +56,24 @@ export async function postJson<TResponse, TRequest>(
 
 export async function getJson<TResponse>(
   path: string,
-  options: RequestOptions = {},
+  options: GetOptions = {},
 ): Promise<TResponse> {
-  const response = await fetch(`${env.NEXT_PUBLIC_API_URL}${path}`, {
+  let url = `${env.NEXT_PUBLIC_API_URL}${path}`;
+
+  if (options.params) {
+    const searchParams = new URLSearchParams();
+    Object.entries(options.params).forEach(([key, value]) => {
+      if (value != null) {
+        searchParams.append(key, String(value));
+      }
+    });
+    const queryString = searchParams.toString();
+    if (queryString) {
+      url += `?${queryString}`;
+    }
+  }
+
+  const response = await fetch(url, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',

@@ -4,6 +4,8 @@ import { Job, Worker } from 'bullmq';
 import Redis from 'ioredis/built/Redis';
 import { DataSource, EntityManager, Repository } from 'typeorm';
 
+import { typeIdGenerator } from '@devpulse/lib';
+
 import { Project } from '../projects/entities/project.entity';
 import { BULL_REDIS_CLIENT } from '../redis/redis.module';
 import { User } from '../users/entities/user.entity';
@@ -43,6 +45,25 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
         concurrency: 5,
       },
     );
+
+    this.worker.on('completed', (job) => {
+      const jobId = job.id ?? 'unknown';
+      const eventsCount = String(job.data.events.length);
+      this.logger.log(`Job ${jobId} successfully processed ${eventsCount} events.`);
+    });
+
+    this.worker.on('failed', (job, err) => {
+      const jobId = job?.id ?? 'unknown';
+      const userId = job?.data.userId ?? 'unknown';
+      this.logger.error(
+        `Job ${jobId} FAILED processing telemetry for user ${userId}. Error: ${err.message}`,
+        err.stack,
+      );
+    });
+
+    this.worker.on('error', (err) => {
+      this.logger.error(`Worker System Error: ${err.message}`, err.stack);
+    });
   }
 
   public async onModuleDestroy(): Promise<void> {
@@ -84,6 +105,7 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
           user,
           userId: user.id,
         });
+        project.id = typeIdGenerator('projects');
         project = await projectRepo.save(project);
       }
     }
@@ -140,7 +162,7 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
         primaryLanguage: event.language ?? null,
         status: WorkSessionStatus.ACTIVE,
       });
-
+      newSession.id = typeIdGenerator('workSessions');
       currentSession = await sessionRepo.save(newSession);
     }
 
@@ -158,7 +180,7 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
       filesChanged,
       fileExtensions,
     });
-
+    rawEvent.id = typeIdGenerator('telemetryEvents');
     await telemetryEventRepo.save(rawEvent);
   }
 }
