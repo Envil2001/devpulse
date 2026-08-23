@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 
-// Обновленные пути
 import { useAuth, type User } from '@/features/auth/context';
 import { useDashboardStats } from '@/features/analytics/hooks';
 import { Button } from '@/shared/components/ui/button';
