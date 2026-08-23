@@ -1,6 +1,7 @@
 import { argon2id } from '@noble/hashes/argon2.js';
 import { hmac } from '@noble/hashes/hmac.js';
 import { sha256 } from '@noble/hashes/sha2.js';
+import { hkdf } from '@noble/hashes/hkdf.js';
 import { utf8ToBytes, bytesToHex as toHex } from '@noble/hashes/utils.js';
 import nacl from 'tweetnacl';
 
@@ -67,6 +68,18 @@ export const deriveArgonKey = async ({
   };
 };
 
+const INFO_AUTH = utf8ToBytes('Playmanity-v1-auth');
+const INFO_WRAP = utf8ToBytes('Playmanity-v1-wrap');
+
+function splitKeyMaterial(argonHashBytes: Uint8Array): {
+  authKey: Uint8Array;
+  wrapKey: Uint8Array;
+} {
+  const authKey = hkdf(sha256, argonHashBytes, new Uint8Array(0), INFO_AUTH, 32);
+  const wrapKey = hkdf(sha256, argonHashBytes, new Uint8Array(0), INFO_WRAP, 32);
+  return { authKey, wrapKey };
+}
+
 const ALGORITHM = 'AES-GCM';
 const KEY_LENGTH_BYTES = 32;
 const IV_LENGTH_BYTES = 12;
@@ -130,14 +143,17 @@ export const buildSignupCryptoPayload = async (password: string) => {
   const salt = uint8ArrayToB64(saltBytes);
 
   const derivedKey = await deriveArgonKey({ password, salt });
-  const verifier = derivedKey.hashBase64;
+
+  const { authKey, wrapKey } = splitKeyMaterial(derivedKey.hashBytes);
+
+  const verifier = uint8ArrayToB64(authKey);
 
   const { publicKey, privateKey } = generateKeyPair();
 
   const masterKey = new SymmetricCrypto();
   const encryptedPrivateKeyData = await masterKey.encrypt(privateKey);
 
-  const protectionKey = new SymmetricCrypto(derivedKey.hashBytes);
+  const protectionKey = new SymmetricCrypto(wrapKey);
   const protectedKeyData = await protectionKey.encrypt(masterKey.getKeyAsBase64());
 
   return {
@@ -164,10 +180,10 @@ export const buildLoginCryptoPayload = async (
     salt: saltBase64,
   });
 
-  const message = utf8ToBytes(`${clientPublicKey}${serverPublicKey}`);
-  const key = b64ToUint8Array(derivedKey.hashBase64);
+  const { authKey } = splitKeyMaterial(derivedKey.hashBytes);
 
-  const proofBytes = hmac(sha256, key, message);
+  const message = utf8ToBytes(`${clientPublicKey}${serverPublicKey}`);
+  const proofBytes = hmac(sha256, authKey, message);
   const clientProof = uint8ArrayToB64(proofBytes);
 
   return {
