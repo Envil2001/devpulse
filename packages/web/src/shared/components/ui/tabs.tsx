@@ -33,11 +33,9 @@ TabsList.displayName = TabsPrimitive.List.displayName;
 
 const tabsTriggerVariants = cva(
   [
-    // Внутренний радиус ровно 10px, как у кнопок и инпутов
     'inline-flex items-center justify-center whitespace-nowrap rounded-[10px] px-4 py-1.5',
     'text-sm font-medium transition-all duration-200',
     'border border-transparent',
-    // Единый фокус:
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950',
     'disabled:pointer-events-none disabled:opacity-50',
   ].join(' '),
