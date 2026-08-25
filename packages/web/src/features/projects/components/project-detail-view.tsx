@@ -8,7 +8,7 @@ import { FolderGit2, Search, Clock, Zap, Layers, ArrowUpRight } from 'lucide-rea
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
 import { cn } from '@/shared/lib/cn';
-import { useProjects } from '../hooks';
+import { useProjects, useProject } from '../hooks';
 
 export function ProjectListView() {
   const { data: projects = [], isLoading, error } = useProjects();
@@ -175,6 +175,84 @@ export function ProjectListView() {
               ))}
             </div>
           )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function ProjectDetailView({ projectId }: { projectId: string }) {
+  const { data: project, isLoading, error } = useProject(projectId);
+
+  if (isLoading) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <span className="body-muted animate-pulse">Loading project details…</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex h-64 items-center justify-center rounded-xl border border-red-coral/20 bg-red-coral/10 p-4">
+        <p className="body-base text-red-coral">
+          Failed to load project: {error instanceof Error ? error.message : 'Unknown error'}
+        </p>
+      </div>
+    );
+  }
+
+  if (!project) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <p className="body-muted">Project not found</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-8">
+      <div>
+        <h2 className="title-1">{project.name}</h2>
+        <p className="body-muted mt-1">{project.remote ?? 'Local repository'}</p>
+      </div>
+
+      <div
+        className={cn(
+          'rounded-2xl border border-white/5 bg-neutral-900/50 p-6 backdrop-blur-sm',
+          'transition-colors hover:border-white/10',
+        )}
+      >
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+          <div className="flex flex-col gap-2">
+            <span className="caption flex items-center gap-1">
+              <Clock className="h-3.5 w-3.5" aria-hidden="true" /> Active Time
+            </span>
+            <span className="metric text-neutral-100">{project.activeTime}</span>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <span className="caption flex items-center gap-1">
+              <Zap className="h-3.5 w-3.5" aria-hidden="true" /> Focus Score
+            </span>
+            <span className="metric text-green-spring">{project.focusScore}%</span>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <span className="caption flex items-center gap-1">
+              <Layers className="h-3.5 w-3.5" aria-hidden="true" /> Sessions
+            </span>
+            <span className="metric text-neutral-100">{project.sessions}</span>
+          </div>
+        </div>
+
+        <div className="caption mt-6 flex items-center justify-between border-t border-white/5 pt-4">
+          <span>Last active</span>
+          <span className="font-medium text-neutral-400">
+            {project.lastActive
+              ? formatDistanceToNow(new Date(project.lastActive), { addSuffix: true })
+              : 'Never'}
+          </span>
         </div>
       </div>
     </div>
