@@ -7,11 +7,11 @@ import { cn } from '@/shared/lib/cn';
 
 const Tabs = TabsPrimitive.Root;
 
-const tabsListVariants = cva('inline-flex items-center justify-center rounded-lg p-1', {
+const tabsListVariants = cva('inline-flex items-center justify-center rounded-xl p-1', {
   variants: {
     variant: {
       default: 'bg-neutral-900',
-      secondary: 'bg-neutral-800/60',
+      secondary: 'bg-neutral-900 border border-white/10',
     },
   },
   defaultVariants: {
@@ -32,16 +32,30 @@ const TabsList = React.forwardRef<
 TabsList.displayName = TabsPrimitive.List.displayName;
 
 const tabsTriggerVariants = cva(
-  'inline-flex items-center justify-center whitespace-nowrap rounded-md px-4 py-1.5 body1 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-electric focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+  [
+    'inline-flex items-center justify-center whitespace-nowrap rounded-[10px] px-4 py-1.5',
+    'text-sm font-medium transition-all duration-200',
+    'border border-transparent',
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950',
+    'disabled:pointer-events-none disabled:opacity-50',
+  ].join(' '),
   {
     variants: {
       variant: {
-        default:
-          'text-neutral-400 hover:text-neutral-200 data-[state=active]:bg-neutral-100 data-[state=active]:text-neutral-950 data-[state=active]:shadow-sm',
-        secondary:
-          'text-neutral-400 hover:text-neutral-200 data-[state=active]:bg-neutral-700/50 data-[state=active]:text-neutral-100',
-        green:
-          'text-neutral-400 hover:text-neutral-200 data-[state=active]:bg-green-spring data-[state=active]:text-neutral-950 data-[state=active]:shadow-sm',
+        default: [
+          'text-neutral-400 hover:text-neutral-100',
+          'data-[state=active]:bg-neutral-100 data-[state=active]:text-neutral-950 data-[state=active]:shadow-sm',
+        ].join(' '),
+
+        secondary: [
+          'text-neutral-400 hover:text-neutral-100',
+          'data-[state=active]:bg-neutral-800 data-[state=active]:border-white/10 data-[state=active]:text-neutral-100 data-[state=active]:shadow-sm',
+        ].join(' '),
+
+        green: [
+          'text-neutral-400 hover:text-neutral-100',
+          'data-[state=active]:bg-green-spring data-[state=active]:text-neutral-950 data-[state=active]:shadow-sm',
+        ].join(' '),
       },
     },
     defaultVariants: {
@@ -70,7 +84,7 @@ const TabsContent = React.forwardRef<
   <TabsPrimitive.Content
     ref={ref}
     className={cn(
-      'mt-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-electric focus-visible:ring-offset-2',
+      'mt-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950',
       className,
     )}
     {...props}

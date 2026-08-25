@@ -27,7 +27,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${inter.variable} ${martianMono.variable}`}>
-      <body className="bg-neutral-950 text-neutral-100 antialiased">
+      <body className="bg-neutral-950 text-neutral-100 antialiased min-h-dvh flex flex-col relative">
         <Providers>{children}</Providers>
       </body>
     </html>

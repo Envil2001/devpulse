@@ -6,10 +6,12 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import Link from 'next/link';
+
 import { buildLoginCryptoPayload, generateKeyPair } from '../crypto';
 import { ApiClientError } from '@/shared/api/api-client';
 import { useAuth } from '../context';
 import { AuthService } from '../api';
+
 import {
   Form,
   FormControl,
@@ -62,7 +64,6 @@ export function LoginForm() {
       );
 
       await authService.loginVerify(values.email, clientProof);
-
       const user = await authService.getMe();
 
       login(user);
@@ -74,14 +75,14 @@ export function LoginForm() {
   };
 
   return (
-    <div className="flex flex-col gap-8 w-full max-w-sm mx-auto">
+    <div className="mx-auto flex w-full max-w-sm flex-col gap-8">
       <div className="text-center lg:text-left">
-        <h2 className="h4 text-neutral-100">Welcome Back</h2>
-        <p className="desc text-neutral-400 mt-1">Enter your credentials to access your account.</p>
+        <h2 className="title-2">Welcome Back</h2>
+        <p className="body-muted mt-1">Enter your credentials to access your account.</p>
       </div>
 
       {error && (
-        <div className="bg-red-coral/10 border border-red-coral text-red-coral p-3 rounded-xl text-sm">
+        <div className="body-base rounded-xl border border-red-coral bg-red-coral/10 p-3 text-red-coral">
           {error}
         </div>
       )}
@@ -93,9 +94,15 @@ export function LoginForm() {
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-neutral-100">Email</FormLabel>
+                <FormLabel>Email</FormLabel>
                 <FormControl>
-                  <Input placeholder="john@example.com" autoFocus disabled={isLoading} {...field} />
+                  <Input
+                    placeholder="john@example.com"
+                    autoFocus
+                    autoComplete="email"
+                    disabled={isLoading}
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage className="text-red-coral" />
               </FormItem>
@@ -108,36 +115,44 @@ export function LoginForm() {
             render={({ field }) => (
               <FormItem>
                 <div className="flex items-center justify-between">
-                  <FormLabel className="text-neutral-100">Password</FormLabel>
-                  <Link
-                    href="/forgot-password"
-                    className="text-mini text-neutral-400 hover:text-neutral-100 transition-colors"
+                  <FormLabel>Password</FormLabel>
+                  <Button
+                    variant="link"
+                    asChild
+                    className="h-auto p-0 text-xs text-neutral-400 no-underline hover:text-neutral-100"
                   >
-                    Forgot?
-                  </Link>
+                    <Link href="/forgot-password">Forgot?</Link>
+                  </Button>
                 </div>
                 <FormControl>
-                  <Input type="password" placeholder="••••••••" disabled={isLoading} {...field} />
+                  <Input
+                    type="password"
+                    placeholder="••••••••"
+                    autoComplete="current-password"
+                    disabled={isLoading}
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage className="text-red-coral" />
               </FormItem>
             )}
           />
 
-          <Button type="submit" className="w-full mt-4" disabled={isLoading}>
+          <Button type="submit" className="mt-4 w-full" loading={isLoading}>
             Sign In
           </Button>
         </form>
       </Form>
 
-      <p className="text-center body1 text-neutral-400">
-        Don&apos;t have an account?{' '}
-        <Link
-          href="/register"
-          className="font-bold text-neutral-100 hover:text-blue-frosty transition-colors"
+      <p className="body-muted flex items-center justify-center gap-1 text-center">
+        Don&apos;t have an account?
+        <Button
+          variant="link"
+          asChild
+          className="h-auto p-0 font-bold text-neutral-100 no-underline hover:text-blue-frosty"
         >
-          Create one
-        </Link>
+          <Link href="/register">Create one</Link>
+        </Button>
       </p>
     </div>
   );
