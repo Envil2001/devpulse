@@ -9,6 +9,8 @@ import { TelemetryApiClient } from './api-client.js';
 import { TelemetryBufferStore } from './buffer-store.js';
 
 const FLUSH_INTERVAL_MS = 60_000;
+const FLUSH_SIZE_THRESHOLD = 50;
+const FLUSH_DEBOUNCE_MS = 5000;
 
 export class TelemetryBridge implements vscode.Disposable {
   private readonly disposables: Array<vscode.Disposable> = [];
@@ -16,6 +18,7 @@ export class TelemetryBridge implements vscode.Disposable {
   private readonly bufferStore = new TelemetryBufferStore();
 
   private timer: ReturnType<typeof setInterval> | undefined;
+  private debounceTimer: ReturnType<typeof setTimeout> | undefined;
   private queue: Array<TelemetryEventDto> = [];
   private flushing = false;
 
@@ -159,6 +162,30 @@ export class TelemetryBridge implements vscode.Disposable {
   private enqueue(event: TelemetryEventDto): void {
     this.queue.push(event);
     void this.bufferStore.save(this.context, this.queue);
+
+    if (this.queue.length >= FLUSH_SIZE_THRESHOLD) {
+      this.clearDebounceTimer();
+      void this.flush();
+      return;
+    }
+
+    this.scheduleDebouncedFlush();
+  }
+
+  private scheduleDebouncedFlush(): void {
+    this.clearDebounceTimer();
+
+    this.debounceTimer = setTimeout(() => {
+      this.debounceTimer = undefined;
+      void this.flush();
+    }, FLUSH_DEBOUNCE_MS);
+  }
+
+  private clearDebounceTimer(): void {
+    if (this.debounceTimer !== undefined) {
+      clearTimeout(this.debounceTimer);
+      this.debounceTimer = undefined;
+    }
   }
 
   public async flush(): Promise<void> {
@@ -189,6 +216,7 @@ export class TelemetryBridge implements vscode.Disposable {
   }
 
   public dispose(): void {
+    this.clearDebounceTimer();
     if (this.timer !== undefined) {
       clearInterval(this.timer);
       this.timer = undefined;
