@@ -1,11 +1,14 @@
 'use client';
 
-import { useAuth } from '@/features/auth/context';
 import { useState } from 'react';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Clock, Zap, Layers, Code2, GitBranch, Download } from 'lucide-react';
+
+import { useRequireAuth } from '@/features/auth/context';
+import { Button } from '@/shared/components/ui/button';
+import { cn } from '@/shared/lib/cn';
 import {
   AnalyticsPeriod,
-  periodToDateRange,
   useDashboardStats,
   useAnalyticsTimeseries,
   useBranchesDistribution,
@@ -18,168 +21,220 @@ function formatDuration(totalSeconds: number): string {
   return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
 }
 
-function formatDateRangeLabel(period: AnalyticsPeriod): string {
-  const { startDate, endDate } = periodToDateRange(period);
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-  const fmt = (d: Date) => d.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
-  return period === 'today' ? fmt(end) : `${fmt(start)} – ${fmt(end)}`;
+function CustomChartTooltip({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean;
+  payload?: Array<{ value: number; name: string }>;
+  label?: string;
+}) {
+  if (active && payload && payload.length) {
+    return (
+      <div className="rounded-xl border border-white/10 bg-neutral-950/90 p-3 shadow-xl backdrop-blur-md">
+        <p className="caption font-medium">{label}</p>
+        <div className="mt-1.5 flex items-center gap-2">
+          <div className="h-2 w-2 rounded-full bg-green-spring" aria-hidden="true" />
+          <span className="font-mono text-sm font-semibold text-neutral-100">
+            {payload[0].value}h
+          </span>
+          <span className="caption">active time</span>
+        </div>
+      </div>
+    );
+  }
+  return null;
 }
 
 export function DashboardView() {
   const [period, setPeriod] = useState<AnalyticsPeriod>('7d');
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useRequireAuth();
 
   const { data: stats, isLoading: statsLoading } = useDashboardStats(period);
-  const { data: timeseries, isLoading: timeseriesLoading } = useAnalyticsTimeseries(period);
-  const { data: branches, isLoading: branchesLoading } = useBranchesDistribution(period);
+  const { data: timeseries = [], isLoading: timeseriesLoading } = useAnalyticsTimeseries(period);
+  const { data: branches = [], isLoading: branchesLoading } = useBranchesDistribution(period);
 
-  const chartData =
-    timeseries?.map((point) => ({
-      date: new Date(point.date).toLocaleDateString('en-US', { weekday: 'short' }),
-      hours: Math.round((point.activeSeconds / 3600) * 10) / 10,
-    })) ?? [];
+  if (authLoading || !user) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <span className="body-muted animate-pulse">Loading...</span>
+      </div>
+    );
+  }
+
+  const chartData = timeseries.map((point) => ({
+    date: new Date(point.date).toLocaleDateString('en-US', { weekday: 'short' }),
+    hours: Math.round((point.activeSeconds / 3600) * 10) / 10,
+  }));
+
+  const statCards = [
+    {
+      label: 'Active Time',
+      icon: Clock,
+      value: statsLoading || !stats ? '—' : formatDuration(stats.totalActiveSeconds),
+      sub: 'this period',
+      change: null,
+    },
+    {
+      label: 'Focus Score',
+      icon: Zap,
+      value: statsLoading || !stats ? '—' : `${Math.round(stats.averageFocusScore)}%`,
+      sub: 'average',
+      change: null,
+    },
+    {
+      label: 'Sessions',
+      icon: Layers,
+      value: statsLoading || !stats ? '—' : String(stats.totalSessionsCount),
+      sub: 'this period',
+      change: null,
+    },
+    {
+      label: 'Top Language',
+      icon: Code2,
+      value: statsLoading || !stats ? '—' : (stats.topLanguage ?? 'N/A'),
+      sub: 'most active',
+      change: null,
+    },
+  ];
 
   return (
-    <div className="flex flex-col gap-4 pb-10">
-      <header className="mb-2 flex items-start justify-between">
-        <div className="flex flex-col gap-2">
-          <h1 className="h4 text-neutral-100">Hello, {user?.displayName ?? '...'}</h1>
-          <div className="body1 flex items-center gap-2">
-            <span className="text-neutral-400">{formatDateRangeLabel(period)}</span>
-            <span className="h-1.5 w-1.5 rounded-full bg-green-spring shadow-[0_0_8px_rgba(21,255,171,0.6)]" />
-            <span className="text-green-spring">Tracking now</span>
-          </div>
-        </div>
-        <TimeSwitcher value={period} onValueChange={(v) => setPeriod(v as AnalyticsPeriod)} />
-      </header>
-
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <div className="flex justify-between gap-4 rounded-xl bg-neutral-900 p-4">
-          <div className="flex flex-col justify-between">
-            <span className="body1 text-neutral-200">Active Time</span>
-            <span className="h6 text-neutral-100">
-              {statsLoading ? '—' : formatDuration(stats?.totalActiveSeconds ?? 0)}
-            </span>
-            <span className="desc text-neutral-600">this period</span>
-          </div>
+    <div className="space-y-8">
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h2 className="title-1">Hello, {user.displayName}</h2>
+          <p className="body-muted mt-1">Here&apos;s what&apos;s happening with your workflow.</p>
         </div>
 
-        <div className="flex justify-between gap-4 rounded-xl bg-neutral-900 p-4">
-          <div className="flex flex-col justify-between">
-            <span className="body1 text-neutral-200">Average Focus Score</span>
-            <span className="h6 text-neutral-100">
-              {statsLoading ? '—' : `${Math.round(stats?.averageFocusScore ?? 0)}%`}
-            </span>
-            <span className="desc text-neutral-600">this period</span>
-          </div>
-        </div>
-
-        <div className="flex justify-between gap-4 rounded-xl bg-neutral-900 p-4">
-          <div className="flex flex-col justify-between">
-            <span className="body1 text-neutral-200">Sessions</span>
-            <span className="h6 text-neutral-100">
-              {statsLoading ? '—' : (stats?.totalSessionsCount ?? 0)}
-            </span>
-            <span className="desc text-neutral-600">this period</span>
-          </div>
-        </div>
-
-        <div className="flex justify-between gap-4 rounded-xl bg-neutral-900 p-4">
-          <div className="flex flex-col justify-between">
-            <span className="body1 text-neutral-200">Top Language</span>
-            <span className="h6 text-neutral-100">
-              {statsLoading ? '—' : (stats?.topLanguage ?? 'n/a')}
-            </span>
-            <span className="desc text-neutral-600">most active time</span>
-          </div>
+        <div className="flex items-center gap-3">
+          <TimeSwitcher value={period} onValueChange={(v) => setPeriod(v as AnalyticsPeriod)} />
         </div>
       </div>
 
-      <div className="flex min-h-60 flex-col rounded-xl bg-neutral-900 p-6">
-        <div className="mb-6 flex flex-col gap-1">
-          <h2 className="h4 text-neutral-100">Activity</h2>
-          <span className="desc text-neutral-400">Active time by day</span>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {statCards.map((card) => {
+          const Icon = card.icon;
+          return (
+            <div
+              key={card.label}
+              className={cn(
+                'rounded-2xl border border-white/5 bg-neutral-900/50 p-5 backdrop-blur-sm',
+                'transition-colors hover:border-white/10 flex flex-col justify-between',
+              )}
+            >
+              <div>
+                <div className="flex items-center justify-between">
+                  <p className="caption font-medium">{card.label}</p>
+                  <Icon className="h-4 w-4 text-neutral-500" aria-hidden="true" />
+                </div>
+                <div className="mt-2 flex items-baseline gap-2">
+                  <span className="metric text-neutral-100">{card.value}</span>
+                  {card.change && <span className="mono-sm text-green-spring">{card.change}</span>}
+                </div>
+              </div>
+              <p className="caption mt-2">{card.sub}</p>
+            </div>
+          );
+        })}
+      </div>
+
+      <div
+        className={cn(
+          'rounded-2xl border border-white/5 bg-neutral-900/50 p-6 backdrop-blur-sm',
+          'transition-colors hover:border-white/10',
+        )}
+      >
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <h3 className="title-4">Activity</h3>
+            <p className="caption mt-0.5">Active coding time by day</p>
+          </div>
+          <Button variant="secondary" size="sm">
+            <Download className="mr-1.5 h-3.5 w-3.5 text-neutral-400" aria-hidden="true" />
+            Export
+          </Button>
         </div>
 
         {timeseriesLoading ? (
-          <div className="flex flex-1 items-center justify-center">
-            <span className="desc animate-pulse text-neutral-600">Loading…</span>
+          <div className="flex h-55 items-center justify-center">
+            <span className="body-muted animate-pulse">Loading activity…</span>
           </div>
         ) : chartData.length === 0 ? (
-          <div className="flex flex-1 items-center justify-center rounded-xl border border-dashed border-neutral-800 bg-neutral-900/30">
-            <span className="desc text-neutral-600">No activity recorded for this period</span>
+          <div className="flex h-55 items-center justify-center rounded-xl border border-dashed border-white/10">
+            <span className="body-muted">No activity recorded for this period</span>
           </div>
         ) : (
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#262626" vertical={false} />
-              <XAxis
-                dataKey="date"
-                stroke="#737373"
-                fontSize={12}
-                tickLine={false}
-                axisLine={false}
-              />
-              <YAxis stroke="#737373" fontSize={12} tickLine={false} axisLine={false} unit="h" />
-              <Tooltip
-                contentStyle={{
-                  background: '#171717',
-                  border: '1px solid #262626',
-                  borderRadius: 8,
-                }}
-                labelStyle={{ color: '#a3a3a3' }}
-                formatter={(value: unknown) => {
-                  if (typeof value !== 'number') {
-                    return ['0h', 'Active time'];
-                  }
-                  return [`${value}h`, 'Active time'];
-                }}
-              />
-              <Bar dataKey="hours" fill="#15ffab" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          <div className="h-55 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#1f1f23" vertical={false} />
+                <XAxis
+                  dataKey="date"
+                  stroke="#5b5b65"
+                  fontSize={11}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <YAxis stroke="#5b5b65" fontSize={11} tickLine={false} axisLine={false} unit="h" />
+                <Tooltip
+                  content={<CustomChartTooltip />}
+                  cursor={{ fill: 'rgba(255, 255, 255, 0.03)' }}
+                />
+                <Bar dataKey="hours" fill="#15ffab" radius={[4, 4, 0, 0]} maxBarSize={36} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         )}
       </div>
 
-      <div className="flex flex-col rounded-xl bg-neutral-900 p-6">
-        <div className="mb-6">
-          <span className="mini text-neutral-400">
-            BRANCHES {period === 'today' ? 'TODAY' : 'THIS PERIOD'}
-          </span>
+      <div
+        className={cn(
+          'rounded-2xl border border-white/5 bg-neutral-900/50 p-6 backdrop-blur-sm',
+          'transition-colors hover:border-white/10',
+        )}
+      >
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <h3 className="title-4">Branches</h3>
+            <p className="caption mt-0.5">Where you spent time this period</p>
+          </div>
         </div>
 
         <div className="flex flex-col">
-          <div className="mb-3 grid grid-cols-12 gap-4 border-b border-neutral-800 pb-2 text-xs text-neutral-500">
+          <div className="label-caps mb-2 grid grid-cols-12 gap-4 border-b border-white/5 pb-2">
             <div className="col-span-8">BRANCH</div>
             <div className="col-span-4 text-right">ACTIVE TIME</div>
           </div>
 
           {branchesLoading && (
             <div className="py-8 text-center">
-              <span className="desc animate-pulse text-neutral-600">Loading…</span>
+              <span className="body-muted animate-pulse">Loading branch data…</span>
             </div>
           )}
 
-          {!branchesLoading && branches?.length === 0 && (
+          {!branchesLoading && branches.length === 0 && (
             <div className="py-8 text-center">
-              <span className="desc text-neutral-600">
-                No branch activity recorded for this period
-              </span>
+              <span className="body-muted">No branch activity recorded for this period</span>
             </div>
           )}
 
-          {branches?.map((branch) => (
+          {branches.map((branch, i) => (
             <div
               key={branch.branchName}
-              className="grid grid-cols-12 gap-4 border-b border-neutral-800/40 py-3 text-sm text-neutral-300 last:border-0"
+              className={cn(
+                'grid grid-cols-12 items-center gap-4 py-3.5 text-sm transition-colors',
+                i !== branches.length - 1 && 'border-b border-white/5',
+                'hover:bg-white/2 rounded-lg px-2 -mx-2',
+              )}
             >
-              <div className="col-span-8">
-                <span className="rounded bg-neutral-800 px-2 py-1 font-mono text-xs">
+              <div className="col-span-8 flex items-center gap-2">
+                <span className="mono-sm inline-flex items-center gap-1.5 rounded-md border border-white/5 bg-neutral-950/40 px-2 py-0.5">
+                  <GitBranch className="h-3 w-3 text-neutral-500" aria-hidden="true" />
                   {branch.branchName}
                 </span>
               </div>
-              <div className="col-span-4 text-right text-neutral-100">
+              <div className="mono-sm col-span-4 text-right text-neutral-200">
                 {formatDuration(branch.activeSeconds)}
               </div>
             </div>

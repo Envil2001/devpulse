@@ -123,8 +123,8 @@ export function RegisterForm() {
   const renderRegisterForm = () => (
     <>
       <div className="text-center lg:text-left">
-        <h2 className="h4 text-neutral-100">Create Account</h2>
-        <p className="desc text-neutral-400 mt-1">Enter your details to create an account</p>
+        <h2 className="title-2">Create Account</h2>
+        <p className="body-muted mt-1">Enter your details to create an account</p>
       </div>
 
       <Form {...registerForm}>
@@ -134,9 +134,14 @@ export function RegisterForm() {
             name="displayName"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-neutral-100">Username</FormLabel>
+                <FormLabel>Username</FormLabel>
                 <FormControl>
-                  <Input placeholder="johndoe" disabled={isLoading} {...field} />
+                  <Input
+                    placeholder="johndoe"
+                    autoComplete="username"
+                    disabled={isLoading}
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage className="text-red-coral" />
               </FormItem>
@@ -148,9 +153,14 @@ export function RegisterForm() {
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-neutral-100">Email</FormLabel>
+                <FormLabel>Email</FormLabel>
                 <FormControl>
-                  <Input placeholder="john@example.com" disabled={isLoading} {...field} />
+                  <Input
+                    placeholder="john@example.com"
+                    autoComplete="email"
+                    disabled={isLoading}
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage className="text-red-coral" />
               </FormItem>
@@ -162,29 +172,36 @@ export function RegisterForm() {
             name="password"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-neutral-100">Password</FormLabel>
+                <FormLabel>Password</FormLabel>
                 <FormControl>
-                  <Input type="password" placeholder="••••••••" disabled={isLoading} {...field} />
+                  <Input
+                    type="password"
+                    placeholder="••••••••"
+                    autoComplete="new-password"
+                    disabled={isLoading}
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage className="text-red-coral" />
               </FormItem>
             )}
           />
 
-          <Button type="submit" className="w-full mt-2" disabled={isLoading}>
+          <Button type="submit" className="mt-2 w-full" loading={isLoading}>
             Continue
           </Button>
         </form>
       </Form>
 
-      <p className="text-center body1 text-neutral-400">
-        Already have an account?{' '}
-        <Link
-          href="/login"
-          className="font-bold text-neutral-100 hover:text-blue-frosty transition-colors"
+      <p className="body-muted flex items-center justify-center gap-1 text-center">
+        Already have an account?
+        <Button
+          variant="link"
+          asChild
+          className="h-auto p-0 font-bold text-neutral-100 no-underline hover:text-blue-frosty"
         >
-          Log in
-        </Link>
+          <Link href="/login">Log in</Link>
+        </Button>
       </p>
     </>
   );
@@ -192,51 +209,57 @@ export function RegisterForm() {
   const renderVerifyForm = () => (
     <>
       <div className="text-center lg:text-left">
-        <h2 className="h4 text-neutral-100">Email Verification</h2>
-        <p className="desc text-neutral-400 mt-1">Enter the 6-digit code sent to your email</p>
+        <h2 className="title-2">Email Verification</h2>
+        <p className="body-muted mt-1">Enter the 6-digit code sent to your email</p>
       </div>
 
-      <form onSubmit={verifyForm.handleSubmit(onVerifySubmit)} className="space-y-4">
-        <div>
-          <label className="text-neutral-100 text-sm font-medium">Verification Code</label>
-          <input
-            type="text"
-            placeholder="123456"
-            autoFocus
-            disabled={isLoading}
-            {...verifyForm.register('code')}
-            className="flex w-full rounded-md body1 transition-colors bg-neutral-700/50 text-neutral-100 placeholder:text-neutral-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-electric focus-visible:ring-offset-2 h-9 px-4 py-2 mt-2 disabled:opacity-50"
+      <Form {...verifyForm}>
+        <form onSubmit={verifyForm.handleSubmit(onVerifySubmit)} className="space-y-4">
+          <FormField
+            control={verifyForm.control}
+            name="code"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Verification Code</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="123456"
+                    autoFocus
+                    autoComplete="one-time-code"
+                    disabled={isLoading}
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage className="text-red-coral" />
+              </FormItem>
+            )}
           />
-          {verifyForm.formState.errors.code && (
-            <p className="text-sm font-medium text-red-coral mt-2">
-              {verifyForm.formState.errors.code.message}
-            </p>
-          )}
-        </div>
 
-        <Button type="submit" className="w-full mt-2" disabled={isLoading}>
-          Verify & Create
-        </Button>
-      </form>
+          <Button type="submit" className="mt-2 w-full" loading={isLoading}>
+            Verify & Create
+          </Button>
+        </form>
+      </Form>
 
-      <p className="text-center body1 text-neutral-400">
-        Didn&apos;t receive the email?{' '}
-        <button
+      <p className="body-muted flex items-center justify-center gap-1 text-center">
+        Didn&apos;t receive the email?
+        <Button
+          variant="link"
           type="button"
-          className="font-bold text-neutral-100 hover:text-blue-frosty transition-colors disabled:opacity-50"
           onClick={handleResendCode}
           disabled={isLoading}
+          className="h-auto p-0 font-bold text-neutral-100 no-underline hover:text-blue-frosty"
         >
           Resend code
-        </button>
+        </Button>
       </p>
     </>
   );
 
   return (
-    <div className="flex flex-col gap-8 w-full max-w-sm mx-auto">
+    <div className="mx-auto flex w-full max-w-sm flex-col gap-8">
       {error && (
-        <div className="bg-red-coral/10 border border-red-coral text-red-coral p-3 rounded-xl text-sm">
+        <div className="body-base rounded-xl border border-red-coral bg-red-coral/10 p-3 text-red-coral">
           {error}
         </div>
       )}

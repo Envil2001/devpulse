@@ -1,16 +1,23 @@
+'use client';
+
+import { useState } from 'react';
 import { Sidebar } from '@/shared/components/layout/sidebar';
-import React from 'react';
+import { Header } from '@/shared/components/layout/header';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex h-screen w-full gap-3 p-3">
-      <div className="flex h-full w-65 flex-col overflow-hidden rounded-xl ">
-        <Sidebar />
-      </div>
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-      <main className="flex h-full flex-1 flex-col overflow-y-auto rounded-xl">
-        <div className="mx-auto w-full max-w-7xl px-8 py-8">{children}</div>
-      </main>
+  return (
+    <div className="h-dvh w-full bg-neutral-950 text-neutral-100 transition-colors duration-200">
+      <Sidebar isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
+
+      <div className="flex flex-1 flex-col min-w-0 lg:pl-64">
+        <Header onMenuToggle={() => setIsMobileMenuOpen((p) => !p)} isMenuOpen={isMobileMenuOpen} />
+
+        <main className="flex-1 overflow-y-auto pt-14">
+          <div className="mx-auto w-full max-w-6xl px-6 py-8 lg:px-8">{children}</div>
+        </main>
+      </div>
     </div>
   );
 }

@@ -95,3 +95,23 @@ export function useAuth() {
   }
   return context;
 }
+
+export function useRequireAuth() {
+  const context = useAuth();
+
+  if (context.isLoading) {
+    return {
+      ...context,
+      user: null,
+    };
+  }
+
+  if (!context.user) {
+    throw new Error('useRequireAuth must be used within protected routes');
+  }
+
+  return {
+    ...context,
+    user: context.user,
+  };
+}

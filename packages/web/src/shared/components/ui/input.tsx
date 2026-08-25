@@ -5,16 +5,26 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/shared/lib/cn';
 
 const inputVariants = cva(
-  'flex w-full rounded-md body1 transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-neutral-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-electric focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
+  [
+    'block w-full bg-transparent border shadow-none transition-colors text-sm',
+    'file:border-0 file:bg-transparent file:font-medium file:text-sm',
+    'placeholder:text-neutral-500',
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20',
+    'disabled:cursor-not-allowed disabled:opacity-50',
+  ].join(' '),
   {
     variants: {
       variant: {
-        default: 'bg-neutral-700/50 text-neutral-100 hover:bg-neutral-700/70',
+        default: [
+          'border-white/10 text-neutral-100',
+          'hover:border-white/20',
+          'focus-visible:border-white/20',
+        ].join(' '),
       },
       size: {
-        default: 'h-9 px-4 py-2',
-        sm: 'h-8 px-3 text-xs',
-        lg: 'h-10 px-6',
+        default: 'h-9 px-3 rounded-[10px]',
+        sm: 'h-8 px-2 rounded-lg text-xs',
+        lg: 'h-10 px-4 rounded-xl text-sm',
       },
     },
     defaultVariants: {
