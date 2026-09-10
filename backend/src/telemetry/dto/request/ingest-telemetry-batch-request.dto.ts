@@ -20,7 +20,6 @@ export class TelemetryEventItemDto implements TelemetryEventDto {
 
   @ApiProperty({ description: 'Git branch name (e.g., main, develop)' })
   @IsString()
-  @IsOptional()
   public gitBranch!: string;
 
   @ApiProperty({ description: 'Git remote origin URL (e.g. github.com/org/repo.git)' })

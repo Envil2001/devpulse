@@ -119,7 +119,7 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
     const lastSession = await sessionRepo.findOne({
       where: {
         userId: user.id,
-        gitBranch: event.gitBranch || 'no-branch',
+        gitBranch: event.gitBranch,
         status: WorkSessionStatus.ACTIVE,
       },
       order: { endedAt: 'DESC' },

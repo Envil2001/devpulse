@@ -41,17 +41,18 @@ function isWorkspaceFolderLike(value: unknown): value is WorkspaceFolderLike {
   return typeof candidate.name === 'string' && typeof candidate.uri?.fsPath === 'string';
 }
 
+let lastActiveFolder: vscode.WorkspaceFolder | undefined;
+
 function resolveWorkspaceFolder(): vscode.WorkspaceFolder | undefined {
   const activeEditor = vscode.window.activeTextEditor;
-  if (activeEditor !== undefined) {
+  if (activeEditor) {
     const folder = vscode.workspace.getWorkspaceFolder(activeEditor.document.uri);
-    if (folder !== undefined) {
+    if (folder) {
+      lastActiveFolder = folder;
       return folder;
     }
   }
-
-  const [firstWorkspace] = vscode.workspace.workspaceFolders ?? [];
-  return firstWorkspace;
+  return lastActiveFolder ?? vscode.workspace.workspaceFolders?.[0];
 }
 
 function resolveWorkspaceName(folder: WorkspaceFolderLike | null): string | null {
@@ -99,8 +100,13 @@ export class GitContextProvider implements vscode.Disposable {
   private refreshChain: Promise<void> = Promise.resolve();
   private gitWatchers: Array<vscode.Disposable> = [];
   private watchedWorkspaceFolderPath: string | null = null;
+  private gitDebounceTimer: ReturnType<typeof setTimeout> | undefined;
+
   private readonly handleGitMetadataChange = (): void => {
-    this.scheduleRefresh();
+    clearTimeout(this.gitDebounceTimer);
+    this.gitDebounceTimer = setTimeout(() => {
+      this.scheduleRefresh();
+    }, 150);
   };
   private context: GitContext = {
     workspaceName: null,
