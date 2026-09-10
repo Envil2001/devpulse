@@ -69,7 +69,11 @@ export class ActivityMonitor implements vscode.Disposable {
         this.pulseActivity();
       }),
       vscode.window.onDidChangeActiveTextEditor((editor) => {
-        if (editor === undefined || !isTrackedTextDocument(editor.document)) return;
+        if (editor === undefined) {
+          this.scheduleIdleTransition();
+          return;
+        }
+        if (!isTrackedTextDocument(editor.document)) return;
         this.pulseActivity();
       }),
       vscode.window.onDidChangeWindowState((windowState) => {

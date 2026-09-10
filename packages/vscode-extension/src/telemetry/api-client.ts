@@ -38,11 +38,16 @@ function trimTrailingSlashes(value: string): string {
 
 function resolveApiBaseUrl(): string {
   const configured = vscode.workspace.getConfiguration('devpulse').get<string>('apiUrl');
-  if (configured !== undefined && configured.trim().length > 0) {
+  if (configured?.trim()) {
     return trimTrailingSlashes(configured);
   }
-
-  return env.DEVPULSE_API_URL;
+  const fromEnv = env.DEVPULSE_API_URL;
+  if (!fromEnv.trim()) {
+    throw new Error(
+      'DevPulse API URL is not configured. Set devpulse.apiUrl or DEVPULSE_API_URL env.',
+    );
+  }
+  return trimTrailingSlashes(fromEnv);
 }
 
 async function readJson<TResponse>(response: Response): Promise<TResponse> {
@@ -114,6 +119,7 @@ export class TelemetryApiClient {
         method: 'POST',
         headers,
         body,
+        signal: AbortSignal.timeout(30_000), // 30 seconds
       });
     } catch (error) {
       this.log?.appendLine(`[telemetry] network error: ${String(error)}`);

@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 
 import { DEVPULSE_API_KEY_SECRET } from '../secret-keys.js';
 
-const COMMAND_ID = 'devpulse.devpulse.setApiKey';
+const COMMAND_ID = 'devpulse.setApiKey';
 
 export function registerSetApiKeyCommand(context: vscode.ExtensionContext): vscode.Disposable {
   return vscode.commands.registerCommand(COMMAND_ID, async () => {
