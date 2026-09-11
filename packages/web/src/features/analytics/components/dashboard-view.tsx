@@ -159,7 +159,7 @@ export function DashboardView() {
             onClick={() => exportMutation.mutate(periodToDateRange(period))}
             disabled={exportMutation.isPending}
           >
-            <Download className="mr-1.5 h-3.5 w-3.5 text-neutral-400" aria-hidden="true" />
+            <Download />
             {exportMutation.isPending ? 'Exporting…' : 'Export'}
           </Button>
         </div>

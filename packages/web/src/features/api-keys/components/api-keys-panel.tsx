@@ -73,7 +73,7 @@ export function ApiKeysPanel() {
           <p className="body-muted mt-1">Create and manage API keys for the VS Code extension</p>
         </div>
         <Button size="sm" onClick={() => setCreateOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
+          <Plus />
           Create Key
         </Button>
       </div>
@@ -107,7 +107,7 @@ export function ApiKeysPanel() {
               extension.
             </p>
             <Button className="mt-4" size="sm" onClick={() => setCreateOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" />
+              <Plus />
               Create Key
             </Button>
           </div>
@@ -227,12 +227,12 @@ export function ApiKeysPanel() {
             <Button size="sm" onClick={() => revealedKey && handleCopy(revealedKey)}>
               {hasCopied ? (
                 <>
-                  <Check className="mr-1.5 h-3.5 w-3.5 text-green-spring" />
+                  <Check className="text-green-spring" />
                   Copied
                 </>
               ) : (
                 <>
-                  <Copy className="mr-1.5 h-3.5 w-3.5" />
+                  <Copy />
                   Copy
                 </>
               )}

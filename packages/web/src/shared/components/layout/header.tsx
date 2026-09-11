@@ -43,11 +43,7 @@ export function Header({ onMenuToggle, isMenuOpen }: HeaderProps) {
             aria-label={isMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
             aria-expanded={isMenuOpen}
           >
-            {isMenuOpen ? (
-              <X className="h-5 w-5" aria-hidden="true" />
-            ) : (
-              <Menu className="h-5 w-5" aria-hidden="true" />
-            )}
+            {isMenuOpen ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />}
           </Button>
 
           <h1 className="body-base font-semibold truncate">{getPageTitle()}</h1>
