@@ -12,6 +12,8 @@ import {
   useDashboardStats,
   useAnalyticsTimeseries,
   useBranchesDistribution,
+  useExportSessions,
+  periodToDateRange,
 } from '../hooks';
 import { TimeSwitcher } from './time-switcher';
 
@@ -50,6 +52,7 @@ function CustomChartTooltip({
 export function DashboardView() {
   const [period, setPeriod] = useState<AnalyticsPeriod>('7d');
   const { user, isLoading: authLoading } = useRequireAuth();
+  const exportMutation = useExportSessions();
 
   const { data: stats, isLoading: statsLoading } = useDashboardStats(period);
   const { data: timeseries = [], isLoading: timeseriesLoading } = useAnalyticsTimeseries(period);
@@ -150,9 +153,14 @@ export function DashboardView() {
             <h3 className="title-4">Activity</h3>
             <p className="caption mt-0.5">Active coding time by day</p>
           </div>
-          <Button variant="secondary" size="sm">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => exportMutation.mutate(periodToDateRange(period))}
+            disabled={exportMutation.isPending}
+          >
             <Download className="mr-1.5 h-3.5 w-3.5 text-neutral-400" aria-hidden="true" />
-            Export
+            {exportMutation.isPending ? 'Exporting…' : 'Export'}
           </Button>
         </div>
 

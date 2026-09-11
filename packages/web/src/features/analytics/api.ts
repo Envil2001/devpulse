@@ -45,6 +45,10 @@ export class AnalyticsService extends BaseService {
     );
     return branches;
   }
+
+  async exportSessions(params: AnalyticsRangeParams = {}): Promise<Blob> {
+    return this.getBlob('/analytics/export', { params });
+  }
 }
 
 export const analyticsService = new AnalyticsService();

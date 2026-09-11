@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import {
   AnalyticsRangeParams,
   DashboardStats,
@@ -6,6 +6,7 @@ import {
   TimeseriesPoint,
   BranchDataPoint,
 } from './api';
+import { downloadBlob } from '@/shared/lib/download';
 
 export type AnalyticsPeriod = 'today' | '7d' | '30d' | 'custom';
 
@@ -50,5 +51,16 @@ export function useBranchesDistribution(period: AnalyticsPeriod, projectId?: str
   return useQuery<Array<BranchDataPoint>>({
     queryKey: ['analytics', 'branches', period, projectId],
     queryFn: () => analyticsService.getBranches(withPeriod(period, { projectId })),
+  });
+}
+
+export function useExportSessions() {
+  return useMutation({
+    mutationFn: (params: AnalyticsRangeParams) => analyticsService.exportSessions(params),
+    onSuccess: (blob, params) => {
+      const start = params.startDate?.split('T')[0] ?? 'all';
+      const end = params.endDate?.split('T')[0] ?? 'now';
+      downloadBlob(blob, `devpulse-sessions_${start}_${end}.csv`);
+    },
   });
 }
