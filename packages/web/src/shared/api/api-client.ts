@@ -118,3 +118,35 @@ export async function patchJson<TResponse, TRequest>(
 
   return readJson<TResponse>(response);
 }
+
+export async function getBlob(path: string, options: GetOptions = {}): Promise<Blob> {
+  let url = `${env.NEXT_PUBLIC_API_URL}${path}`;
+
+  if (options.params) {
+    const searchParams = new URLSearchParams();
+    Object.entries(options.params).forEach(([key, value]) => {
+      if (value != null) {
+        searchParams.append(key, String(value));
+      }
+    });
+    const queryString = searchParams.toString();
+    if (queryString) {
+      url += `?${queryString}`;
+    }
+  }
+
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      ...(options.authToken ? { Authorization: `Bearer ${options.authToken}` } : {}),
+    },
+    credentials: 'include',
+  });
+
+  if (!response.ok) {
+    const body = (await response.json()) as ApiErrorResponse;
+    throw new ApiClientError(body.error.message, response.status, body.error.details);
+  }
+
+  return response.blob();
+}

@@ -1,4 +1,14 @@
-import { Controller, Get, HttpCode, HttpStatus, Query, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Query,
+  Res,
+  StreamableFile,
+  UseGuards,
+} from '@nestjs/common';
+import type { Response } from 'express';
 
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
@@ -8,11 +18,15 @@ import { GetAnalyticsBranchesResponseDto } from '../dto/response/get-analytics-b
 import { GetAnalyticsDashboardResponseDto } from '../dto/response/get-analytics-dashboard-response.dto';
 import { GetAnalyticsTimeseriesResponseDto } from '../dto/response/get-analytics-timeseries-response.dto';
 import { AnalyticsService } from '../services/analytics.service';
+import { AnalyticsExportService } from '../services/analytics-export.service';
 
 @Controller('analytics')
 @UseGuards(JwtAuthGuard)
 export class AnalyticsController {
-  constructor(private readonly analyticsService: AnalyticsService) {}
+  constructor(
+    private readonly analyticsService: AnalyticsService,
+    private readonly analyticsExportService: AnalyticsExportService,
+  ) {}
 
   @Get('dashboard')
   @HttpCode(HttpStatus.OK)
@@ -39,5 +53,22 @@ export class AnalyticsController {
     @Query() query: GetAnalyticsRangeRequestDto,
   ): Promise<GetAnalyticsBranchesResponseDto> {
     return this.analyticsService.getBranchesDistribution(user.id, query);
+  }
+
+  @Get('export')
+  @HttpCode(HttpStatus.OK)
+  public async exportSessions(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query() query: GetAnalyticsRangeRequestDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<StreamableFile> {
+    const file = await this.analyticsExportService.exportSessions(user.id, query);
+
+    res.set({
+      'Content-Type': file.contentType,
+      'Content-Disposition': `attachment; filename="${file.filename}"`,
+    });
+
+    return new StreamableFile(Buffer.from(file.content, 'utf8'));
   }
 }
