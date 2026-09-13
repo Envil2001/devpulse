@@ -5,6 +5,7 @@ import type { StringValue } from 'ms';
 
 import { env } from '@devpulse/env/api';
 
+import { EmailModule } from '../email/email.module';
 import { UsersModule } from '../users/users.module';
 
 import { AuthController } from './controllers/auth.controller';
@@ -14,6 +15,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
   imports: [
     UsersModule,
     PassportModule,
+    EmailModule,
     JwtModule.registerAsync({
       useFactory: () => ({
         secret: env.JWT_SECRET,

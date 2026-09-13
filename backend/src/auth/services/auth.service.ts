@@ -4,6 +4,7 @@ import path from 'node:path';
 
 import {
   BadRequestException,
+  Inject,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -24,6 +25,10 @@ import {
 } from '@devpulse/lib';
 
 import { MessageResponseDto } from '../../common/dto/message-response.dto';
+import {
+  VERIFICATION_MAILER,
+  type VerificationMailer,
+} from '../../email/services/verification-mailer.service';
 import { RedisService } from '../../redis/services/redis.service';
 import { User } from '../../users/entities/user.entity';
 import { UserEncryption } from '../../users/entities/user-encryption.entity';
@@ -36,6 +41,9 @@ import { VerifySignUpRequestDto } from '../dto/requests/verify-signup-request.dt
 import { SignUpCompleteResponseDto } from '../dto/response/sign-up-complete.response.dto';
 import { VerifySignUpResponseDto } from '../dto/response/verify-signup-response.dto';
 
+const CODE_EXPIRY_MINUTES = 10;
+const CODE_EXPIRY_SECONDS = CODE_EXPIRY_MINUTES * 60;
+
 @Injectable()
 export class AuthService implements OnModuleInit {
   private readonly logger = new Logger(AuthService.name);
@@ -46,6 +54,8 @@ export class AuthService implements OnModuleInit {
     private readonly redisService: RedisService,
     private readonly jwtService: JwtService,
     private readonly dataSource: DataSource,
+    @Inject(VERIFICATION_MAILER)
+    private readonly verificationMailer: VerificationMailer,
   ) {}
 
   public async onModuleInit(): Promise<void> {
@@ -87,15 +97,18 @@ export class AuthService implements OnModuleInit {
     }
 
     const verificationCode = crypto.randomInt(100_000, 999_999).toString();
-
     const redisKey = `signup_code:${email}`;
     const payload = { code: verificationCode, displayName };
 
     try {
-      await this.redisService.set(redisKey, payload, 600);
+      await this.redisService.set(redisKey, payload, CODE_EXPIRY_SECONDS);
       this.logger.debug(`Generated verification code for ${email}: ${verificationCode}`);
-      // TODO: Implement email sending functionality here. For now, we just log the code.
-      // await this.emailService.sendVerificationCode(email, verificationCode);
+
+      await this.verificationMailer.sendVerificationCode(email, {
+        code: verificationCode,
+        displayName,
+        expiresInMinutes: CODE_EXPIRY_MINUTES,
+      });
     } catch (error) {
       this.logger.error(`Error saving verification code for ${email}: ${String(error)}`);
       throw new InternalServerErrorException(

@@ -11,6 +11,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
 import { ApiKeysModule } from './api-keys/api-keys.module';
 import { ApiKey } from './api-keys/entities/api-key.entity';
 import { AuthModule } from './auth/auth.module';
+import { EmailModule } from './email/email.module';
 import { Project } from './projects/entities/project.entity';
 import { ProjectsModule } from './projects/projects.module';
 import { RedisModule } from './redis/redis.module';
@@ -64,6 +65,7 @@ const throttlerProvider: Provider = {
     TelemetryModule,
     ProjectsModule,
     AnalyticsModule,
+    EmailModule,
   ],
   controllers: [AppController],
   providers: [AppService, throttlerProvider],
