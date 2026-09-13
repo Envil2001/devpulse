@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { Clock, Zap, Layers, Code2, GitBranch, Download } from 'lucide-react';
 
 import { useRequireAuth } from '@/features/auth/context';
 import { Button } from '@/shared/components/ui/button';
 import { cn } from '@/shared/lib/cn';
+import { formatChartAxisLabel, toDateInput } from '@/shared/lib/date';
 import {
   AnalyticsPeriod,
   useDashboardStats,
@@ -16,6 +17,7 @@ import {
   periodToDateRange,
 } from '../hooks';
 import { TimeSwitcher } from './time-switcher';
+import { differenceInCalendarDays } from 'date-fns';
 
 function formatDuration(totalSeconds: number): string {
   const hours = Math.floor(totalSeconds / 3600);
@@ -32,31 +34,43 @@ function CustomChartTooltip({
   payload?: Array<{ value: number; name: string }>;
   label?: string;
 }) {
-  if (active && payload && payload.length) {
-    return (
-      <div className="rounded-xl border border-white/10 bg-neutral-950/90 p-3 shadow-xl backdrop-blur-md">
-        <p className="caption font-medium">{label}</p>
-        <div className="mt-1.5 flex items-center gap-2">
-          <div className="h-2 w-2 rounded-full bg-green-spring" aria-hidden="true" />
-          <span className="font-mono text-sm font-semibold text-neutral-100">
-            {payload[0].value}h
-          </span>
-          <span className="caption">active time</span>
-        </div>
-      </div>
-    );
+  if (!active || !payload?.length) {
+    return null;
   }
-  return null;
+
+  return (
+    <div className="rounded-xl border border-white/10 bg-neutral-950/90 p-3 shadow-xl backdrop-blur-md">
+      <p className="caption font-medium">{label}</p>
+      <div className="mt-1.5 flex items-center gap-2">
+        <div className="h-2 w-2 rounded-full bg-green-spring" aria-hidden="true" />
+        <span className="font-mono text-sm font-semibold text-neutral-100">
+          {payload[0].value}h
+        </span>
+        <span className="caption">active time</span>
+      </div>
+    </div>
+  );
+}
+
+function getInitialCustomDates(): { startDate: string; endDate: string } {
+  const to = new Date();
+  const from = new Date();
+  from.setDate(from.getDate() - 7);
+  return { startDate: toDateInput(from), endDate: toDateInput(to) };
 }
 
 export function DashboardView() {
   const [period, setPeriod] = useState<AnalyticsPeriod>('7d');
+  const [customDates, setCustomDates] = useState(getInitialCustomDates);
+
+  const range = useMemo(() => periodToDateRange(period, customDates), [period, customDates]);
+
   const { user, isLoading: authLoading } = useRequireAuth();
   const exportMutation = useExportSessions();
 
-  const { data: stats, isLoading: statsLoading } = useDashboardStats(period);
-  const { data: timeseries = [], isLoading: timeseriesLoading } = useAnalyticsTimeseries(period);
-  const { data: branches = [], isLoading: branchesLoading } = useBranchesDistribution(period);
+  const { data: stats, isLoading: statsLoading } = useDashboardStats(range);
+  const { data: timeseries = [], isLoading: timeseriesLoading } = useAnalyticsTimeseries(range);
+  const { data: branches = [], isLoading: branchesLoading } = useBranchesDistribution(range);
 
   if (authLoading || !user) {
     return (
@@ -65,9 +79,10 @@ export function DashboardView() {
       </div>
     );
   }
+  const rangeDays = differenceInCalendarDays(new Date(range.endDate), new Date(range.startDate));
 
   const chartData = timeseries.map((point) => ({
-    date: new Date(point.date).toLocaleDateString('en-US', { weekday: 'short' }),
+    date: formatChartAxisLabel(point.date, rangeDays),
     hours: Math.round((point.activeSeconds / 3600) * 10) / 10,
   }));
 
@@ -77,28 +92,24 @@ export function DashboardView() {
       icon: Clock,
       value: statsLoading || !stats ? '—' : formatDuration(stats.totalActiveSeconds),
       sub: 'this period',
-      change: null,
     },
     {
       label: 'Focus Score',
       icon: Zap,
       value: statsLoading || !stats ? '—' : `${Math.round(stats.averageFocusScore)}%`,
       sub: 'average',
-      change: null,
     },
     {
       label: 'Sessions',
       icon: Layers,
       value: statsLoading || !stats ? '—' : String(stats.totalSessionsCount),
       sub: 'this period',
-      change: null,
     },
     {
       label: 'Top Language',
       icon: Code2,
       value: statsLoading || !stats ? '—' : (stats.topLanguage ?? 'N/A'),
       sub: 'most active',
-      change: null,
     },
   ];
 
@@ -111,7 +122,12 @@ export function DashboardView() {
         </div>
 
         <div className="flex items-center gap-3">
-          <TimeSwitcher value={period} onValueChange={(v) => setPeriod(v as AnalyticsPeriod)} />
+          <TimeSwitcher
+            value={period}
+            onValueChange={(v) => setPeriod(v as AnalyticsPeriod)}
+            customRange={customDates}
+            onCustomRangeChange={setCustomDates}
+          />
         </div>
       </div>
 
@@ -133,7 +149,6 @@ export function DashboardView() {
                 </div>
                 <div className="mt-2 flex items-baseline gap-2">
                   <span className="metric text-neutral-100">{card.value}</span>
-                  {card.change && <span className="mono-sm text-green-spring">{card.change}</span>}
                 </div>
               </div>
               <p className="caption mt-2">{card.sub}</p>
@@ -156,7 +171,9 @@ export function DashboardView() {
           <Button
             variant="secondary"
             size="sm"
-            onClick={() => exportMutation.mutate(periodToDateRange(period))}
+            onClick={() =>
+              exportMutation.mutate({ startDate: range.startDate, endDate: range.endDate })
+            }
             disabled={exportMutation.isPending}
           >
             <Download />

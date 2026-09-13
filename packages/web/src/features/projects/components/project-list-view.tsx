@@ -2,18 +2,19 @@
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { formatDistanceToNow } from 'date-fns';
 import { FolderGit2, Search, Clock, Zap, Layers, ArrowUpRight } from 'lucide-react';
 
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
 import { cn } from '@/shared/lib/cn';
 import { useProjects } from '../hooks';
+import { useAuth } from '@/features/auth/context';
+import { formatDateTimeLabel } from '@/shared/lib/date';
 
 export function ProjectListView() {
   const { data: projects = [], isLoading, error } = useProjects();
   const [searchQuery, setSearchQuery] = useState('');
-
+  const { user } = useAuth();
   const filteredProjects = useMemo(() => {
     const query = searchQuery.toLowerCase().trim();
     if (!query) return projects;
@@ -167,7 +168,7 @@ export function ProjectListView() {
                     <span>Last active</span>
                     <span className="font-medium text-neutral-400">
                       {project.lastActive
-                        ? formatDistanceToNow(new Date(project.lastActive), { addSuffix: true })
+                        ? formatDateTimeLabel(project.lastActive, user?.timezone)
                         : 'Never'}
                     </span>
                   </div>

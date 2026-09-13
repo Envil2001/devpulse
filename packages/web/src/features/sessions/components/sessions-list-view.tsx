@@ -14,6 +14,8 @@ import {
 } from '@/shared/components/ui/select';
 import { cn } from '@/shared/lib/cn';
 import { useSessions } from '../hooks';
+import { useAuth } from '@/features/auth/context';
+import { formatDateTimeLabel } from '@/shared/lib/date';
 
 function formatDuration(ms: number): string {
   const seconds = Math.floor(ms / 1000);
@@ -25,7 +27,7 @@ function formatDuration(ms: number): string {
 
 export function SessionsListView() {
   const { data: sessions = [], isLoading, error } = useSessions();
-
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [projectFilter, setProjectFilter] = useState('all');
 
@@ -212,12 +214,7 @@ export function SessionsListView() {
                     aria-hidden="true"
                   />
                   <span className="mono-sm text-neutral-400">
-                    {new Date(session.startedAt).toLocaleString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
+                    {formatDateTimeLabel(session.startedAt, user?.timezone)}
                   </span>
                 </div>
 
