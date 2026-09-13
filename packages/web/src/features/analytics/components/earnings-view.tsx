@@ -17,7 +17,7 @@ import {
 import { cn } from '@/shared/lib/cn';
 
 import { useAuth, type User } from '@/features/auth/context';
-import { useDashboardStats } from '@/features/analytics/hooks';
+import { periodToDateRange, useDashboardStats } from '@/features/analytics/hooks';
 
 export function EarningsView() {
   const { user, isLoading } = useAuth();
@@ -36,8 +36,8 @@ export function EarningsView() {
 function EarningsContent({ user }: { user: User }) {
   const { updateProfile } = useAuth();
 
-  const { data: stats30d, isLoading: isLoading30d } = useDashboardStats('30d');
-  const { data: stats7d, isLoading: isLoading7d } = useDashboardStats('7d');
+  const { data: stats30d, isLoading: isLoading30d } = useDashboardStats(periodToDateRange('30d'));
+  const { data: stats7d, isLoading: isLoading7d } = useDashboardStats(periodToDateRange('7d'));
 
   const safeRate = user.hourlyRate ?? 0;
   const safeCurrency = user.currency ?? 'USD';
