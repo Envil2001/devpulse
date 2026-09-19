@@ -17,8 +17,11 @@ import { GetAnalyticsRangeRequestDto } from '../dto/request/get-analytics-range-
 import { GetAnalyticsBranchesResponseDto } from '../dto/response/get-analytics-branches-response.dto';
 import { GetAnalyticsDashboardResponseDto } from '../dto/response/get-analytics-dashboard-response.dto';
 import { GetAnalyticsTimeseriesResponseDto } from '../dto/response/get-analytics-timeseries-response.dto';
+import { GetIntegrationLanguagesResponseDto } from '../dto/response/get-integration-languages-response.dto';
+import { GetIntegrationStatusResponseDto } from '../dto/response/get-integration-status-response.dto';
 import { AnalyticsService } from '../services/analytics.service';
 import { AnalyticsExportService } from '../services/analytics-export.service';
+import { IntegrationsAnalyticsService } from '../services/integrations-analytics.service';
 
 @Controller('analytics')
 @UseGuards(JwtAuthGuard)
@@ -26,6 +29,7 @@ export class AnalyticsController {
   constructor(
     private readonly analyticsService: AnalyticsService,
     private readonly analyticsExportService: AnalyticsExportService,
+    private readonly integrationsService: IntegrationsAnalyticsService,
   ) {}
 
   @Get('dashboard')
@@ -53,6 +57,22 @@ export class AnalyticsController {
     @Query() query: GetAnalyticsRangeRequestDto,
   ): Promise<GetAnalyticsBranchesResponseDto> {
     return this.analyticsService.getBranchesDistribution(user.id, query);
+  }
+
+  @Get('status')
+  @HttpCode(HttpStatus.OK)
+  public async getLiveStatus(
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<GetIntegrationStatusResponseDto> {
+    return this.integrationsService.getLiveStatus(user.id);
+  }
+
+  @Get('languages')
+  @HttpCode(HttpStatus.OK)
+  public async getLanguages(
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<GetIntegrationLanguagesResponseDto> {
+    return this.integrationsService.getLanguagesBreakdown(user.id);
   }
 
   @Get('export')

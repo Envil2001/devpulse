@@ -9,7 +9,6 @@ import { UsersModule } from '../users/users.module';
 import { TelemetryController } from './controllers/telemetry.controller';
 import { TelemetryEvent } from './entities/telemetry-event.entity';
 import { WorkSession } from './entities/work-session.entity';
-import { ApiKeyGuard } from './guards/api-key.guard';
 import { TelemetryQueue } from './queue/telemetry.queue';
 import { TelemetryWorker } from './telemetry.worker';
 
@@ -20,6 +19,6 @@ import { TelemetryWorker } from './telemetry.worker';
     UsersModule,
   ],
   controllers: [TelemetryController],
-  providers: [TelemetryQueue, TelemetryWorker, ApiKeyGuard],
+  providers: [TelemetryQueue, TelemetryWorker],
 })
 export class TelemetryModule {}

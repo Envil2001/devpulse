@@ -3,7 +3,7 @@ import { User } from '../auth/api';
 
 export interface UpdateUserDto {
   displayName?: string;
-  timezone?: string;
+  timezone: string;
   hourlyRate?: number;
   currency?: string;
 }

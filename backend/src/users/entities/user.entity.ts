@@ -37,10 +37,9 @@ export class User extends AppBaseEntity<'users'> {
   @Column({
     type: 'varchar',
     length: 100,
-    nullable: true,
     default: 'UTC',
   })
-  public timezone!: string | null;
+  public timezone!: string;
 
   @Column({ name: 'hourly_rate', type: 'real', default: 0 })
   public hourlyRate = 0;

@@ -6,7 +6,13 @@ import { TypeId, typeIdGenerator } from '@devpulse/lib';
 
 import { User } from '../../users/entities/user.entity';
 import { ApiKey } from '../entities/api-key.entity';
+import { ApiKeyScope, ApiKeyType, SCOPES_BY_KEY_TYPE } from '../enums/api-key.enums';
 import { ApiKeysRepository } from '../repository/api-keys.repository';
+
+export interface ApiKeyValidationResult {
+  user: User;
+  scopes: Array<ApiKeyScope>;
+}
 
 @Injectable()
 export class ApiKeysService {
@@ -14,7 +20,12 @@ export class ApiKeysService {
 
   constructor(private readonly apiKeysRepository: ApiKeysRepository) {}
 
-  public async createKey(user: User, name: string): Promise<{ rawKey: string; keyEntity: ApiKey }> {
+  public async createKey(
+    user: User,
+    name: string,
+    type: ApiKeyType,
+    deviceLabel?: string,
+  ): Promise<{ rawKey: string; keyEntity: ApiKey }> {
     const randomBytes = crypto.randomBytes(32).toString('hex');
     const rawKey = `dp_live_${randomBytes}`;
 
@@ -26,11 +37,13 @@ export class ApiKeysService {
       name,
       keyHash,
       keyPrefix,
+      deviceLabel: deviceLabel ?? null,
+      scopes: SCOPES_BY_KEY_TYPE[type],
       user,
     });
 
     const savedKey = await this.apiKeysRepository.save(newKey);
-    this.logger.log(`Created API Key "${name}" for user ${user.id}`);
+    this.logger.log(`Created ${type} API key "${name}" for user ${user.id}`);
 
     return { rawKey, keyEntity: savedKey };
   }
@@ -44,7 +57,7 @@ export class ApiKeysService {
     this.logger.log(`Revoked API Key ${keyId} for user ${userId}`);
   }
 
-  public async validateApiKey(rawKey: string): Promise<User | null> {
+  public async validateApiKey(rawKey: string): Promise<ApiKeyValidationResult | null> {
     const hash = crypto.createHash('sha256').update(rawKey).digest('hex');
 
     const apiKey = await this.apiKeysRepository.findByHashWithUser(hash);
@@ -57,6 +70,6 @@ export class ApiKeysService {
       this.logger.error(`Failed to update lastUsedAt for key ${apiKey.id}`, String(error));
     });
 
-    return apiKey.user;
+    return { user: apiKey.user, scopes: apiKey.scopes };
   }
 }

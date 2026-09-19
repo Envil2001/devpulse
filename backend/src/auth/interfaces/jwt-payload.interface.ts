@@ -4,7 +4,7 @@ export interface AuthenticatedUser {
   id: TypeId<'users'>;
   email: string;
   displayName: string;
-  timezone: string | null;
+  timezone: string;
   hourlyRate: number;
   currency: string;
 }

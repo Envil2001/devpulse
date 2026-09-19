@@ -2,6 +2,10 @@ import { Body, Controller, Get, HttpCode, HttpStatus, Post, UseGuards } from '@n
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
+import { RequireScopes } from '../../api-keys/decorators/require-scopes.decorator';
+import { ApiKeyScope } from '../../api-keys/enums/api-key.enums';
+import { ApiKeyGuard } from '../../api-keys/guards/api-key.guard';
+import { ScopesGuard } from '../../api-keys/guards/scopes.guard';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { type AuthenticatedUser } from '../../auth/interfaces/jwt-payload.interface';
@@ -10,7 +14,6 @@ import { User } from '../../users/entities/user.entity';
 import { IngestTelemetryBatchRequestDto } from '../dto/request/ingest-telemetry-batch-request.dto';
 import { IngestTelemetryBatchResponseDto } from '../dto/response/ingest-telemetry-batch-response.dto';
 import { WorkSession } from '../entities/work-session.entity';
-import { ApiKeyGuard } from '../guards/api-key.guard';
 import { TelemetryQueue } from '../queue/telemetry.queue';
 
 interface WorkSessionSummary {
@@ -33,7 +36,8 @@ export class TelemetryController {
   ) {}
 
   @Post('events/batch')
-  @UseGuards(ApiKeyGuard)
+  @UseGuards(ApiKeyGuard, ScopesGuard)
+  @RequireScopes(ApiKeyScope.TELEMETRY_WRITE)
   @TelemetryThrottle()
   @HttpCode(HttpStatus.OK)
   public async ingestBatch(

@@ -5,6 +5,8 @@ import {
   analyticsService,
   TimeseriesPoint,
   BranchDataPoint,
+  LiveStatus,
+  LanguagesBreakdown,
 } from './api';
 import { downloadBlob } from '@/shared/lib/download';
 
@@ -45,6 +47,21 @@ export function periodToDateRange(
   }
 
   return { startDate: start.toISOString(), endDate: now.toISOString() };
+}
+
+export function useLiveStatus() {
+  return useQuery<LiveStatus>({
+    queryKey: ['analytics', 'status'],
+    queryFn: () => analyticsService.getLiveStatus(),
+    refetchInterval: 30000,
+  });
+}
+
+export function useLanguagesBreakdown() {
+  return useQuery<LanguagesBreakdown>({
+    queryKey: ['analytics', 'languages'],
+    queryFn: () => analyticsService.getLanguages(),
+  });
 }
 
 export function useDashboardStats(range: DateRange, projectId?: string) {

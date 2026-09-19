@@ -214,7 +214,7 @@ export function SessionsListView() {
                     aria-hidden="true"
                   />
                   <span className="mono-sm text-neutral-400">
-                    {formatDateTimeLabel(session.startedAt, user?.timezone)}
+                    {formatDateTimeLabel(session.startedAt, user?.timezone ?? 'UTC')}
                   </span>
                 </div>
 

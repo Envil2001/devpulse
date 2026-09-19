@@ -196,7 +196,7 @@ export class AuthService implements OnModuleInit {
         id: typeIdGenerator('users'),
         email,
         displayName,
-        timezone: timezone ?? 'UTC',
+        timezone: timezone,
       });
 
       const savedUser = await userRepo.save(newUser);
