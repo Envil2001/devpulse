@@ -4,7 +4,7 @@ export interface User {
   id: string;
   email: string;
   displayName: string;
-  timezone: string | null;
+  timezone: string;
   hourlyRate: number;
   currency: string;
 }
