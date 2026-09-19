@@ -26,6 +26,27 @@ export interface AnalyticsRangeParams extends QueryParams {
   projectId?: string;
 }
 
+export interface LiveStatus {
+  isCodingNow: boolean;
+  currentProject: string | null;
+  currentBranch: string | null;
+  currentLanguage: string | null;
+  currentSessionDurationSeconds: number | null;
+  sessionStartedAt: string | null;
+}
+
+export interface LanguageStat {
+  language: string;
+  activeSeconds: number;
+  formattedTime: string;
+  percentage: number;
+}
+
+export interface LanguagesBreakdown {
+  totalActiveSeconds: number;
+  languages: Array<LanguageStat>;
+}
+
 export class AnalyticsService extends BaseService {
   async getDashboard(params: AnalyticsRangeParams = {}): Promise<DashboardStats> {
     return this.get<DashboardStats>('/analytics/dashboard', { params });
@@ -48,6 +69,14 @@ export class AnalyticsService extends BaseService {
 
   async exportSessions(params: AnalyticsRangeParams = {}): Promise<Blob> {
     return this.getBlob('/analytics/export', { params });
+  }
+
+  async getLiveStatus(): Promise<LiveStatus> {
+    return this.get<LiveStatus>('/analytics/status');
+  }
+
+  async getLanguages(): Promise<LanguagesBreakdown> {
+    return this.get<LanguagesBreakdown>('/analytics/languages');
   }
 }
 

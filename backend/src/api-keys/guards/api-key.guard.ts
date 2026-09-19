@@ -1,7 +1,7 @@
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
 
-import { ApiKeysService } from '../../api-keys/services/api-keys.service';
 import { RequestWithUser } from '../../common/interfaces/request-with-user.interface';
+import { ApiKeysService } from '../services/api-keys.service';
 
 @Injectable()
 export class ApiKeyGuard implements CanActivate {
@@ -17,13 +17,15 @@ export class ApiKeyGuard implements CanActivate {
       throw new UnauthorizedException('API key is missing');
     }
 
-    const user = await this.apiKeyService.validateApiKey(apiKey);
+    const result = await this.apiKeyService.validateApiKey(apiKey);
 
-    if (!user) {
+    if (!result) {
       throw new UnauthorizedException('Invalid API key');
     }
 
-    request.user = user;
+    request.user = result.user;
+    request.apiKeyScopes = result.scopes;
+
     return true;
   }
 }

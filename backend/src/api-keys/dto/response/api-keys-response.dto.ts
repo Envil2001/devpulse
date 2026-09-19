@@ -1,11 +1,19 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
+import { ApiKeyType } from '../../enums/api-key.enums';
+
 export class ApiKeyResponseDto {
   @ApiProperty({ description: 'Unique ID of the API key' })
   public id!: string;
 
   @ApiProperty({ description: 'User-defined name for the API key' })
   public name!: string;
+
+  @ApiProperty({ description: 'Type of the API key', enum: ApiKeyType })
+  public type!: ApiKeyType;
+
+  @ApiPropertyOptional({ description: 'Device label for extension keys' })
+  public deviceLabel!: string | null;
 
   @ApiProperty({ description: 'Prefix of the API key for display (e.g., dp_live_1234)' })
   public keyPrefix!: string;

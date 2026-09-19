@@ -5,8 +5,6 @@ const DATE_INPUT_FORMAT = 'yyyy-MM-dd';
 const DATE_LABEL_FORMAT = 'MMM d, yyyy';
 const DATE_TIME_LABEL_FORMAT = 'MMM d, h:mm a';
 
-const DEFAULT_TIMEZONE = 'UTC';
-
 export function toDateInput(date: Date): string {
   return format(date, DATE_INPUT_FORMAT);
 }
@@ -25,10 +23,6 @@ export function formatChartAxisLabel(dateInput: string, rangeDays: number): stri
   return format(date, rangeDays <= 7 ? 'EEE' : 'MMM d');
 }
 
-export function formatDateTimeLabel(isoString: string, timezone?: string | null): string {
-  return formatInTimeZone(
-    new Date(isoString),
-    timezone ?? DEFAULT_TIMEZONE,
-    DATE_TIME_LABEL_FORMAT,
-  );
+export function formatDateTimeLabel(isoString: string, timezone: string): string {
+  return formatInTimeZone(new Date(isoString), timezone, DATE_TIME_LABEL_FORMAT);
 }

@@ -1,5 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { apiKeysService, type ApiKeySummary, type CreateApiKeyResponse } from './api';
+import {
+  apiKeysService,
+  CreateApiKeyRequest,
+  type ApiKeySummary,
+  type CreateApiKeyResponse,
+} from './api';
 
 const API_KEYS_QUERY_KEY = ['api-keys'] as const;
 
@@ -17,8 +22,8 @@ export function useApiKeys() {
 export function useCreateApiKey() {
   const queryClient = useQueryClient();
 
-  return useMutation<CreateApiKeyResponse, Error, string>({
-    mutationFn: (name: string) => apiKeysService.create(name),
+  return useMutation<CreateApiKeyResponse, Error, CreateApiKeyRequest>({
+    mutationFn: (payload) => apiKeysService.create(payload),
     onSuccess: (data) => {
       queryClient.setQueryData<Array<ApiKeySummary>>(API_KEYS_QUERY_KEY, (prev) =>
         prev ? [data.key, ...prev] : [data.key],

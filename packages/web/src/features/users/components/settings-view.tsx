@@ -105,8 +105,8 @@ export function SettingsView() {
               <div className="h-9 w-64 animate-pulse rounded-lg bg-neutral-800" />
             ) : (
               <TimezonePreference
-                key={user.timezone ?? 'UTC'}
-                initialTimezone={user.timezone ?? 'UTC'}
+                key={user.timezone}
+                initialTimezone={user.timezone}
                 onSave={handleSave}
                 isPending={isPending}
               />

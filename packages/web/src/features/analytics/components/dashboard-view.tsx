@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from 'react';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { Clock, Zap, Layers, Code2, GitBranch, Download } from 'lucide-react';
+import { Clock, Zap, Layers, Code2, GitBranch, Download, TerminalSquare } from 'lucide-react';
+import { differenceInCalendarDays } from 'date-fns';
 
 import { useRequireAuth } from '@/features/auth/context';
 import { Button } from '@/shared/components/ui/button';
@@ -14,10 +15,11 @@ import {
   useAnalyticsTimeseries,
   useBranchesDistribution,
   useExportSessions,
+  useLiveStatus,
+  useLanguagesBreakdown,
   periodToDateRange,
 } from '../hooks';
 import { TimeSwitcher } from './time-switcher';
-import { differenceInCalendarDays } from 'date-fns';
 
 function formatDuration(totalSeconds: number): string {
   const hours = Math.floor(totalSeconds / 3600);
@@ -72,6 +74,9 @@ export function DashboardView() {
   const { data: timeseries = [], isLoading: timeseriesLoading } = useAnalyticsTimeseries(range);
   const { data: branches = [], isLoading: branchesLoading } = useBranchesDistribution(range);
 
+  const { data: liveStatus } = useLiveStatus();
+  const { data: languagesData, isLoading: languagesLoading } = useLanguagesBreakdown();
+
   if (authLoading || !user) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -79,6 +84,7 @@ export function DashboardView() {
       </div>
     );
   }
+
   const rangeDays = differenceInCalendarDays(new Date(range.endDate), new Date(range.startDate));
 
   const chartData = timeseries.map((point) => ({
@@ -115,9 +121,24 @@ export function DashboardView() {
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 className="title-1">Hello, {user.displayName}</h2>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+            <h2 className="title-1">Hello, {user.displayName}</h2>
+
+            {liveStatus?.isCodingNow && (
+              <div className="flex items-center gap-2 rounded-full border border-green-spring/20 bg-green-spring/10 px-3 py-1 text-sm text-green-spring shadow-[0_0_15px_rgba(21,255,171,0.15)]">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-spring opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-spring"></span>
+                </span>
+                <span className="font-medium">
+                  Coding in {liveStatus.currentProject || 'Unknown'}
+                  {liveStatus.currentLanguage && ` (${liveStatus.currentLanguage})`}
+                </span>
+              </div>
+            )}
+          </div>
           <p className="body-muted mt-1">Here&apos;s what&apos;s happening with your workflow.</p>
         </div>
 
@@ -213,57 +234,118 @@ export function DashboardView() {
         )}
       </div>
 
-      <div
-        className={cn(
-          'rounded-2xl border border-white/5 bg-neutral-900/50 p-6 backdrop-blur-sm',
-          'transition-colors hover:border-white/10',
-        )}
-      >
-        <div className="mb-4 flex items-center justify-between">
-          <div>
-            <h3 className="title-4">Branches</h3>
-            <p className="caption mt-0.5">Where you spent time this period</p>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div
+          className={cn(
+            'rounded-2xl border border-white/5 bg-neutral-900/50 p-6 backdrop-blur-sm transition-colors hover:border-white/10',
+          )}
+        >
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <h3 className="title-4">Branches</h3>
+              <p className="caption mt-0.5">Where you spent time</p>
+            </div>
+          </div>
+
+          <div className="flex flex-col">
+            <div className="label-caps mb-2 grid grid-cols-12 gap-4 border-b border-white/5 pb-2">
+              <div className="col-span-8">BRANCH</div>
+              <div className="col-span-4 text-right">ACTIVE TIME</div>
+            </div>
+
+            {branchesLoading && (
+              <div className="py-8 text-center">
+                <span className="body-muted animate-pulse">Loading branch data…</span>
+              </div>
+            )}
+
+            {!branchesLoading && branches.length === 0 && (
+              <div className="py-8 text-center">
+                <span className="body-muted">No branch activity recorded for this period</span>
+              </div>
+            )}
+
+            {branches.map((branch, i) => (
+              <div
+                key={branch.branchName}
+                className={cn(
+                  'grid grid-cols-12 items-center gap-4 py-3.5 text-sm transition-colors',
+                  i !== branches.length - 1 && 'border-b border-white/5',
+                  'hover:bg-white/2 rounded-lg px-2 -mx-2',
+                )}
+              >
+                <div className="col-span-8 flex items-center gap-2">
+                  <span className="mono-sm inline-flex items-center gap-1.5 rounded-md border border-white/5 bg-neutral-950/40 px-2 py-0.5">
+                    <GitBranch className="h-3 w-3 text-neutral-500" aria-hidden="true" />
+                    {branch.branchName}
+                  </span>
+                </div>
+                <div className="mono-sm col-span-4 text-right text-neutral-200">
+                  {formatDuration(branch.activeSeconds)}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
-        <div className="flex flex-col">
-          <div className="label-caps mb-2 grid grid-cols-12 gap-4 border-b border-white/5 pb-2">
-            <div className="col-span-8">BRANCH</div>
-            <div className="col-span-4 text-right">ACTIVE TIME</div>
+        <div
+          className={cn(
+            'rounded-2xl border border-white/5 bg-neutral-900/50 p-6 backdrop-blur-sm transition-colors hover:border-white/10',
+          )}
+        >
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <h3 className="title-4">Languages</h3>
+              <p className="caption mt-0.5">Your technology stack</p>
+            </div>
           </div>
 
-          {branchesLoading && (
-            <div className="py-8 text-center">
-              <span className="body-muted animate-pulse">Loading branch data…</span>
+          <div className="flex flex-col">
+            <div className="label-caps mb-2 grid grid-cols-12 gap-4 border-b border-white/5 pb-2">
+              <div className="col-span-8">LANGUAGE</div>
+              <div className="col-span-4 text-right">ACTIVE TIME</div>
             </div>
-          )}
 
-          {!branchesLoading && branches.length === 0 && (
-            <div className="py-8 text-center">
-              <span className="body-muted">No branch activity recorded for this period</span>
-            </div>
-          )}
+            {languagesLoading && (
+              <div className="py-8 text-center">
+                <span className="body-muted animate-pulse">Loading languages…</span>
+              </div>
+            )}
 
-          {branches.map((branch, i) => (
-            <div
-              key={branch.branchName}
-              className={cn(
-                'grid grid-cols-12 items-center gap-4 py-3.5 text-sm transition-colors',
-                i !== branches.length - 1 && 'border-b border-white/5',
-                'hover:bg-white/2 rounded-lg px-2 -mx-2',
-              )}
-            >
-              <div className="col-span-8 flex items-center gap-2">
-                <span className="mono-sm inline-flex items-center gap-1.5 rounded-md border border-white/5 bg-neutral-950/40 px-2 py-0.5">
-                  <GitBranch className="h-3 w-3 text-neutral-500" aria-hidden="true" />
-                  {branch.branchName}
-                </span>
+            {!languagesLoading && languagesData?.languages.length === 0 && (
+              <div className="py-8 text-center">
+                <span className="body-muted">No language data recorded</span>
               </div>
-              <div className="mono-sm col-span-4 text-right text-neutral-200">
-                {formatDuration(branch.activeSeconds)}
+            )}
+
+            {languagesData?.languages.map((lang, i) => (
+              <div
+                key={lang.language}
+                className={cn(
+                  'grid grid-cols-12 items-center gap-4 py-3 text-sm transition-colors',
+                  i !== languagesData.languages.length - 1 && 'border-b border-white/5',
+                  'hover:bg-white/2 rounded-lg px-2 -mx-2',
+                )}
+              >
+                <div className="col-span-8 flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    <TerminalSquare className="h-4 w-4 text-neutral-500" />
+                    <span className="body-base capitalize">{lang.language}</span>
+                  </div>
+                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-neutral-800">
+                    <div
+                      className="h-full bg-green-spring/70"
+                      style={{ width: `${lang.percentage}%` }}
+                    />
+                  </div>
+                </div>
+                <div className="mono-sm col-span-4 flex flex-col items-end justify-center text-right">
+                  <span className="text-neutral-200">{lang.formattedTime}</span>
+                  <span className="text-xs text-neutral-500">{lang.percentage}%</span>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
     </div>

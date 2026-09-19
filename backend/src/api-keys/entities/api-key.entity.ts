@@ -5,6 +5,7 @@ import { type TypeId } from '@devpulse/lib';
 import { AppBaseEntity } from '../../common/entities/app-base.entity';
 import { TelemetryEvent } from '../../telemetry/entities/telemetry-event.entity';
 import { User } from '../../users/entities/user.entity';
+import { ApiKeyScope } from '../enums/api-key.enums';
 
 @Entity('api_keys')
 export class ApiKey extends AppBaseEntity<'apiKeys'> {
@@ -22,6 +23,14 @@ export class ApiKey extends AppBaseEntity<'apiKeys'> {
 
   @Column({ name: 'device_label', type: 'varchar', length: 100, nullable: true })
   public deviceLabel!: string | null;
+
+  @Column({
+    name: 'scopes',
+    type: 'text',
+    array: true,
+    default: '{telemetry:write}',
+  })
+  public scopes!: Array<ApiKeyScope>;
 
   @ManyToOne(() => User, (user) => user.apiKeys, {
     nullable: false,

@@ -24,6 +24,7 @@ import {
   DemoKeyResponseDto,
 } from '../dto/response/api-keys-response.dto';
 import { ApiKey } from '../entities/api-key.entity';
+import { ApiKeyScope, ApiKeyType } from '../enums/api-key.enums';
 import { ApiKeysService } from '../services/api-keys.service';
 
 @ApiTags('API Keys')
@@ -41,7 +42,12 @@ export class ApiKeysController {
     @CurrentUser() user: User,
     @Body() dto: CreateApiKeyRequestDto,
   ): Promise<CreateApiKeyResponseDto> {
-    const { rawKey, keyEntity } = await this.apiKeysService.createKey(user, dto.name);
+    const { rawKey, keyEntity } = await this.apiKeysService.createKey(
+      user,
+      dto.name,
+      dto.type,
+      dto.deviceLabel,
+    );
 
     return {
       rawKey,
@@ -54,7 +60,6 @@ export class ApiKeysController {
   @ApiResponse({ status: HttpStatus.OK, type: [ApiKeyResponseDto] })
   public async getMyKeys(@CurrentUser() user: User): Promise<Array<ApiKeyResponseDto>> {
     const keys = await this.apiKeysService.getUserKeys(user.id);
-
     return keys.map((key) => this.mapToDto(key));
   }
 
@@ -73,14 +78,20 @@ export class ApiKeysController {
   @ApiOperation({ summary: 'Get a temporary key for demo mode' })
   @ApiResponse({ status: HttpStatus.OK, type: DemoKeyResponseDto })
   public async getDemoKey(@CurrentUser() user: User): Promise<DemoKeyResponseDto> {
-    const { rawKey } = await this.apiKeysService.createKey(user, 'Demo Key');
+    const { rawKey } = await this.apiKeysService.createKey(user, 'Demo Key', ApiKeyType.EXTENSION);
     return { rawKey };
   }
 
   private mapToDto(entity: ApiKey): ApiKeyResponseDto {
+    const type = entity.scopes.includes(ApiKeyScope.ANALYTICS_READ)
+      ? ApiKeyType.INTEGRATION
+      : ApiKeyType.EXTENSION;
+
     return {
       id: entity.id,
       name: entity.name,
+      type,
+      deviceLabel: entity.deviceLabel ?? null,
       keyPrefix: entity.keyPrefix,
       lastUsedAt: entity.lastUsedAt,
       createdAt: entity.createdAt,
