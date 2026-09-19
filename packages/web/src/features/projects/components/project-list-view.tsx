@@ -168,7 +168,7 @@ export function ProjectListView() {
                     <span>Last active</span>
                     <span className="font-medium text-neutral-400">
                       {project.lastActive
-                        ? formatDateTimeLabel(project.lastActive, user?.timezone)
+                        ? formatDateTimeLabel(project.lastActive, user?.timezone ?? 'UTC')
                         : 'Never'}
                     </span>
                   </div>
