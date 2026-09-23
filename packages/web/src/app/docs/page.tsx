@@ -1,6 +1,8 @@
 import { EndpointCard } from '@/features/docs/components/endpoint-card';
 import { DocsLayoutWrapper } from '@/features/docs/components/docs-layout-wrapper';
 
+export const dynamic = 'force-dynamic';
+
 interface OpenAPIParameter {
   name: string;
   in: 'header' | 'query' | 'path';
