@@ -1,5 +1,5 @@
 import { Controller, Get, HttpCode, HttpStatus, Query, UseGuards } from '@nestjs/common';
-import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiQuery, ApiResponse, ApiSecurity, ApiTags } from '@nestjs/swagger';
 
 import { type TypeId } from '@devpulse/lib';
 
@@ -17,6 +17,7 @@ import { GetIntegrationTodayResponseDto } from '../dto/response/get-integration-
 import { IntegrationsAnalyticsService } from '../services/integrations-analytics.service';
 
 @ApiTags('Integrations Analytics')
+@ApiSecurity('ApiKeyAuth')
 @Controller('integrations/analytics')
 @UseGuards(ApiKeyGuard, ScopesGuard)
 export class IntegrationsAnalyticsController {
@@ -27,6 +28,7 @@ export class IntegrationsAnalyticsController {
 
   @Get('ping')
   @RequireScopes(ApiKeyScope.ANALYTICS_READ)
+  @ApiSecurity('ApiKeyAuth', [ApiKeyScope.ANALYTICS_READ])
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Verify connection and API key scopes' })
   public ping(@CurrentUser() user: User): {
@@ -39,6 +41,7 @@ export class IntegrationsAnalyticsController {
 
   @Get('today')
   @RequireScopes(ApiKeyScope.ANALYTICS_READ)
+  @ApiSecurity('ApiKeyAuth', [ApiKeyScope.ANALYTICS_READ])
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get summary metrics for today (based on user timezone)' })
   @ApiResponse({ status: HttpStatus.OK, type: GetIntegrationTodayResponseDto })
@@ -48,6 +51,7 @@ export class IntegrationsAnalyticsController {
 
   @Get('sessions')
   @RequireScopes(ApiKeyScope.ANALYTICS_READ)
+  @ApiSecurity('ApiKeyAuth', [ApiKeyScope.ANALYTICS_READ])
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get a list of recent work sessions' })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -64,6 +68,7 @@ export class IntegrationsAnalyticsController {
 
   @Get('status')
   @RequireScopes(ApiKeyScope.ANALYTICS_READ)
+  @ApiSecurity('ApiKeyAuth', [ApiKeyScope.ANALYTICS_READ])
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get live status: is user coding right now?' })
   @ApiResponse({ status: HttpStatus.OK, type: GetIntegrationStatusResponseDto })
@@ -73,6 +78,7 @@ export class IntegrationsAnalyticsController {
 
   @Get('languages')
   @RequireScopes(ApiKeyScope.ANALYTICS_READ)
+  @ApiSecurity('ApiKeyAuth', [ApiKeyScope.ANALYTICS_READ])
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get programming languages usage breakdown' })
   @ApiResponse({ status: HttpStatus.OK, type: GetIntegrationLanguagesResponseDto })
@@ -84,6 +90,7 @@ export class IntegrationsAnalyticsController {
 
   @Get('projects')
   @RequireScopes(ApiKeyScope.ANALYTICS_READ)
+  @ApiSecurity('ApiKeyAuth', [ApiKeyScope.ANALYTICS_READ])
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get stats and time spent per project' })
   public async getProjects(@CurrentUser() user: User): Promise<Array<ProjectSummaryDto>> {
