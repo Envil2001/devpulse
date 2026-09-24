@@ -20,4 +20,8 @@ export class UpdateUserRequestDto {
   @IsString()
   @MaxLength(10)
   public currency?: string;
+
+  @IsOptional()
+  @IsString()
+  public openaiKey?: string;
 }

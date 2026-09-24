@@ -7,6 +7,7 @@ export interface User {
   timezone: string;
   hourlyRate: number;
   currency: string;
+  hasOpenaiKey: boolean;
 }
 
 interface BeginSignupRequest {

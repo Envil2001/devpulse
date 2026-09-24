@@ -41,6 +41,14 @@ export class User extends AppBaseEntity<'users'> {
   })
   public timezone!: string;
 
+  @Column({
+    name: 'openai_key',
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+  })
+  public openaiKey!: string | null;
+
   @Column({ name: 'hourly_rate', type: 'real', default: 0 })
   public hourlyRate = 0;
 

@@ -35,7 +35,9 @@ export class UsersService {
 
   public async update(
     userId: TypeId<'users'>,
-    updates: Partial<Pick<User, 'displayName' | 'timezone' | 'hourlyRate' | 'currency'>>,
+    updates: Partial<
+      Pick<User, 'displayName' | 'timezone' | 'hourlyRate' | 'currency' | 'openaiKey'>
+    >,
   ): Promise<User> {
     if (updates.displayName) {
       const existing = await this.userRepository.findByDisplayName(updates.displayName);

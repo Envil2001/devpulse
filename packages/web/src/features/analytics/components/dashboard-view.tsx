@@ -20,6 +20,7 @@ import {
   periodToDateRange,
 } from '../hooks';
 import { TimeSwitcher } from './time-switcher';
+import { AiWorklogCard } from '@/features/worklog/components/ai-worklog-card';
 
 function formatDuration(totalSeconds: number): string {
   const hours = Math.floor(totalSeconds / 3600);
@@ -233,6 +234,8 @@ export function DashboardView() {
           </div>
         )}
       </div>
+
+      <AiWorklogCard />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <div

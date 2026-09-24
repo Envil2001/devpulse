@@ -6,5 +6,6 @@ export class UserResponseDto {
   public displayName!: string;
   public timezone!: string;
   public hourlyRate!: number;
+  public hasOpenaiKey!: boolean;
   public currency!: string;
 }

@@ -29,10 +29,12 @@ export class UserRepository {
   }
 
   public async findById(id: TypeId<'users'>): Promise<User | null> {
-    return this.repository.findOne({
-      where: { id },
-      relations: ['encryption'],
-    });
+    return this.repository
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.encryption', 'encryption')
+      .addSelect(['user.openaiKey'])
+      .where('user.id = :id', { id })
+      .getOne();
   }
 
   public async existsByEmail(email: string): Promise<boolean> {

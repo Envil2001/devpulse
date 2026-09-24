@@ -242,6 +242,7 @@ export class AuthService implements OnModuleInit {
           timezone: savedUser.timezone,
           hourlyRate: savedUser.hourlyRate,
           currency: savedUser.currency,
+          hasOpenaiKey: false,
         },
       };
     });

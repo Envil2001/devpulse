@@ -6,18 +6,18 @@ import {
   HttpCode,
   HttpStatus,
   Post,
-  Req,
   Res,
   UseGuards,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
-import type { Request, Response } from 'express';
+import type { Response } from 'express';
 
 import { env } from '@devpulse/env/api';
 
 import { AuthThrottle } from '../../common/decorators/throtte.decorators';
 import { MessageResponseDto } from '../../common/dto/message-response.dto';
 import { User } from '../../users/entities/user.entity';
+import { UserRepository } from '../../users/repositories/users.repository';
+import { CurrentUser } from '../decorators/current-user.decorator';
 import { BeginSignupRequestDto } from '../dto/requests/begin-signup-request.dto';
 import { CompleteSignupRequestDto } from '../dto/requests/complete-signup-request.dto';
 import { LoginBeginRequestDto } from '../dto/requests/login-begin-request.dto';
@@ -28,11 +28,15 @@ import { LoginVerifyResponseDto } from '../dto/response/login-verify-response.dt
 import { SignUpCompleteResponseDto } from '../dto/response/sign-up-complete.response.dto';
 import { UserResponseDto } from '../dto/response/user-response.dto';
 import { VerifySignUpResponseDto } from '../dto/response/verify-signup-response.dto';
+import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { AuthService } from '../services/auth.service';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly userRepo: UserRepository,
+  ) {}
 
   @Post('signup/begin')
   @AuthThrottle()
@@ -81,16 +85,30 @@ export class AuthController {
   }
 
   @Get('me')
-  @UseGuards(AuthGuard('jwt'))
-  public getMe(@Req() req: Request): UserResponseDto {
-    const user = req.user as User;
+  @UseGuards(JwtAuthGuard)
+  public async getMe(@CurrentUser() user: User): Promise<UserResponseDto> {
+    const fullUser = await this.userRepo.findById(user.id);
+
+    if (!fullUser) {
+      return {
+        id: user.id,
+        email: user.email,
+        displayName: user.displayName,
+        timezone: user.timezone,
+        hourlyRate: user.hourlyRate,
+        currency: user.currency,
+        hasOpenaiKey: false,
+      };
+    }
+
     return {
-      id: user.id,
-      email: user.email,
-      displayName: user.displayName,
-      timezone: user.timezone,
-      hourlyRate: user.hourlyRate,
-      currency: user.currency,
+      id: fullUser.id,
+      email: fullUser.email,
+      displayName: fullUser.displayName,
+      timezone: fullUser.timezone,
+      hourlyRate: fullUser.hourlyRate,
+      currency: fullUser.currency,
+      hasOpenaiKey: Boolean(fullUser.openaiKey),
     };
   }
 
