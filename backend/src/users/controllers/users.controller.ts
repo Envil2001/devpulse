@@ -33,6 +33,7 @@ export class UsersController {
       timezone: user.timezone,
       hourlyRate: user.hourlyRate,
       currency: user.currency,
+      hasOpenaiKey: Boolean(user.openaiKey),
     };
   }
 }

@@ -11,6 +11,7 @@ export interface User {
   timezone: string;
   hourlyRate: number;
   currency: string;
+  hasOpenaiKey: boolean;
 }
 
 export interface UpdateProfileDto {
@@ -18,6 +19,7 @@ export interface UpdateProfileDto {
   timezone?: string;
   hourlyRate?: number;
   currency?: string;
+  openaiKey?: string | null;
 }
 
 interface AuthContextType {
