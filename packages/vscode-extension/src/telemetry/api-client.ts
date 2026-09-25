@@ -72,7 +72,10 @@ export class TelemetryApiClient {
     private readonly log?: vscode.OutputChannel,
   ) {}
 
-  public async postEventsBatch(payload: { events: Array<TelemetryEventDto> }): Promise<void> {
+  public async postEventsBatch(
+    payload: { events: Array<TelemetryEventDto> },
+    signal?: AbortSignal,
+  ): Promise<void> {
     const apiKey = await this.context.secrets.get(DEVPULSE_API_KEY_SECRET);
     if (apiKey === undefined || apiKey.trim().length === 0) {
       throw new Error('MissingApiKey');
@@ -119,7 +122,7 @@ export class TelemetryApiClient {
         method: 'POST',
         headers,
         body,
-        signal: AbortSignal.timeout(30_000), // 30 seconds
+        signal: signal ?? AbortSignal.timeout(30_000), // 30 seconds
       });
     } catch (error) {
       this.log?.appendLine(`[telemetry] network error: ${String(error)}`);

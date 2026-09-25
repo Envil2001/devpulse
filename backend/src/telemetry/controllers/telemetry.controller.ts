@@ -13,19 +13,9 @@ import { TelemetryThrottle } from '../../common/decorators/throtte.decorators';
 import { User } from '../../users/entities/user.entity';
 import { IngestTelemetryBatchRequestDto } from '../dto/request/ingest-telemetry-batch-request.dto';
 import { IngestTelemetryBatchResponseDto } from '../dto/response/ingest-telemetry-batch-response.dto';
+import { WorkSessionSummaryDto } from '../dto/response/work-session-summary.dto';
 import { WorkSession } from '../entities/work-session.entity';
 import { TelemetryQueue } from '../queue/telemetry.queue';
-
-interface WorkSessionSummary {
-  id: string;
-  startedAt: string;
-  endedAt: string;
-  projectName: string;
-  gitBranch: string | null;
-  durationMs: number;
-  focusScore: number;
-  earnedMoney: number;
-}
 
 @Controller('telemetry')
 export class TelemetryController {
@@ -58,7 +48,7 @@ export class TelemetryController {
   @HttpCode(HttpStatus.OK)
   public async getSessions(
     @CurrentUser() user: AuthenticatedUser,
-  ): Promise<Array<WorkSessionSummary>> {
+  ): Promise<Array<WorkSessionSummaryDto>> {
     const sessions = await this.sessionRepo.find({
       where: { userId: user.id },
       relations: ['project'],
@@ -66,7 +56,7 @@ export class TelemetryController {
       take: 50,
     });
 
-    return sessions.map((session): WorkSessionSummary => {
+    return sessions.map((session): WorkSessionSummaryDto => {
       return {
         id: session.id,
         startedAt: session.startedAt.toISOString(),

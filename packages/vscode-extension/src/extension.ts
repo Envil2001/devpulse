@@ -7,6 +7,7 @@ import { ActivityMonitor } from './activity-monitor.js';
 import { GitContextProvider } from './git-context.js';
 
 let telemetryBridge: TelemetryBridge | undefined;
+const DEACTIVATE_FLUSH_TIMEOUT_MS = 3000;
 
 export function activate(context: vscode.ExtensionContext): void {
   console.log('DevPulse extension is now active!');
@@ -34,14 +35,15 @@ export function activate(context: vscode.ExtensionContext): void {
       outputChannel,
     );
 
+    const gitStatusBar = new GitStatusBar(gitContextProvider);
+
+    context.subscriptions.push(activityMonitor, gitContextProvider, telemetryBridge, gitStatusBar);
+
+    void gitStatusBar.show();
+
     telemetryBridge.start().catch((error: unknown) => {
       outputChannel.appendLine(`[error] Telemetry failed to start: ${String(error)}`);
     });
-
-    const gitStatusBar = new GitStatusBar(gitContextProvider);
-    void gitStatusBar.show();
-
-    context.subscriptions.push(activityMonitor, gitContextProvider, telemetryBridge, gitStatusBar);
 
     outputChannel.appendLine('[info] Workspace is trusted. Telemetry started.');
   };
@@ -62,9 +64,18 @@ export function activate(context: vscode.ExtensionContext): void {
 }
 
 export async function deactivate(): Promise<void> {
+  if (!telemetryBridge) return;
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => {
+    controller.abort();
+  }, DEACTIVATE_FLUSH_TIMEOUT_MS);
+
   try {
-    await telemetryBridge?.flush();
+    await telemetryBridge.flush(controller.signal);
   } catch {
-    // shutting down, nothing to do
+    // shutting down, best effort
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
