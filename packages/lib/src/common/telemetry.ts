@@ -1,5 +1,5 @@
 export interface TelemetryEventDto {
-  type: 'heartbeat' | 'file_save' | 'file_switch' | 'idle_start' | 'idle_end';
+  type: 'heartbeat' | 'file_save' | 'file_switch' | 'idle_start' | 'idle_end' | 'session_end';
   gitBranch: string | null;
   gitRemoteUrl?: string;
   filePath?: string;

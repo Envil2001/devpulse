@@ -15,8 +15,9 @@ import { type TelemetryEventDto } from '@devpulse/lib';
 
 export class TelemetryEventItemDto implements TelemetryEventDto {
   @ApiProperty({ description: 'Event type' })
-  @IsEnum(['heartbeat', 'file_save', 'file_switch', 'idle_start', 'idle_end'])
-  public type!: 'heartbeat' | 'file_save' | 'file_switch' | 'idle_start' | 'idle_end';
+  @IsEnum(['heartbeat', 'file_save', 'file_switch', 'idle_start', 'idle_end', 'session_end'])
+  public type!:
+    'heartbeat' | 'file_save' | 'file_switch' | 'idle_start' | 'idle_end' | 'session_end';
 
   @ApiProperty({ description: 'Git branch name (e.g., main, develop)' })
   @IsString()

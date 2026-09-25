@@ -26,6 +26,10 @@
       {
         "command": "devpulse.setApiKey",
         "title": "DevPulse: Set API Key"
+      },
+      {
+        "command": "devpulse.clearApiKey",
+        "title": "DevPulse: Clear API Key"
       }
     ],
     "configuration": {

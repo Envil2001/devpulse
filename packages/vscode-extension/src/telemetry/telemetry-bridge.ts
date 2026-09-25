@@ -117,8 +117,18 @@ export class TelemetryBridge implements vscode.Disposable {
     const nextRemoteUrl = nextContext.gitRemoteUrl;
 
     if (nextBranch === null) {
+      if (previousBranch !== null) {
+        this.enqueue(
+          this.createEvent('session_end', {
+            gitBranch: previousBranch,
+            gitRemoteUrl: previousRemoteUrl,
+          }),
+        );
+      }
+
       this.lastObservedGitBranch = null;
       this.lastObservedGitRemoteUrl = null;
+
       return;
     }
 
@@ -153,7 +163,7 @@ export class TelemetryBridge implements vscode.Disposable {
   }
 
   private createEvent(
-    type: 'heartbeat' | 'file_save' | 'file_switch' | 'idle_start' | 'idle_end',
+    type: 'heartbeat' | 'file_save' | 'file_switch' | 'idle_start' | 'idle_end' | 'session_end',
     partial: {
       durationMs?: number | null;
       filePath?: string | null;
@@ -220,7 +230,7 @@ export class TelemetryBridge implements vscode.Disposable {
       });
   }
 
-  public async flush(): Promise<void> {
+  public async flush(signal?: AbortSignal): Promise<void> {
     if (this.flushing) {
       return;
     }
@@ -240,9 +250,12 @@ export class TelemetryBridge implements vscode.Disposable {
         })}`,
       );
 
-      await this.client.postEventsBatch({
-        events: batch,
-      });
+      await this.client.postEventsBatch(
+        {
+          events: batch,
+        },
+        signal,
+      );
 
       this.persistQueue();
 
