@@ -133,6 +133,14 @@ export function AuthenticatedUserProvider({
   );
 }
 
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within AuthContextProvider');
+  }
+  return context;
+}
+
 export function useRequireAuth(): AuthenticatedContextType {
   const context = useContext(AuthenticatedContext);
   if (!context) {

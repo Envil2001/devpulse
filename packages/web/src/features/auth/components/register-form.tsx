@@ -8,7 +8,6 @@ import * as z from 'zod';
 import Link from 'next/link';
 
 import { AuthService } from '@/features/auth/api';
-import { useAuth } from '@/features/auth/context';
 import { buildSignupCryptoPayload } from '@/features/auth/crypto';
 import { ApiClientError } from '@/shared/api/api-client';
 
@@ -22,6 +21,7 @@ import {
 } from '@/shared/components/ui/form';
 import { Input } from '@/shared/components/ui/input';
 import { Button } from '@/shared/components/ui/button';
+import { useAuth } from '../context';
 
 const registerSchema = z.object({
   displayName: z
