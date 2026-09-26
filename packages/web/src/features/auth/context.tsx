@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { getJson, postJson, patchJson } from '@/shared/api/api-client';
 
@@ -33,7 +33,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthContextProvider({ children }: { children: React.ReactNode }) {
+export function AuthContextProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
@@ -45,24 +45,18 @@ export function AuthContextProvider({ children }: { children: React.ReactNode })
         setUser(userData);
       } catch {
         setUser(null);
-        console.log('Not authenticated');
       } finally {
         setIsLoading(false);
       }
     };
-
     checkAuth();
   }, []);
 
-  const login = (userData: User) => {
-    setUser(userData);
-  };
+  const login = (userData: User) => setUser(userData);
 
   const logout = async () => {
     try {
       await postJson('/auth/logout', {});
-    } catch (error) {
-      console.error('Logout error (server-side):', error);
     } finally {
       setUser(null);
       router.replace('/login');
@@ -90,6 +84,55 @@ export function AuthContextProvider({ children }: { children: React.ReactNode })
   );
 }
 
+interface AuthenticatedContextType {
+  user: User;
+  logout: () => Promise<void>;
+  updateProfile: (dto: UpdateProfileDto) => Promise<void>;
+}
+
+const AuthenticatedContext = createContext<AuthenticatedContextType | undefined>(undefined);
+
+export function AuthenticatedUserProvider({
+  children,
+  initialUser,
+}: {
+  children: ReactNode;
+  initialUser: User;
+}) {
+  const [user, setUser] = useState<User>(initialUser);
+  const router = useRouter();
+
+  const logout = async () => {
+    try {
+      await postJson('/auth/logout', {});
+    } finally {
+      router.replace('/login');
+    }
+  };
+
+  const updateProfile = async (dto: UpdateProfileDto) => {
+    const updated = await patchJson<User, UpdateProfileDto>('/users/me', dto);
+    setUser(updated);
+  };
+
+  return (
+    <AuthenticatedContext.Provider value={{ user, logout, updateProfile }}>
+      <AuthContext.Provider
+        value={{
+          user,
+          isAuthenticated: true,
+          isLoading: false,
+          login: () => {},
+          logout,
+          updateProfile,
+        }}
+      >
+        {children}
+      </AuthContext.Provider>
+    </AuthenticatedContext.Provider>
+  );
+}
+
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
@@ -98,22 +141,10 @@ export function useAuth() {
   return context;
 }
 
-export function useRequireAuth() {
-  const context = useAuth();
-
-  if (context.isLoading) {
-    return {
-      ...context,
-      user: null,
-    };
+export function useRequireAuth(): AuthenticatedContextType {
+  const context = useContext(AuthenticatedContext);
+  if (!context) {
+    throw new Error('useRequireAuth must be used within AuthenticatedUserProvider');
   }
-
-  if (!context.user) {
-    throw new Error('useRequireAuth must be used within protected routes');
-  }
-
-  return {
-    ...context,
-    user: context.user,
-  };
+  return context;
 }

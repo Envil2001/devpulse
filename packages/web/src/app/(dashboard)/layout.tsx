@@ -1,23 +1,15 @@
-'use client';
+import { type ReactNode } from 'react';
+import { redirect } from 'next/navigation';
 
-import { useState } from 'react';
-import { Sidebar } from '@/shared/components/layout/sidebar';
-import { Header } from '@/shared/components/layout/header';
+import { getServerUser } from '@/features/auth/server';
+import { DashboardShell } from '@/shared/components/layout/dashboard-shell';
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+export default async function DashboardLayout({ children }: { children: ReactNode }) {
+  const user = await getServerUser();
 
-  return (
-    <div className="h-dvh w-full bg-neutral-950 text-neutral-100 transition-colors duration-200">
-      <Sidebar isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
+  if (!user) {
+    redirect('/login');
+  }
 
-      <div className="flex flex-1 flex-col min-w-0 lg:pl-64">
-        <Header onMenuToggle={() => setIsMobileMenuOpen((p) => !p)} isMenuOpen={isMobileMenuOpen} />
-
-        <main className="flex-1 overflow-y-auto pt-14">
-          <div className="mx-auto w-full max-w-6xl px-6 py-8 lg:px-8">{children}</div>
-        </main>
-      </div>
-    </div>
-  );
+  return <DashboardShell user={user}>{children}</DashboardShell>;
 }

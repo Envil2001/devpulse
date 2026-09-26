@@ -14,8 +14,16 @@ import {
 } from '@/shared/components/ui/select';
 import { cn } from '@/shared/lib/cn';
 import { useSessions } from '../hooks';
-import { useAuth } from '@/features/auth/context';
 import { formatDateTimeLabel } from '@/shared/lib/date';
+import {
+  PageHeader,
+  PageHeaderHeading,
+  PageTitle,
+  PageDescription,
+  Page,
+} from '@/shared/components/layout/page';
+import { Panel, PanelHeader } from '@/shared/components/layout/panel';
+import { useRequireAuth } from '@/features/auth/context';
 
 function formatDuration(ms: number): string {
   const seconds = Math.floor(ms / 1000);
@@ -27,7 +35,7 @@ function formatDuration(ms: number): string {
 
 export function SessionsListView() {
   const { data: sessions = [], isLoading, error } = useSessions();
-  const { user } = useAuth();
+  const { user } = useRequireAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [projectFilter, setProjectFilter] = useState('all');
 
@@ -57,13 +65,17 @@ export function SessionsListView() {
   }, [sessions]);
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h2 className="title-1">Sessions</h2>
-        <p className="body-muted mt-1">
-          Detailed log of your tracked development activity and focus metrics
-        </p>
-      </div>
+    <Page>
+      <PageHeader>
+        <div>
+          <PageHeaderHeading>
+            <PageTitle>Sessions</PageTitle>
+          </PageHeaderHeading>
+          <PageDescription>
+            Detailed log of your tracked development activity and focus metrics
+          </PageDescription>
+        </div>
+      </PageHeader>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div className="flex flex-col rounded-xl border border-white/5 bg-neutral-900/50 p-4 backdrop-blur-sm">
@@ -103,13 +115,8 @@ export function SessionsListView() {
         </div>
       </div>
 
-      <div
-        className={cn(
-          'rounded-2xl border border-white/5 bg-neutral-900/50 p-6 backdrop-blur-sm',
-          'transition-colors hover:border-white/10',
-        )}
-      >
-        <div className="mb-4 flex flex-col items-center justify-between gap-3 border-b border-white/5 pb-4 sm:flex-row">
+      <Panel>
+        <PanelHeader>
           <div className="flex w-full flex-1 items-center gap-2.5 sm:w-auto">
             <div className="relative w-full sm:w-72">
               <Search
@@ -147,7 +154,7 @@ export function SessionsListView() {
               {filteredSessions.length} of {sessions.length}
             </span>
           </div>
-        </div>
+        </PanelHeader>
 
         <div className="label-caps mb-2 grid grid-cols-12 gap-4 border-b border-white/5 pb-3">
           <div className="col-span-4 sm:col-span-3">Start Time</div>
@@ -189,7 +196,7 @@ export function SessionsListView() {
                   setSearchQuery('');
                   setProjectFilter('all');
                 }}
-                className="mt-2 text-neutral-400 hover:text-neutral-100"
+                className="mt-2"
               >
                 Reset filters
               </Button>
@@ -214,7 +221,7 @@ export function SessionsListView() {
                     aria-hidden="true"
                   />
                   <span className="mono-sm text-neutral-400">
-                    {formatDateTimeLabel(session.startedAt, user?.timezone ?? 'UTC')}
+                    {formatDateTimeLabel(session.startedAt, user.timezone)}
                   </span>
                 </div>
 
@@ -244,7 +251,7 @@ export function SessionsListView() {
             ))}
           </div>
         )}
-      </div>
-    </div>
+      </Panel>
+    </Page>
   );
 }
