@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { DollarSign, Clock, TrendingUp } from 'lucide-react';
 
 import { Button } from '@/shared/components/ui/button';
@@ -15,32 +15,28 @@ import {
   SelectValue,
 } from '@/shared/components/ui/select';
 import { cn } from '@/shared/lib/cn';
-
-import { useAuth, type User } from '@/features/auth/context';
 import { periodToDateRange, useDashboardStats } from '@/features/analytics/hooks';
+import {
+  Page,
+  PageDescription,
+  PageHeader,
+  PageHeaderHeading,
+  PageTitle,
+} from '@/shared/components/layout/page';
+import { Panel } from '@/shared/components/layout/panel';
+import { useRequireAuth } from '@/features/auth/context';
 
 export function EarningsView() {
-  const { user, isLoading } = useAuth();
+  const { user, updateProfile } = useRequireAuth();
 
-  if (isLoading || !user) {
-    return (
-      <div className="flex h-[50vh] flex-col items-center justify-center p-12 text-neutral-500">
-        <p className="body-muted animate-pulse">Loading earnings profile...</p>
-      </div>
-    );
-  }
+  const range30d = useMemo(() => periodToDateRange('30d'), []);
+  const range7d = useMemo(() => periodToDateRange('7d'), []);
 
-  return <EarningsContent user={user} />;
-}
+  const { data: stats30d } = useDashboardStats(range30d);
+  const { data: stats7d } = useDashboardStats(range7d);
 
-function EarningsContent({ user }: { user: User }) {
-  const { updateProfile } = useAuth();
-
-  const { data: stats30d, isLoading: isLoading30d } = useDashboardStats(periodToDateRange('30d'));
-  const { data: stats7d, isLoading: isLoading7d } = useDashboardStats(periodToDateRange('7d'));
-
-  const safeRate = user.hourlyRate ?? 0;
-  const safeCurrency = user.currency ?? 'USD';
+  const safeRate = user.hourlyRate;
+  const safeCurrency = user.currency;
 
   const [rateType, setRateType] = useState<'hourly' | 'monthly'>('hourly');
   const [rateInput, setRateInput] = useState<string>(safeRate.toString());
@@ -81,19 +77,15 @@ function EarningsContent({ user }: { user: User }) {
     {
       label: 'This week',
       icon: Clock,
-      value: isLoading7d
-        ? '...'
-        : `${earnedThisWeek.toLocaleString('en-US', { maximumFractionDigits: 0 })} ${safeCurrency}`,
-      sub: isLoading7d ? '...' : `${activeHoursThisWeek}h active coding`,
+      value: `${earnedThisWeek.toLocaleString('en-US', { maximumFractionDigits: 0 })} ${safeCurrency}`,
+      sub: `${activeHoursThisWeek}h active coding`,
       accent: false,
     },
     {
       label: 'This month (30d)',
       icon: TrendingUp,
-      value: isLoading30d
-        ? '...'
-        : `${earnedThisMonth.toLocaleString('en-US', { maximumFractionDigits: 0 })} ${safeCurrency}`,
-      sub: isLoading30d ? '...' : `${activeHoursThisMonth}h active coding`,
+      value: `${earnedThisMonth.toLocaleString('en-US', { maximumFractionDigits: 0 })} ${safeCurrency}`,
+      sub: `${activeHoursThisMonth}h active coding`,
       accent: true,
     },
     {
@@ -106,18 +98,17 @@ function EarningsContent({ user }: { user: User }) {
   ];
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h2 className="title-1">Earnings</h2>
-        <p className="body-muted mt-1">Set your rate and see how much your focus is worth</p>
-      </div>
+    <Page>
+      <PageHeader>
+        <div>
+          <PageHeaderHeading>
+            <PageTitle>Earnings</PageTitle>
+          </PageHeaderHeading>
+          <PageDescription>Set your rate and see how much your focus is worth</PageDescription>
+        </div>
+      </PageHeader>
 
-      <div
-        className={cn(
-          'rounded-2xl border border-white/5 bg-neutral-900/50 p-6 backdrop-blur-sm',
-          'transition-colors hover:border-white/10',
-        )}
-      >
+      <Panel>
         <p className="label-caps mb-5">Rate Configuration</p>
 
         <div className="flex flex-wrap items-end gap-6">
@@ -171,19 +162,13 @@ function EarningsContent({ user }: { user: User }) {
             </div>
           </div>
         </div>
-      </div>
+      </Panel>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {earningsCards.map((card) => {
           const Icon = card.icon;
           return (
-            <div
-              key={card.label}
-              className={cn(
-                'rounded-2xl border border-white/5 bg-neutral-900/50 p-5 backdrop-blur-sm',
-                'transition-colors hover:border-white/10 flex flex-col justify-between',
-              )}
-            >
+            <Panel key={card.label} className="flex flex-col justify-between p-5">
               <div>
                 <div className="flex items-center justify-between">
                   <p className="caption font-medium">{card.label}</p>
@@ -199,10 +184,10 @@ function EarningsContent({ user }: { user: User }) {
                 </p>
               </div>
               <p className="caption mt-2">{card.sub}</p>
-            </div>
+            </Panel>
           );
         })}
       </div>
-    </div>
+    </Page>
   );
 }

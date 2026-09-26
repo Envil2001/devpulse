@@ -5,15 +5,16 @@ import { Sparkles, Copy, Check, AlertCircle } from 'lucide-react';
 
 import { Button } from '@/shared/components/ui/button';
 import { DateRangePicker } from '@/shared/components/ui/date-range-picker';
-import { cn } from '@/shared/lib/cn';
+import { Panel } from '@/shared/components/layout/panel';
 import { toDateInput } from '@/shared/lib/date';
 import { useGenerateWorklog } from '../hooks';
 
 export function AiWorklogCard() {
   const { mutate, data, isPending, error, reset } = useGenerateWorklog();
   const [copied, setCopied] = useState(false);
-  const [startDate, setStartDate] = useState(toDateInput(new Date()));
-  const [endDate, setEndDate] = useState(toDateInput(new Date()));
+
+  const [startDate, setStartDate] = useState(() => toDateInput(new Date()));
+  const [endDate, setEndDate] = useState(() => toDateInput(new Date()));
 
   const handleGenerate = () => {
     mutate({ startDate, endDate });
@@ -33,13 +34,8 @@ export function AiWorklogCard() {
   };
 
   return (
-    <div
-      className={cn(
-        'rounded-2xl border border-white/5 bg-neutral-900/50 p-6 backdrop-blur-sm',
-        'transition-colors hover:border-white/10 flex flex-col gap-5',
-      )}
-    >
-      <div className="flex items-center justify-between">
+    <Panel className="flex flex-col gap-5">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-purple-500/20 bg-purple-500/10">
             <Sparkles className="h-4.5 w-4.5 text-purple-400" />
@@ -50,7 +46,7 @@ export function AiWorklogCard() {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <DateRangePicker
             startDate={startDate}
             endDate={endDate}
@@ -101,11 +97,7 @@ export function AiWorklogCard() {
           </p>
 
           <div className="absolute right-3 top-3 opacity-0 transition-opacity group-hover:opacity-100">
-            <Button
-              onClick={handleCopy}
-              variant="secondary"
-              size="icon"
-            >
+            <Button onClick={handleCopy} variant="secondary" size="icon">
               {copied ? (
                 <Check className="h-4 w-4 text-green-spring" />
               ) : (
@@ -115,6 +107,6 @@ export function AiWorklogCard() {
           </div>
         </div>
       )}
-    </div>
+    </Panel>
   );
 }

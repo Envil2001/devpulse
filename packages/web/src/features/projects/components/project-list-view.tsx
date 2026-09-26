@@ -8,13 +8,22 @@ import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
 import { cn } from '@/shared/lib/cn';
 import { useProjects } from '../hooks';
-import { useAuth } from '@/features/auth/context';
 import { formatDateTimeLabel } from '@/shared/lib/date';
+import {
+  PageHeader,
+  PageHeaderHeading,
+  PageTitle,
+  PageDescription,
+  Page,
+} from '@/shared/components/layout/page';
+import { Panel, PanelHeader } from '@/shared/components/layout/panel';
+import { useRequireAuth } from '@/features/auth/context';
 
 export function ProjectListView() {
   const { data: projects = [], isLoading, error } = useProjects();
   const [searchQuery, setSearchQuery] = useState('');
-  const { user } = useAuth();
+  const { user } = useRequireAuth();
+
   const filteredProjects = useMemo(() => {
     const query = searchQuery.toLowerCase().trim();
     if (!query) return projects;
@@ -27,21 +36,20 @@ export function ProjectListView() {
   }, [projects, searchQuery]);
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h2 className="title-1">Projects</h2>
-        <p className="body-muted mt-1">
-          All repositories tracked by your workspace and VS Code extension.
-        </p>
-      </div>
+    <Page>
+      <PageHeader>
+        <div>
+          <PageHeaderHeading>
+            <PageTitle>Projects</PageTitle>
+          </PageHeaderHeading>
+          <PageDescription>
+            All repositories tracked by your workspace and VS Code extension.
+          </PageDescription>
+        </div>
+      </PageHeader>
 
-      <div
-        className={cn(
-          'rounded-2xl border border-white/5 bg-neutral-900/50 p-6 backdrop-blur-sm',
-          'transition-colors hover:border-white/10',
-        )}
-      >
-        <div className="mb-6 flex flex-col items-center justify-between gap-3 border-b border-white/5 pb-4 sm:flex-row">
+      <Panel>
+        <PanelHeader>
           <div className="relative w-full sm:w-72">
             <Search
               className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-500"
@@ -58,7 +66,7 @@ export function ProjectListView() {
             <span>Total projects:</span>
             <span className="mono-sm text-neutral-100">{filteredProjects.length}</span>
           </div>
-        </div>
+        </PanelHeader>
 
         <div>
           {isLoading && (
@@ -168,7 +176,7 @@ export function ProjectListView() {
                     <span>Last active</span>
                     <span className="font-medium text-neutral-400">
                       {project.lastActive
-                        ? formatDateTimeLabel(project.lastActive, user?.timezone ?? 'UTC')
+                        ? formatDateTimeLabel(project.lastActive, user.timezone)
                         : 'Never'}
                     </span>
                   </div>
@@ -177,7 +185,7 @@ export function ProjectListView() {
             </div>
           )}
         </div>
-      </div>
-    </div>
+      </Panel>
+    </Page>
   );
 }

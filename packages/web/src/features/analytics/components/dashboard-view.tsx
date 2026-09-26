@@ -21,6 +21,21 @@ import {
 } from '../hooks';
 import { TimeSwitcher } from './time-switcher';
 import { AiWorklogCard } from '@/features/worklog/components/ai-worklog-card';
+import {
+  PageHeader,
+  PageHeaderHeading,
+  PageTitle,
+  PageDescription,
+  PageActions,
+  Page,
+} from '@/shared/components/layout/page';
+import {
+  Panel,
+  PanelHeader,
+  PanelTitle,
+  PanelDescription,
+  PanelContent,
+} from '@/shared/components/layout/panel';
 
 function formatDuration(totalSeconds: number): string {
   const hours = Math.floor(totalSeconds / 3600);
@@ -68,7 +83,7 @@ export function DashboardView() {
 
   const range = useMemo(() => periodToDateRange(period, customDates), [period, customDates]);
 
-  const { user, isLoading: authLoading } = useRequireAuth();
+  const { user } = useRequireAuth();
   const exportMutation = useExportSessions();
 
   const { data: stats, isLoading: statsLoading } = useDashboardStats(range);
@@ -77,14 +92,6 @@ export function DashboardView() {
 
   const { data: liveStatus } = useLiveStatus();
   const { data: languagesData, isLoading: languagesLoading } = useLanguagesBreakdown();
-
-  if (authLoading || !user) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <span className="body-muted animate-pulse">Loading...</span>
-      </div>
-    );
-  }
 
   const rangeDays = differenceInCalendarDays(new Date(range.endDate), new Date(range.startDate));
 
@@ -121,17 +128,16 @@ export function DashboardView() {
   ];
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <Page>
+      <PageHeader>
         <div>
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-            <h2 className="title-1">Hello, {user.displayName}</h2>
-
+          <PageHeaderHeading>
+            <PageTitle>Hello, {user.displayName}</PageTitle>
             {liveStatus?.isCodingNow && (
               <div className="flex items-center gap-2 rounded-full border border-green-spring/20 bg-green-spring/10 px-3 py-1 text-sm text-green-spring shadow-[0_0_15px_rgba(21,255,171,0.15)]">
                 <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-spring opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-spring"></span>
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-spring opacity-75"></span>
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-green-spring"></span>
                 </span>
                 <span className="font-medium">
                   Coding in {liveStatus.currentProject || 'Unknown'}
@@ -139,31 +145,25 @@ export function DashboardView() {
                 </span>
               </div>
             )}
-          </div>
-          <p className="body-muted mt-1">Here&apos;s what&apos;s happening with your workflow.</p>
+          </PageHeaderHeading>
+          <PageDescription>Here&apos;s what&apos;s happening with your workflow.</PageDescription>
         </div>
 
-        <div className="flex items-center gap-3">
+        <PageActions>
           <TimeSwitcher
             value={period}
             onValueChange={(v) => setPeriod(v as AnalyticsPeriod)}
             customRange={customDates}
             onCustomRangeChange={setCustomDates}
           />
-        </div>
-      </div>
+        </PageActions>
+      </PageHeader>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {statCards.map((card) => {
           const Icon = card.icon;
           return (
-            <div
-              key={card.label}
-              className={cn(
-                'rounded-2xl border border-white/5 bg-neutral-900/50 p-5 backdrop-blur-sm',
-                'transition-colors hover:border-white/10 flex flex-col justify-between',
-              )}
-            >
+            <Panel key={card.label} className="flex flex-col justify-between p-5">
               <div>
                 <div className="flex items-center justify-between">
                   <p className="caption font-medium">{card.label}</p>
@@ -174,21 +174,16 @@ export function DashboardView() {
                 </div>
               </div>
               <p className="caption mt-2">{card.sub}</p>
-            </div>
+            </Panel>
           );
         })}
       </div>
 
-      <div
-        className={cn(
-          'rounded-2xl border border-white/5 bg-neutral-900/50 p-6 backdrop-blur-sm',
-          'transition-colors hover:border-white/10',
-        )}
-      >
-        <div className="mb-6 flex items-center justify-between">
+      <Panel>
+        <PanelHeader>
           <div>
-            <h3 className="title-4">Activity</h3>
-            <p className="caption mt-0.5">Active coding time by day</p>
+            <PanelTitle>Activity</PanelTitle>
+            <PanelDescription>Active coding time by day</PanelDescription>
           </div>
           <Button
             variant="secondary"
@@ -201,56 +196,60 @@ export function DashboardView() {
             <Download />
             {exportMutation.isPending ? 'Exporting…' : 'Export'}
           </Button>
-        </div>
+        </PanelHeader>
 
-        {timeseriesLoading ? (
-          <div className="flex h-55 items-center justify-center">
-            <span className="body-muted animate-pulse">Loading activity…</span>
-          </div>
-        ) : chartData.length === 0 ? (
-          <div className="flex h-55 items-center justify-center rounded-xl border border-dashed border-white/10">
-            <span className="body-muted">No activity recorded for this period</span>
-          </div>
-        ) : (
-          <div className="h-55 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1f1f23" vertical={false} />
-                <XAxis
-                  dataKey="date"
-                  stroke="#5b5b65"
-                  fontSize={11}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <YAxis stroke="#5b5b65" fontSize={11} tickLine={false} axisLine={false} unit="h" />
-                <Tooltip
-                  content={<CustomChartTooltip />}
-                  cursor={{ fill: 'rgba(255, 255, 255, 0.03)' }}
-                />
-                <Bar dataKey="hours" fill="#15ffab" radius={[4, 4, 0, 0]} maxBarSize={36} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        )}
-      </div>
+        <PanelContent>
+          {timeseriesLoading ? (
+            <div className="flex h-55 items-center justify-center">
+              <span className="body-muted animate-pulse">Loading activity…</span>
+            </div>
+          ) : chartData.length === 0 ? (
+            <div className="flex h-55 items-center justify-center rounded-xl border border-dashed border-white/10">
+              <span className="body-muted">No activity recorded for this period</span>
+            </div>
+          ) : (
+            <div className="h-55 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1f1f23" vertical={false} />
+                  <XAxis
+                    dataKey="date"
+                    stroke="#5b5b65"
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis
+                    stroke="#5b5b65"
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={false}
+                    unit="h"
+                  />
+                  <Tooltip
+                    content={<CustomChartTooltip />}
+                    cursor={{ fill: 'rgba(255, 255, 255, 0.03)' }}
+                  />
+                  <Bar dataKey="hours" fill="#15ffab" radius={[4, 4, 0, 0]} maxBarSize={36} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </PanelContent>
+      </Panel>
 
       <AiWorklogCard />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div
-          className={cn(
-            'rounded-2xl border border-white/5 bg-neutral-900/50 p-6 backdrop-blur-sm transition-colors hover:border-white/10',
-          )}
-        >
-          <div className="mb-4 flex items-center justify-between">
+        <Panel>
+          <PanelHeader>
             <div>
-              <h3 className="title-4">Branches</h3>
-              <p className="caption mt-0.5">Where you spent time</p>
+              <PanelTitle>Branches</PanelTitle>
+              <PanelDescription>Where you spent time</PanelDescription>
             </div>
-          </div>
+          </PanelHeader>
 
-          <div className="flex flex-col">
+          <PanelContent className="flex flex-col">
             <div className="label-caps mb-2 grid grid-cols-12 gap-4 border-b border-white/5 pb-2">
               <div className="col-span-8">BRANCH</div>
               <div className="col-span-4 text-right">ACTIVE TIME</div>
@@ -274,7 +273,7 @@ export function DashboardView() {
                 className={cn(
                   'grid grid-cols-12 items-center gap-4 py-3.5 text-sm transition-colors',
                   i !== branches.length - 1 && 'border-b border-white/5',
-                  'hover:bg-white/2 rounded-lg px-2 -mx-2',
+                  'hover:bg-white/2 -mx-2 rounded-lg px-2',
                 )}
               >
                 <div className="col-span-8 flex items-center gap-2">
@@ -288,22 +287,18 @@ export function DashboardView() {
                 </div>
               </div>
             ))}
-          </div>
-        </div>
+          </PanelContent>
+        </Panel>
 
-        <div
-          className={cn(
-            'rounded-2xl border border-white/5 bg-neutral-900/50 p-6 backdrop-blur-sm transition-colors hover:border-white/10',
-          )}
-        >
-          <div className="mb-4 flex items-center justify-between">
+        <Panel>
+          <PanelHeader>
             <div>
-              <h3 className="title-4">Languages</h3>
-              <p className="caption mt-0.5">Your technology stack</p>
+              <PanelTitle>Languages</PanelTitle>
+              <PanelDescription>Your technology stack</PanelDescription>
             </div>
-          </div>
+          </PanelHeader>
 
-          <div className="flex flex-col">
+          <PanelContent className="flex flex-col">
             <div className="label-caps mb-2 grid grid-cols-12 gap-4 border-b border-white/5 pb-2">
               <div className="col-span-8">LANGUAGE</div>
               <div className="col-span-4 text-right">ACTIVE TIME</div>
@@ -327,7 +322,7 @@ export function DashboardView() {
                 className={cn(
                   'grid grid-cols-12 items-center gap-4 py-3 text-sm transition-colors',
                   i !== languagesData.languages.length - 1 && 'border-b border-white/5',
-                  'hover:bg-white/2 rounded-lg px-2 -mx-2',
+                  'hover:bg-white/2 -mx-2 rounded-lg px-2',
                 )}
               >
                 <div className="col-span-8 flex flex-col gap-1">
@@ -348,9 +343,9 @@ export function DashboardView() {
                 </div>
               </div>
             ))}
-          </div>
-        </div>
+          </PanelContent>
+        </Panel>
       </div>
-    </div>
+    </Page>
   );
 }

@@ -6,7 +6,10 @@ import {
   type CreateApiKeyResponse,
 } from './api';
 
-const API_KEYS_QUERY_KEY = ['api-keys'] as const;
+export const apiKeysKeys = {
+  all: ['api-keys'] as const,
+  list: () => ['api-keys'] as const,
+};
 
 interface RevokeContext {
   previous: Array<ApiKeySummary> | undefined;
@@ -14,7 +17,7 @@ interface RevokeContext {
 
 export function useApiKeys() {
   return useQuery<Array<ApiKeySummary>>({
-    queryKey: API_KEYS_QUERY_KEY,
+    queryKey: apiKeysKeys.list(),
     queryFn: () => apiKeysService.list(),
   });
 }
@@ -25,7 +28,7 @@ export function useCreateApiKey() {
   return useMutation<CreateApiKeyResponse, Error, CreateApiKeyRequest>({
     mutationFn: (payload) => apiKeysService.create(payload),
     onSuccess: (data) => {
-      queryClient.setQueryData<Array<ApiKeySummary>>(API_KEYS_QUERY_KEY, (prev) =>
+      queryClient.setQueryData<Array<ApiKeySummary>>(apiKeysKeys.list(), (prev) =>
         prev ? [data.key, ...prev] : [data.key],
       );
     },
@@ -38,20 +41,20 @@ export function useRevokeApiKey() {
   return useMutation<{ message: string }, Error, string, RevokeContext>({
     mutationFn: (id: string) => apiKeysService.revoke(id),
     onMutate: async (id) => {
-      await queryClient.cancelQueries({ queryKey: API_KEYS_QUERY_KEY });
-      const previous = queryClient.getQueryData<Array<ApiKeySummary>>(API_KEYS_QUERY_KEY);
-      queryClient.setQueryData<Array<ApiKeySummary>>(API_KEYS_QUERY_KEY, (prev) =>
+      await queryClient.cancelQueries({ queryKey: apiKeysKeys.list() });
+      const previous = queryClient.getQueryData<Array<ApiKeySummary>>(apiKeysKeys.list());
+      queryClient.setQueryData<Array<ApiKeySummary>>(apiKeysKeys.list(), (prev) =>
         prev?.filter((key) => key.id !== id),
       );
       return { previous };
     },
     onError: (_error, _id, context) => {
       if (context?.previous) {
-        queryClient.setQueryData(API_KEYS_QUERY_KEY, context.previous);
+        queryClient.setQueryData(apiKeysKeys.list(), context.previous);
       }
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: API_KEYS_QUERY_KEY });
+      void queryClient.invalidateQueries({ queryKey: apiKeysKeys.list() });
     },
   });
 }

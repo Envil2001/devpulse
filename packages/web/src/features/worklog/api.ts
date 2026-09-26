@@ -1,3 +1,4 @@
+import { QueryParams } from '@/shared/api/api-client';
 import { BaseService } from '@/shared/api/base.service';
 
 export interface DailyWorklogResponse {
@@ -5,15 +6,14 @@ export interface DailyWorklogResponse {
   summary: string;
 }
 
-export interface GenerateWorklogParams {
+export interface GenerateWorklogParams extends QueryParams {
   startDate: string;
   endDate: string;
 }
 
 export class WorklogService extends BaseService {
   async generateSummary(params: GenerateWorklogParams): Promise<DailyWorklogResponse> {
-    const query = `?startDate=${params.startDate}&endDate=${params.endDate}`;
-    return this.get<DailyWorklogResponse>(`/worklog/generate${query}`);
+    return this.get<DailyWorklogResponse>('/worklog/generate', { params });
   }
 }
 

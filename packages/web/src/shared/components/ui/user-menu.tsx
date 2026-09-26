@@ -15,21 +15,18 @@ import {
 import { Avatar, AvatarFallback } from '@/shared/components/ui/avatar';
 
 export function UserMenu() {
-  const { user, logout, isLoading } = useRequireAuth();
+  const { user, logout } = useRequireAuth();
 
-  const getInitials = (name: string) =>
-    name
+  const getInitials = (name?: string, email?: string) => {
+    const target = name?.trim() || email?.trim() || 'U';
+    return target
       .split(' ')
+      .filter(Boolean)
       .map((w) => w[0])
       .join('')
       .toUpperCase()
       .slice(0, 2);
-
-  if (isLoading || !user) {
-    return (
-      <div className="h-9 w-9 rounded-full bg-neutral-800 animate-pulse" />
-    );
-  }
+  };
 
   return (
     <DropdownMenu>

@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { Globe, Key } from 'lucide-react';
 
 import { ApiKeysPanel } from '@/features/api-keys/components/api-keys-panel';
-import { useAuth } from '@/features/auth/context';
 import { Button } from '@/shared/components/ui/button';
 import {
   Select,
@@ -13,8 +12,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/shared/components/ui/select';
-import { cn } from '@/shared/lib/cn';
 import { Input } from '@/shared/components/ui/input';
+
+import {
+  Page,
+  PageHeader,
+  PageHeaderHeading,
+  PageTitle,
+  PageDescription,
+} from '@/shared/components/layout/page';
+import { Panel } from '@/shared/components/layout/panel';
+import { useRequireAuth } from '@/features/auth/context';
 
 const TIMEZONES = Intl.supportedValuesOf('timeZone');
 
@@ -64,20 +72,10 @@ function OpenAiKeyPreference({
           />
         </div>
         <div className="flex gap-2">
-          <Button
-            onClick={handleStartEdit}
-            disabled={isPending}
-            size="sm"
-            variant="secondary"
-          >
+          <Button onClick={handleStartEdit} disabled={isPending} size="sm" variant="secondary">
             Change
           </Button>
-          <Button
-            onClick={handleRemove}
-            disabled={isPending}
-            size="sm"
-            variant="ghost"
-          >
+          <Button onClick={handleRemove} disabled={isPending} size="sm" variant="ghost">
             Remove
           </Button>
         </div>
@@ -99,21 +97,11 @@ function OpenAiKeyPreference({
       </div>
 
       <div className="flex gap-2">
-        <Button
-          onClick={handleSave}
-          disabled={!key || isPending}
-          loading={isPending}
-          size="sm"
-        >
+        <Button onClick={handleSave} disabled={!key || isPending} loading={isPending} size="sm">
           {isSet ? 'Update' : 'Save'}
         </Button>
         {isEditing && (
-          <Button
-            onClick={handleCancel}
-            disabled={isPending}
-            size="sm"
-            variant="ghost"
-          >
+          <Button onClick={handleCancel} disabled={isPending} size="sm" variant="ghost">
             Cancel
           </Button>
         )}
@@ -163,10 +151,10 @@ function TimezonePreference({
 }
 
 export function SettingsView() {
-  const { user, isLoading, updateProfile } = useAuth();
+  const { user, updateProfile } = useRequireAuth();
   const [isPending, setIsPending] = useState(false);
 
-  async function handleSave(timezone: string) {
+  async function handleSaveTimezone(timezone: string) {
     setIsPending(true);
     try {
       await updateProfile({ timezone });
@@ -176,20 +164,19 @@ export function SettingsView() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-8">
-      <div>
-        <h1 className="title-1">Settings</h1>
-        <p className="body-muted mt-1">Manage your account and preferences</p>
-      </div>
+    <Page className="max-w-4xl">
+      <PageHeader>
+        <div>
+          <PageHeaderHeading>
+            <PageTitle>Settings</PageTitle>
+          </PageHeaderHeading>
+          <PageDescription>Manage your account and preferences</PageDescription>
+        </div>
+      </PageHeader>
 
       <ApiKeysPanel />
 
-      <div
-        className={cn(
-          'rounded-2xl border border-white/5 bg-neutral-900/50 p-6 backdrop-blur-sm',
-          'transition-colors hover:border-white/10',
-        )}
-      >
+      <Panel>
         <p className="label-caps mb-5">Preferences</p>
 
         <div className="flex flex-col gap-6">
@@ -206,16 +193,12 @@ export function SettingsView() {
               </div>
             </div>
 
-            {isLoading || !user ? (
-              <div className="h-9 w-64 animate-pulse rounded-lg bg-neutral-800" />
-            ) : (
-              <TimezonePreference
-                key={user.timezone}
-                initialTimezone={user.timezone}
-                onSave={handleSave}
-                isPending={isPending}
-              />
-            )}
+            <TimezonePreference
+              key={user.timezone}
+              initialTimezone={user.timezone}
+              onSave={handleSaveTimezone}
+              isPending={isPending}
+            />
           </div>
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-6 border-t border-white/5">
@@ -232,25 +215,21 @@ export function SettingsView() {
               </div>
             </div>
 
-            {isLoading || !user ? (
-              <div className="h-9 w-64 animate-pulse rounded-lg bg-neutral-800" />
-            ) : (
-              <OpenAiKeyPreference
-                isSet={user.hasOpenaiKey}
-                onSave={async (newKey) => {
-                  setIsPending(true);
-                  try {
-                    await updateProfile({ openaiKey: newKey });
-                  } finally {
-                    setIsPending(false);
-                  }
-                }}
-                isPending={isPending}
-              />
-            )}
+            <OpenAiKeyPreference
+              isSet={user.hasOpenaiKey}
+              onSave={async (newKey) => {
+                setIsPending(true);
+                try {
+                  await updateProfile({ openaiKey: newKey });
+                } finally {
+                  setIsPending(false);
+                }
+              }}
+              isPending={isPending}
+            />
           </div>
         </div>
-      </div>
-    </div>
+      </Panel>
+    </Page>
   );
 }

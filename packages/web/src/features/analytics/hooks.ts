@@ -9,13 +9,26 @@ import {
   LanguagesBreakdown,
 } from './api';
 import { downloadBlob } from '@/shared/lib/download';
+import { QueryParams } from '@/shared/api/api-client';
 
 export type AnalyticsPeriod = 'today' | '7d' | '30d' | 'custom';
 
-export interface DateRange {
+export interface DateRange extends QueryParams {
   startDate: string;
   endDate: string;
 }
+
+export const analyticsKeys = {
+  all: ['analytics'] as const,
+  status: () => [...analyticsKeys.all, 'status'] as const,
+  languages: () => [...analyticsKeys.all, 'languages'] as const,
+  dashboard: (range: DateRange, projectId?: string) =>
+    [...analyticsKeys.all, 'dashboard', range.startDate, range.endDate, projectId] as const,
+  timeseries: (range: DateRange, projectId?: string) =>
+    [...analyticsKeys.all, 'timeseries', range.startDate, range.endDate, projectId] as const,
+  branches: (range: DateRange, projectId?: string) =>
+    [...analyticsKeys.all, 'branches', range.startDate, range.endDate, projectId] as const,
+};
 
 function endOfDay(d: Date): Date {
   const copy = new Date(d);
@@ -35,7 +48,10 @@ export function periodToDateRange(
       ? { startDate: startDate.toISOString(), endDate: endDate.toISOString() }
       : { startDate: endDate.toISOString(), endDate: startDate.toISOString() };
   }
+
   const now = new Date();
+  now.setSeconds(0, 0);
+
   const start = new Date(now);
 
   if (period === 'today') {
@@ -51,7 +67,7 @@ export function periodToDateRange(
 
 export function useLiveStatus() {
   return useQuery<LiveStatus>({
-    queryKey: ['analytics', 'status'],
+    queryKey: analyticsKeys.status(),
     queryFn: () => analyticsService.getLiveStatus(),
     refetchInterval: 30000,
   });
@@ -59,28 +75,28 @@ export function useLiveStatus() {
 
 export function useLanguagesBreakdown() {
   return useQuery<LanguagesBreakdown>({
-    queryKey: ['analytics', 'languages'],
+    queryKey: analyticsKeys.languages(),
     queryFn: () => analyticsService.getLanguages(),
   });
 }
 
 export function useDashboardStats(range: DateRange, projectId?: string) {
   return useQuery<DashboardStats>({
-    queryKey: ['analytics', 'dashboard', range.startDate, range.endDate, projectId],
+    queryKey: analyticsKeys.dashboard(range, projectId),
     queryFn: () => analyticsService.getDashboard({ ...range, projectId }),
   });
 }
 
 export function useAnalyticsTimeseries(range: DateRange, projectId?: string) {
   return useQuery<Array<TimeseriesPoint>>({
-    queryKey: ['analytics', 'timeseries', range.startDate, range.endDate, projectId],
+    queryKey: analyticsKeys.timeseries(range, projectId),
     queryFn: () => analyticsService.getTimeseries({ ...range, projectId }),
   });
 }
 
 export function useBranchesDistribution(range: DateRange, projectId?: string) {
   return useQuery<Array<BranchDataPoint>>({
-    queryKey: ['analytics', 'branches', range.startDate, range.endDate, projectId],
+    queryKey: analyticsKeys.branches(range, projectId),
     queryFn: () => analyticsService.getBranches({ ...range, projectId }),
   });
 }
