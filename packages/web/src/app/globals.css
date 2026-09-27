@@ -86,7 +86,7 @@
   }
 
   .metric {
-    @apply font-mono text-2xl font-bold tracking-tight;
+    @apply font-mono text-2xl font-semibold tracking-tight tabular-nums text-neutral-100;
   }
 
   .mono-sm {

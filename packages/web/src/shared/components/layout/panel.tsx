@@ -6,7 +6,7 @@ const Panel = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivEleme
     <div
       ref={ref}
       className={cn(
-        'rounded-2xl border border-white/5 bg-neutral-900/50 p-6 backdrop-blur-sm transition-colors hover:border-white/10',
+        'rounded-2xl border border-white/[0.07] bg-linear-to-b from-neutral-900/70 to-neutral-900/40 p-6 backdrop-blur-xl shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] transition-all hover:border-white/15',
         className,
       )}
       {...props}

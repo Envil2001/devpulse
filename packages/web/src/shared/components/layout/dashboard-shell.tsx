@@ -17,6 +17,10 @@ export function DashboardShell({ children, user }: DashboardShellProps) {
   return (
     <AuthenticatedUserProvider initialUser={user}>
       <div className="h-dvh w-full bg-neutral-950 text-neutral-100 transition-colors duration-200">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 h-96 w-175 rounded-full bg-linear-to-b from-white/4 to-transparent blur-3xl"
+        />
         <Sidebar isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
 
         <div className="flex flex-1 flex-col min-w-0 lg:pl-64">
