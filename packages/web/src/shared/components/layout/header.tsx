@@ -7,6 +7,8 @@ import { Button } from '@/shared/components/ui/button';
 import { inputVariants } from '@/shared/components/ui/input';
 import { UserMenu } from '@/shared/components/ui/user-menu';
 import { cn } from '@/shared/lib/cn';
+import { useState } from 'react';
+import { CommandMenu } from '../ui/command-menu';
 
 interface HeaderProps {
   onMenuToggle?: () => void;
@@ -15,6 +17,7 @@ interface HeaderProps {
 
 export function Header({ onMenuToggle, isMenuOpen }: HeaderProps) {
   const pathname = usePathname();
+  const [isCommandOpen, setIsCommandOpen] = useState(false);
 
   const getPageTitle = () => {
     if (pathname === '/') return 'Dashboard';
@@ -53,6 +56,7 @@ export function Header({ onMenuToggle, isMenuOpen }: HeaderProps) {
           <button
             type="button"
             aria-label="Global search"
+            onClick={() => setIsCommandOpen(true)}
             className={cn(
               inputVariants(),
               'group flex items-center justify-between gap-3 text-neutral-400 hover:text-neutral-200 cursor-pointer',
@@ -90,6 +94,7 @@ export function Header({ onMenuToggle, isMenuOpen }: HeaderProps) {
           <UserMenu />
         </div>
       </div>
+      <CommandMenu open={isCommandOpen} onOpenChange={setIsCommandOpen} />
     </header>
   );
 }
