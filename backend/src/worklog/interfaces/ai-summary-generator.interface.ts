@@ -1,5 +1,5 @@
 export interface SummaryInputData {
-  apiKey?: string | null;
+  apiKey: string;
   date: string;
   totalTime: string;
   projects: string;

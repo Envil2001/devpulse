@@ -82,9 +82,6 @@ export function Header({ onMenuToggle, isMenuOpen }: HeaderProps) {
         </div>
 
         <div className="flex items-center gap-3 shrink-0">
-          <Button variant="secondary" size="sm" className="hidden md:inline-flex">
-            Feedback
-          </Button>
           <Button variant="secondary" size="sm" className="hidden md:inline-flex" asChild>
             <a href="/docs" target="_blank" rel="noreferrer">
               Docs
