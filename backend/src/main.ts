@@ -71,7 +71,7 @@ async function bootstrap(): Promise<void> {
 
     const filteredPaths: Record<string, unknown> = {};
     for (const [path, pathItem] of Object.entries(document.paths)) {
-      if (path.startsWith('/integrations/')) {
+      if (path.includes('/integrations/')) {
         filteredPaths[path] = pathItem;
       }
     }
