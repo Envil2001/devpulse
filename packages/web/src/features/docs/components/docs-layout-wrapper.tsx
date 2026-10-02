@@ -1,97 +1,23 @@
 'use client';
 
-import * as React from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Menu, X } from 'lucide-react';
 import { Button } from '@/shared/components/ui/button';
 import { cn } from '@/shared/lib/cn';
-
-interface NavigationItem {
-  title: string;
-  href: string;
-}
-
-interface NavigationGroup {
-  category: string;
-  items: Array<NavigationItem>;
-}
+import { groupEndpointsByPath, type EndpointData } from '@/shared/lib/docs';
+import { useIntersectionObserver } from '@/shared/hooks/use-intersection-observer';
 
 interface DocsLayoutWrapperProps {
   children: React.ReactNode;
-  endpoints: Array<{
-    id: string;
-    method: string;
-    path: string;
-    summary: string;
-  }>;
+  endpoints: Array<EndpointData>;
 }
 
 export function DocsLayoutWrapper({ children, endpoints }: DocsLayoutWrapperProps) {
-  const [isOpen, setIsOpen] = React.useState(false);
-  const [activeId, setActiveId] = React.useState<string>('introduction');
-  const mainRef = React.useRef<HTMLElement>(null);
+  const [isOpen, setIsOpen] = useState(false);
+  const { activeId, mainRef } = useIntersectionObserver();
 
-  const navigation: Array<NavigationGroup> = React.useMemo(() => {
-    const groups: Array<NavigationGroup> = [
-      {
-        category: 'Overview',
-        items: [
-          { title: 'Introduction', href: '#introduction' },
-          { title: 'Authentication', href: '#authentication' },
-        ],
-      },
-    ];
-
-    const endpointGroups = new Map<string, Array<NavigationItem>>();
-
-    for (const endpoint of endpoints) {
-      const pathParts = endpoint.path.split('/').filter(Boolean);
-      const category = pathParts.length > 0 ? pathParts[0] : 'Endpoints';
-
-      if (!endpointGroups.has(category)) {
-        endpointGroups.set(category, []);
-      }
-
-      endpointGroups.get(category)?.push({
-        title: endpoint.summary,
-        href: `#${endpoint.id}`,
-      });
-    }
-
-    for (const [category, items] of endpointGroups.entries()) {
-      groups.push({
-        category: category.charAt(0).toUpperCase() + category.slice(1),
-        items,
-      });
-    }
-
-    return groups;
-  }, [endpoints]);
-
-  React.useEffect(() => {
-    const container = mainRef.current;
-    if (!container) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setActiveId(entry.target.id);
-          }
-        });
-      },
-      {
-        root: container,
-        rootMargin: '0px 0px -65% 0px',
-        threshold: 0.1,
-      },
-    );
-
-    const elements = container.querySelectorAll('[id]');
-    elements.forEach((el) => observer.observe(el));
-
-    return () => observer.disconnect();
-  }, []);
+  const navigation = useMemo(() => groupEndpointsByPath(endpoints), [endpoints]);
 
   return (
     <div className="flex h-screen w-full bg-neutral-950 text-neutral-100 overflow-hidden">
@@ -134,13 +60,13 @@ export function DocsLayoutWrapper({ children, endpoints }: DocsLayoutWrapperProp
             <div className="body-muted text-xs">v1.0 Public Reference</div>
           </div>
 
-          {navigation.map((group: NavigationGroup) => (
+          {navigation.map((group) => (
             <div key={group.category} className="space-y-1">
               <div className="px-2 label-caps text-neutral-500 text-[11px] mb-2">
                 {group.category}
               </div>
               <ul className="space-y-0.5">
-                {group.items.map((item: NavigationItem) => {
+                {group.items.map((item) => {
                   const targetId = item.href.replace('#', '');
                   const isActive = activeId === targetId;
 

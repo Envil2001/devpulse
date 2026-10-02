@@ -1,10 +1,8 @@
 import * as React from 'react';
 import { cn } from '@/shared/lib/cn';
 import { CodeTabs } from './code-tabs';
-
-/* -------------------------------------------------------------------------- */
-/*                                 COMPONENTS                                 */
-/* -------------------------------------------------------------------------- */
+import { generateIdFromTitle } from '@/shared/lib/docs';
+import { METHOD_STYLES } from '@/shared/lib/docs-constants';
 
 export interface IntroductionProps extends React.HTMLAttributes<HTMLDivElement> {
   title: string;
@@ -80,7 +78,7 @@ export function Endpoint({
   className,
   ...props
 }: EndpointProps) {
-  const id = title.toLowerCase().replace(/\s+/g, '-');
+  const id = generateIdFromTitle(title);
 
   return (
     <div
@@ -96,8 +94,7 @@ export function Endpoint({
           <span
             className={cn(
               'mono-sm rounded px-2 py-0.5 text-xs font-semibold',
-              method === 'GET' && 'bg-green-spring/10 text-green-spring',
-              method === 'POST' && 'bg-blue-azure/10 text-blue-azure',
+              METHOD_STYLES[method as keyof typeof METHOD_STYLES] || METHOD_STYLES.GET,
             )}
           >
             {method}
@@ -127,8 +124,7 @@ export const mdxComponents = {
     <h2 className={cn('title-2 mb-4 scroll-m-20', className)} {...props} />
   ),
   h3: ({ className, children, ...props }: React.ComponentPropsWithoutRef<'h3'>) => {
-    const id =
-      typeof children === 'string' ? children.toLowerCase().replace(/\s+/g, '-') : undefined;
+    const id = typeof children === 'string' ? generateIdFromTitle(children) : undefined;
     return (
       <h3
         id={id}

@@ -1,8 +1,8 @@
 'use client';
 
-import * as React from 'react';
 import { cn } from '@/shared/lib/cn';
 import { CodeTabs } from './code-tabs';
+import { METHOD_STYLES } from '@/shared/lib/docs-constants';
 
 interface Parameter {
   name: string;
@@ -26,14 +26,6 @@ interface EndpointCardProps {
   id: string;
 }
 
-const methodColors: Record<string, string> = {
-  GET: 'bg-green-spring/10 text-green-spring border-green-spring/20',
-  POST: 'bg-blue-frosty/10 text-blue-frosty border-blue-frosty/20',
-  PUT: 'bg-purple-aspid/10 text-purple-aspid border-purple-aspid/20',
-  PATCH: 'bg-purple-aspid/10 text-purple-aspid border-purple-aspid/20',
-  DELETE: 'bg-red-fluor/10 text-red-fluor border-red-fluor/20',
-};
-
 export function EndpointCard({
   method,
   path,
@@ -45,6 +37,7 @@ export function EndpointCard({
   id,
 }: EndpointCardProps) {
   const hasParameters = parameters && parameters.length > 0;
+  const methodStyle = METHOD_STYLES[method as keyof typeof METHOD_STYLES] || METHOD_STYLES.GET;
 
   return (
     <div id={id} className="scroll-mt-24">
@@ -54,7 +47,7 @@ export function EndpointCard({
             <span
               className={cn(
                 'px-2.5 py-1 rounded-md border font-mono text-xs font-bold uppercase',
-                methodColors[method] || methodColors.GET,
+                methodStyle,
               )}
             >
               {method}

@@ -1,5 +1,6 @@
 import { EndpointCard } from '@/features/docs/components/endpoint-card';
 import { DocsLayoutWrapper } from '@/features/docs/components/docs-layout-wrapper';
+import { generateIdFromTitle } from '@/shared/lib/docs';
 
 export const dynamic = 'force-dynamic';
 
@@ -86,15 +87,6 @@ function extractResponseExample(responses?: Record<string, unknown>): string | u
   return JSON.stringify(jsonContent.example, null, 2);
 }
 
-function slugify(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-')
-    .trim();
-}
-
 export default async function DocsPage() {
   const spec = await getOpenAPISpec();
   const { info, paths } = spec;
@@ -116,7 +108,7 @@ export default async function DocsPage() {
         if (operation && typeof operation === 'object' && 'summary' in operation) {
           const op = operation as OpenAPIOperation;
           endpoints.push({
-            id: slugify(op.summary || path),
+            id: generateIdFromTitle(op.summary || path),
             method: method.toUpperCase(),
             path,
             summary: op.summary || path,
