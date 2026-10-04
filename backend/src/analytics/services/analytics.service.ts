@@ -1,55 +1,39 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, SelectQueryBuilder } from 'typeorm';
 
 import { TypeId } from '@devpulse/lib';
 
 import { WorkSession } from '../../telemetry/entities/work-session.entity';
+import { User } from '../../users/entities/user.entity';
 import { GetAnalyticsRangeRequestDto } from '../dto/request/get-analytics-range-request.dto';
 import { GetAnalyticsBranchesResponseDto } from '../dto/response/get-analytics-branches-response.dto';
 import { GetAnalyticsDashboardResponseDto } from '../dto/response/get-analytics-dashboard-response.dto';
 import { GetAnalyticsTimeseriesResponseDto } from '../dto/response/get-analytics-timeseries-response.dto';
-
-interface DashboardStatsRaw {
-  totalActiveSeconds: string | null;
-  totalEarnedMoney: string | null;
-  averageFocusScore: string | null;
-  totalSessionsCount: string | null;
-}
-
-interface TopLanguageRaw {
-  language: string | null;
-  totalTime: string | null;
-}
-
-interface TimeseriesRaw {
-  date: Date | string;
-  activeSeconds: string | null;
-  earnedMoney: string | null;
-}
-
-interface BranchDistributionRaw {
-  branchName: string | null;
-  activeSeconds: string | null;
-}
+import {
+  BranchDistributionRaw,
+  DashboardStatsRaw,
+  TimeseriesRaw,
+  TopLanguageRaw,
+} from '../interfaces/analytics-raw.interfaces';
 
 @Injectable()
 export class AnalyticsService {
   private readonly logger = new Logger(AnalyticsService.name);
+
   constructor(
     @InjectRepository(WorkSession)
     private readonly sessionRepo: Repository<WorkSession>,
+    @InjectRepository(User)
+    private readonly userRepo: Repository<User>,
   ) {}
 
-  public async getDashboardStats(
+  private applyBaseFilters(
+    qb: SelectQueryBuilder<WorkSession>,
     userId: TypeId<'users'>,
     query: GetAnalyticsRangeRequestDto,
-  ): Promise<GetAnalyticsDashboardResponseDto> {
-    this.logger.log(`Fetching dashboard stats for user: ${userId}`);
-
-    const qb = this.sessionRepo
-      .createQueryBuilder('session')
-      .where('session.user_id = :userId', { userId });
+  ): SelectQueryBuilder<WorkSession> {
+    qb.where('session.user_id = :userId', { userId });
 
     if (query.projectId) {
       qb.andWhere('session.project_id = :projectId', { projectId: query.projectId });
@@ -61,31 +45,40 @@ export class AnalyticsService {
       qb.andWhere('session.started_at <= :endDate', { endDate: query.endDate });
     }
 
-    const stats = await qb
+    return qb;
+  }
+
+  public async getDashboardStats(
+    userId: TypeId<'users'>,
+    query: GetAnalyticsRangeRequestDto,
+  ): Promise<GetAnalyticsDashboardResponseDto> {
+    this.logger.log(`Fetching dashboard stats for user: ${userId}`);
+
+    const qbStats = this.applyBaseFilters(
+      this.sessionRepo.createQueryBuilder('session'),
+      userId,
+      query,
+    );
+
+    const weightedFocusSql =
+      'SUM(session.focus_score * session.active_seconds) / NULLIF(SUM(session.active_seconds), 0)';
+
+    const stats = await qbStats
       .select('SUM(session.active_seconds)', 'totalActiveSeconds')
       .addSelect('SUM(session.earned_money)', 'totalEarnedMoney')
-      .addSelect('AVG(session.focus_score)', 'averageFocusScore')
+      .addSelect(weightedFocusSql, 'averageFocusScore')
       .addSelect('COUNT(session.id)', 'totalSessionsCount')
       .getRawOne<DashboardStatsRaw>();
 
-    const qbLang = this.sessionRepo
-      .createQueryBuilder('session')
-      .select('session.primary_language', 'language')
-      .addSelect('SUM(session.active_seconds)', 'totalTime')
-      .where('session.user_id = :userId', { userId })
-      .andWhere('session.primary_language IS NOT NULL');
-
-    if (query.projectId) {
-      qbLang.andWhere('session.project_id = :projectId', { projectId: query.projectId });
-    }
-    if (query.startDate) {
-      qbLang.andWhere('session.started_at >= :startDate', { startDate: query.startDate });
-    }
-    if (query.endDate) {
-      qbLang.andWhere('session.started_at <= :endDate', { endDate: query.endDate });
-    }
+    const qbLang = this.applyBaseFilters(
+      this.sessionRepo.createQueryBuilder('session'),
+      userId,
+      query,
+    ).andWhere('session.primary_language IS NOT NULL');
 
     const topLanguageResult = await qbLang
+      .select('session.primary_language', 'language')
+      .addSelect('SUM(session.active_seconds)', 'totalTime')
       .groupBy('session.primary_language')
       .orderBy('"totalTime"', 'DESC')
       .limit(1)
@@ -94,7 +87,7 @@ export class AnalyticsService {
     return {
       totalActiveSeconds: Number(stats?.totalActiveSeconds ?? 0),
       totalEarnedMoney: Number(stats?.totalEarnedMoney ?? 0),
-      averageFocusScore: Number(stats?.averageFocusScore ?? 0),
+      averageFocusScore: Math.round(Number(stats?.averageFocusScore ?? 0)),
       totalSessionsCount: Number(stats?.totalSessionsCount ?? 0),
       topLanguage: topLanguageResult?.language ?? null,
     };
@@ -106,44 +99,27 @@ export class AnalyticsService {
   ): Promise<GetAnalyticsTimeseriesResponseDto> {
     this.logger.log(`Fetching timeseries for user: ${userId}`);
 
-    const qb = this.sessionRepo
-      .createQueryBuilder('session')
-      .where('session.user_id = :userId', { userId });
+    const user = await this.userRepo.findOne({ where: { id: userId }, select: ['id', 'timezone'] });
+    const timezone = user?.timezone ?? 'UTC';
 
-    if (query.projectId) {
-      qb.andWhere('session.project_id = :projectId', { projectId: query.projectId });
-    }
-    if (query.startDate) {
-      qb.andWhere('session.started_at >= :startDate', { startDate: query.startDate });
-    }
-    if (query.endDate) {
-      qb.andWhere('session.started_at <= :endDate', { endDate: query.endDate });
-    }
+    const qb = this.applyBaseFilters(this.sessionRepo.createQueryBuilder('session'), userId, query);
+
+    const dateTruncSql = "TO_CHAR(session.started_at AT TIME ZONE :timezone, 'YYYY-MM-DD')";
 
     const rawData = await qb
-      .select('DATE(session.started_at)', 'date')
+      .select(dateTruncSql, 'date')
       .addSelect('SUM(session.active_seconds)', 'activeSeconds')
       .addSelect('SUM(session.earned_money)', 'earnedMoney')
-      .groupBy('DATE(session.started_at)')
-      .orderBy('DATE(session.started_at)', 'ASC')
+      .setParameter('timezone', timezone)
+      .groupBy(dateTruncSql)
+      .orderBy('"date"', 'ASC')
       .getRawMany<TimeseriesRaw>();
 
-    const series = rawData.map((row) => {
-      let dateStr: string;
-      if (row.date instanceof Date) {
-        dateStr = row.date.toISOString().split('T')[0] ?? '';
-      } else if (typeof row.date === 'string') {
-        dateStr = new Date(row.date).toISOString().split('T')[0] ?? '';
-      } else {
-        dateStr = '';
-      }
-
-      return {
-        date: dateStr,
-        activeSeconds: Number(row.activeSeconds ?? 0),
-        earnedMoney: Number(row.earnedMoney ?? 0),
-      };
-    });
+    const series = rawData.map((row) => ({
+      date: row.date,
+      activeSeconds: Number(row.activeSeconds ?? 0),
+      earnedMoney: Number(row.earnedMoney ?? 0),
+    }));
 
     return { series };
   }
@@ -152,24 +128,15 @@ export class AnalyticsService {
     userId: TypeId<'users'>,
     query: GetAnalyticsRangeRequestDto,
   ): Promise<GetAnalyticsBranchesResponseDto> {
-    const qb = this.sessionRepo
-      .createQueryBuilder('session')
-      .select('session.git_branch', 'branchName')
-      .addSelect('SUM(session.active_seconds)', 'activeSeconds')
-      .where('session.user_id = :userId', { userId })
-      .andWhere('session.git_branch IS NOT NULL');
-
-    if (query.projectId) {
-      qb.andWhere('session.project_id = :projectId', { projectId: query.projectId });
-    }
-    if (query.startDate) {
-      qb.andWhere('session.started_at >= :startDate', { startDate: query.startDate });
-    }
-    if (query.endDate) {
-      qb.andWhere('session.started_at <= :endDate', { endDate: query.endDate });
-    }
+    const qb = this.applyBaseFilters(
+      this.sessionRepo.createQueryBuilder('session'),
+      userId,
+      query,
+    ).andWhere('session.git_branch IS NOT NULL');
 
     const rawData = await qb
+      .select('session.git_branch', 'branchName')
+      .addSelect('SUM(session.active_seconds)', 'activeSeconds')
       .groupBy('session.git_branch')
       .orderBy('"activeSeconds"', 'DESC')
       .limit(10)

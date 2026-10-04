@@ -14,6 +14,7 @@ export enum WorkSessionStatus {
 }
 
 @Entity('work_sessions')
+@Index(['userId', 'startedAt'])
 @Index(['userId', 'gitBranch', 'status'])
 @Index(['projectId', 'gitBranch'])
 export class WorkSession extends AppBaseEntity<'workSessions'> {
