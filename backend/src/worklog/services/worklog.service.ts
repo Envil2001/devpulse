@@ -10,26 +10,12 @@ import {
   AI_SUMMARY_GENERATOR,
   type AiSummaryGenerator,
 } from '../interfaces/ai-summary-generator.interface';
+import { SessionAggregate, UtcRange } from '../interfaces/worklog-internal.interfaces';
 
 const DATE_FORMAT = 'yyyy-MM-dd';
 const MAX_RANGE_DAYS = 31;
 const SECONDS_PER_MINUTE = 60;
 const SECONDS_PER_HOUR = 3600;
-
-interface UtcRange {
-  startKey: string;
-  endKey: string;
-  start: Date;
-  endExclusive: Date;
-}
-
-interface SessionAggregate {
-  totalActiveSeconds: number;
-  weightedFocus: number;
-  branches: Set<string>;
-  projects: Map<string, number>;
-  languages: Map<string, number>;
-}
 
 @Injectable()
 export class WorklogService {

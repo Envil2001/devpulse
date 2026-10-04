@@ -7,23 +7,8 @@ import { TypeId } from '@devpulse/lib';
 import { WorkSession } from '../../telemetry/entities/work-session.entity';
 import { GetAnalyticsRangeRequestDto } from '../dto/request/get-analytics-range-request.dto';
 import { CsvExportFormatterService } from '../formatters/csv-export-formatter.service';
+import { ExportedFile, SessionExportRaw } from '../interfaces/analytics-export.interfaces';
 import { ExportRow } from '../interfaces/export-formatter.interface';
-
-interface ExportedFile {
-  content: string;
-  contentType: string;
-  filename: string;
-}
-
-interface SessionExportRaw {
-  date: Date | string;
-  projectName: string | null;
-  gitBranch: string | null;
-  activeSeconds: string | null;
-  focusScore: string | null;
-  earnedMoney: string | null;
-  primaryLanguage: string | null;
-}
 
 @Injectable()
 export class AnalyticsExportService {
