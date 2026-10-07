@@ -1,8 +1,7 @@
 import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
 import { Job, Worker } from 'bullmq';
 import Redis from 'ioredis/built/Redis';
-import { DataSource, EntityManager, Repository } from 'typeorm';
+import { DataSource, EntityManager } from 'typeorm';
 
 import { typeIdGenerator } from '@devpulse/lib';
 
@@ -16,6 +15,9 @@ import { TelemetryEvent } from './entities/telemetry-event.entity';
 import { WorkSession, WorkSessionStatus } from './entities/work-session.entity';
 import { TelemetryJobData } from './queue/telemetry.queue';
 
+const SESSION_GAP_MS = 15 * 60 * 1000;
+const MAX_IDLE_CREDIT_MS = 30 * 60 * 1000;
+
 @Injectable()
 export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(TelemetryWorker.name);
@@ -26,12 +28,6 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
     private readonly redisConnection: Redis,
     private readonly userRepository: UserRepository,
     private readonly dataSource: DataSource,
-    @InjectRepository(WorkSession)
-    private readonly sessionRepo: Repository<WorkSession>,
-    @InjectRepository(Project)
-    private readonly projectRepo: Repository<Project>,
-    @InjectRepository(TelemetryEvent)
-    private readonly telemetryEventRepo: Repository<TelemetryEvent>,
   ) {}
 
   public onModuleInit(): void {
@@ -116,6 +112,11 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
 
     const eventTime = new Date(event.clientTimestamp ?? new Date().toISOString());
 
+    const idleCreditSec =
+      event.type === 'idle_end' && event.durationMs
+        ? Math.min(Math.round(event.durationMs / 1000), Math.round(MAX_IDLE_CREDIT_MS / 1000))
+        : 0;
+
     const lastSession = await sessionRepo.findOne({
       where: {
         userId: user.id,
@@ -125,24 +126,19 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
       order: { endedAt: 'DESC' },
     });
 
-    const isContinuation =
-      lastSession?.endedAt && eventTime.getTime() - lastSession.endedAt.getTime() <= 5 * 60 * 1000;
+    const gapMs = lastSession?.endedAt
+      ? eventTime.getTime() - lastSession.endedAt.getTime()
+      : Number.POSITIVE_INFINITY;
 
-    const durationSec = event.durationMs ? Math.round(event.durationMs / 1000) : 0;
-    const activeSeconds = event.type === 'idle_start' ? durationSec : 0;
-    const idleSeconds = event.type === 'idle_end' ? durationSec : 0;
+    const isContinuation = lastSession !== null && gapMs >= 0 && gapMs <= SESSION_GAP_MS;
 
     let currentSession: WorkSession;
 
     if (isContinuation) {
       lastSession.endedAt = eventTime;
-      lastSession.activeSeconds += activeSeconds;
-      lastSession.idleSeconds += idleSeconds;
+      lastSession.idleSeconds += idleCreditSec;
 
-      const total = lastSession.activeSeconds + lastSession.idleSeconds;
-      lastSession.focusScore = total > 0 ? (lastSession.activeSeconds / total) * 100 : 0;
-
-      lastSession.earnedMoney = (lastSession.activeSeconds / 3600) * user.hourlyRate;
+      this.recomputeDerived(lastSession, user);
 
       if (event.language) {
         lastSession.primaryLanguage = event.language;
@@ -152,12 +148,9 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
     } else {
       if (lastSession) {
         lastSession.status = WorkSessionStatus.CLOSED;
+        this.recomputeDerived(lastSession, user);
         await sessionRepo.save(lastSession);
       }
-
-      const total = activeSeconds + idleSeconds;
-      const focusScore = total > 0 ? (activeSeconds / total) * 100 : 0;
-      const earnedMoney = (activeSeconds / 3600) * user.hourlyRate;
 
       const newSession = sessionRepo.create({
         user: user,
@@ -167,14 +160,17 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
         gitBranch: event.gitBranch,
         startedAt: eventTime,
         endedAt: eventTime,
-        activeSeconds,
-        idleSeconds,
-        focusScore,
-        earnedMoney,
+        activeSeconds: 0,
+        idleSeconds: idleCreditSec,
+        focusScore: 0,
+        earnedMoney: 0,
         primaryLanguage: event.language ?? null,
         status: WorkSessionStatus.ACTIVE,
       });
       newSession.id = typeIdGenerator('workSessions');
+
+      this.recomputeDerived(newSession, user);
+
       currentSession = await sessionRepo.save(newSession);
     }
 
@@ -187,12 +183,26 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
       session: currentSession,
       gitBranch: event.gitBranch,
       eventTimestamp: eventTime,
-      activeSeconds,
-      idleSeconds,
+      activeSeconds: 0,
+      idleSeconds: idleCreditSec,
       filesChanged,
       fileExtensions,
     });
     rawEvent.id = typeIdGenerator('telemetryEvents');
     await telemetryEventRepo.save(rawEvent);
+  }
+
+  private recomputeDerived(session: WorkSession, user: User): void {
+    const endedAt = session.endedAt ?? session.startedAt;
+    const wallSec = Math.max(
+      0,
+      Math.round((endedAt.getTime() - session.startedAt.getTime()) / 1000),
+    );
+
+    session.activeSeconds = Math.max(0, wallSec - session.idleSeconds);
+
+    const total = session.activeSeconds + session.idleSeconds;
+    session.focusScore = total > 0 ? (session.activeSeconds / total) * 100 : 0;
+    session.earnedMoney = (session.activeSeconds / 3600) * user.hourlyRate;
   }
 }

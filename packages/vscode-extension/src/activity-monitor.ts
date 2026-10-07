@@ -159,7 +159,7 @@ export class ActivityMonitor implements vscode.Disposable {
 
       if (elapsed > SLEEP_CHECK_INTERVAL_MS * SLEEP_DRIFT_TOLERANCE) {
         const sleptSeconds = Math.round((elapsed - SLEEP_CHECK_INTERVAL_MS) / 1000);
-        this.log?.appendLine(`[activity] system sleep detected, ~${String(sleptSeconds)}s`);
+        this.log?.appendLine(`[warn] system sleep detected, ~${String(sleptSeconds)}s`);
 
         this.clearIdleTimer();
         this.clearBlurTimer();
@@ -180,7 +180,7 @@ export class ActivityMonitor implements vscode.Disposable {
     if (this.state === next) return;
 
     this.state = next;
-    this.log?.appendLine(`[activity] ${next}`);
+    this.log?.appendLine(`[info] ${next}`);
     this.emitter.fire({ state: next, changedAt });
   }
 

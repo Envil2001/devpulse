@@ -89,12 +89,21 @@ export class IntegrationsAnalyticsService {
       order: { startedAt: 'DESC' },
     });
 
-    const isStale =
-      activeSession &&
-      Date.now() - new Date(activeSession.startedAt).getTime() >
-        activeSession.activeSeconds * 1000 + LIVE_SESSION_TIMEOUT_MS;
+    if (!activeSession) {
+      return {
+        isCodingNow: false,
+        currentProject: null,
+        currentBranch: null,
+        currentLanguage: null,
+        currentSessionDurationSeconds: null,
+        sessionStartedAt: null,
+      };
+    }
 
-    if (!activeSession || isStale) {
+    const lastSeenMs = new Date(activeSession.endedAt ?? activeSession.startedAt).getTime();
+    const isStale = Date.now() - lastSeenMs > LIVE_SESSION_TIMEOUT_MS;
+
+    if (isStale) {
       return {
         isCodingNow: false,
         currentProject: null,

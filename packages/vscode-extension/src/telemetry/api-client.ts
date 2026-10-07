@@ -111,13 +111,14 @@ export class TelemetryApiClient {
       const ratio = ((1 - compressedSize / rawSize) * 100).toFixed(1);
 
       this.log?.appendLine(
-        `[telemetry] compressed ${String(rawSize)}B → ${String(compressedSize)}B ` +
+        `[debug] compressed ${String(rawSize)}B → ${String(compressedSize)}B ` +
           `(${ratio}% reduction, ${(after - before).toFixed(2)}ms)`,
       );
     }
 
     let response: Response;
     try {
+      this.log?.appendLine(`[debug] POST ${url} size=${String(rawSize)}B`);
       response = await fetch(url, {
         method: 'POST',
         headers,
@@ -125,7 +126,7 @@ export class TelemetryApiClient {
         signal: signal ?? AbortSignal.timeout(30_000), // 30 seconds
       });
     } catch (error) {
-      this.log?.appendLine(`[telemetry] network error: ${String(error)}`);
+      this.log?.appendLine(`[error] network error: ${String(error)}`);
       throw new Error('TelemetryRequestNetworkError');
     }
 
@@ -134,7 +135,7 @@ export class TelemetryApiClient {
     } catch (error) {
       if (error instanceof TelemetryApiClientError) {
         this.log?.appendLine(
-          `[telemetry] request failed status=${String(error.status)} message=${error.message}`,
+          `[error] request failed status=${String(error.status)} message=${error.message}`,
         );
         throw new Error(`TelemetryRequestFailed:${String(error.status)}`);
       }
