@@ -49,6 +49,12 @@ export class WorkSession extends AppBaseEntity<'workSessions'> {
   @Column({ type: 'varchar', name: 'primary_language', length: 50, nullable: true })
   public primaryLanguage!: string | null;
 
+  @Column({ name: 'language_seconds', type: 'jsonb', default: () => "'{}'::jsonb" })
+  public languageSeconds!: Record<string, number>;
+
+  @Column({ name: 'current_language', type: 'varchar', length: 50, nullable: true })
+  public currentLanguage!: string | null;
+
   @ManyToOne(() => User, (user) => user.workSessions, {
     nullable: false,
     onDelete: 'CASCADE',

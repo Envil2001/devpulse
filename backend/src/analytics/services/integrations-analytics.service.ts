@@ -127,14 +127,28 @@ export class IntegrationsAnalyticsService {
   public async getLanguagesBreakdown(
     userId: TypeId<'users'>,
   ): Promise<GetIntegrationLanguagesResponseDto> {
-    const rawStats = await this.sessionRepo
-      .createQueryBuilder('session')
-      .select("COALESCE(session.primary_language, 'Other')", 'language')
-      .addSelect('SUM(session.active_seconds)', 'totalSeconds')
-      .where('session.user_id = :userId', { userId })
-      .groupBy("COALESCE(session.primary_language, 'Other')")
-      .orderBy('"totalSeconds"', 'DESC')
-      .getRawMany<{ language: string; totalSeconds: string }>();
+    const rawStats: Array<{ language: string; totalSeconds: string }> =
+      await this.sessionRepo.query(
+        `
+        SELECT lang.key AS language,
+               SUM((lang.value)::int) AS "totalSeconds"
+        FROM work_sessions ws,
+             LATERAL jsonb_each_text(
+               CASE
+                 WHEN ws.language_seconds = '{}'::jsonb
+                   THEN jsonb_build_object(
+                     COALESCE(ws.primary_language, 'Other'),
+                     ws.active_seconds
+                   )
+                 ELSE ws.language_seconds
+               END
+             ) AS lang(key, value)
+        WHERE ws.user_id = $1
+        GROUP BY lang.key
+        ORDER BY "totalSeconds" DESC
+      `,
+        [userId],
+      );
 
     let totalActiveSeconds = 0;
 
@@ -163,6 +177,10 @@ export class IntegrationsAnalyticsService {
   private formatSeconds(seconds: number): string {
     const h = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
-    return `${h.toString()}h ${m.toString()}m`;
+    const s = seconds % 60;
+
+    if (h > 0) return `${h.toString()}h ${m.toString()}m`;
+    if (m > 0) return `${m.toString()}m`;
+    return `${s.toString()}s`;
   }
 }
