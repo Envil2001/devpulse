@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { Queue } from 'bullmq';
 import Redis from 'ioredis';
 
@@ -14,7 +14,6 @@ export interface TelemetryJobData {
 
 @Injectable()
 export class TelemetryQueue implements OnModuleInit {
-  private readonly logger = new Logger(TelemetryQueue.name);
   private queue!: Queue<TelemetryJobData>;
 
   constructor(@Inject(BULL_REDIS_CLIENT) private readonly redisConnection: Redis) {}

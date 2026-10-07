@@ -26,6 +26,7 @@ export class GitStatusBar implements vscode.Disposable {
     const labelWorkspace = workspaceName ?? 'No Workspace';
     const labelBranch = gitBranch ?? 'No Git';
     this.statusBarItem.text = `$(repo) ${labelWorkspace}  $(git-branch) ${labelBranch}`;
+    this.statusBarItem.tooltip = `Workspace: ${labelWorkspace}\nGit Branch: ${labelBranch}`;
 
     await vscode.commands.executeCommand('setContext', 'devpulse.workspaceName', workspaceName);
     await vscode.commands.executeCommand('setContext', 'devpulse.gitBranch', gitBranch);

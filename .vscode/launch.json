@@ -5,7 +5,10 @@
       "name": "DevPulse: Debug Extension",
       "type": "extensionHost",
       "request": "launch",
-      "args": ["--extensionDevelopmentPath=${workspaceFolder}/packages/vscode-extension"],
+      "args": [
+        "--extensionDevelopmentPath=${workspaceFolder}/packages/vscode-extension",
+        "${workspaceFolder}/backend"
+      ],
       "outFiles": ["${workspaceFolder}/packages/vscode-extension/out/**/*.js"],
       "preLaunchTask": "build-extension",
       "env": {

@@ -12,7 +12,7 @@ const DEACTIVATE_FLUSH_TIMEOUT_MS = 3000;
 export function activate(context: vscode.ExtensionContext): void {
   console.log('DevPulse extension is now active!');
 
-  const outputChannel = vscode.window.createOutputChannel('DevPulse');
+  const outputChannel = vscode.window.createOutputChannel('DevPulse', { log: true });
 
   context.subscriptions.push(outputChannel, ...registerCommands(context));
 
@@ -65,6 +65,8 @@ export function activate(context: vscode.ExtensionContext): void {
 
 export async function deactivate(): Promise<void> {
   if (!telemetryBridge) return;
+
+  telemetryBridge.stop();
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => {
