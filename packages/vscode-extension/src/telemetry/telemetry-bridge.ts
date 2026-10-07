@@ -180,8 +180,7 @@ export class TelemetryBridge implements vscode.Disposable {
 
     if (previousBranch !== null) {
       this.enqueue(
-        this.createEvent('heartbeat', {
-          durationMs: null,
+        this.createEvent('session_end', {
           gitBranch: previousBranch,
           gitRemoteUrl: previousRemoteUrl,
           clientTimestamp: boundaryTimestamp,

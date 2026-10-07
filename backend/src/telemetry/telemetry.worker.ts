@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { Job, Worker } from 'bullmq';
 import Redis from 'ioredis/built/Redis';
-import { DataSource, EntityManager } from 'typeorm';
+import { DataSource, EntityManager, Repository } from 'typeorm';
 
 import { typeIdGenerator } from '@devpulse/lib';
 
@@ -17,6 +17,10 @@ import { TelemetryJobData } from './queue/telemetry.queue';
 
 const SESSION_GAP_MS = 15 * 60 * 1000;
 const MAX_IDLE_CREDIT_MS = 30 * 60 * 1000;
+
+const MAX_LANGUAGE_DELTA_SEC = 300;
+
+const NOISY_LANGUAGES = new Set(['plaintext', 'log', 'jsonc']);
 
 @Injectable()
 export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
@@ -88,34 +92,30 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
     event: TelemetryEventItemDto,
   ): Promise<void> {
     const sessionRepo = manager.getRepository(WorkSession);
-    const projectRepo = manager.getRepository(Project);
-    const telemetryEventRepo = manager.getRepository(TelemetryEvent);
-
-    let project: Project | null = null;
-    if (event.gitRemoteUrl) {
-      project = await projectRepo.findOneBy({
-        gitRemoteUrl: event.gitRemoteUrl,
-        userId: user.id,
-      });
-
-      if (!project) {
-        project = projectRepo.create({
-          gitRemoteUrl: event.gitRemoteUrl,
-          name: event.gitRemoteUrl.split('/').pop()?.replace('.git', '') ?? 'Unknown',
-          user,
-          userId: user.id,
-        });
-        project.id = typeIdGenerator('projects');
-        project = await projectRepo.save(project);
-      }
-    }
-
+    const project = await this.resolveProject(manager, user, event.gitRemoteUrl);
     const eventTime = new Date(event.clientTimestamp ?? new Date().toISOString());
 
-    const idleCreditSec =
-      event.type === 'idle_end' && event.durationMs
-        ? Math.min(Math.round(event.durationMs / 1000), Math.round(MAX_IDLE_CREDIT_MS / 1000))
-        : 0;
+    if (event.type === 'session_end') {
+      const active = await sessionRepo.findOne({
+        where: {
+          userId: user.id,
+          gitBranch: event.gitBranch,
+          status: WorkSessionStatus.ACTIVE,
+        },
+        order: { endedAt: 'DESC' },
+      });
+
+      if (active) {
+        this.accumulateLanguage(active, eventTime);
+        active.endedAt = eventTime;
+        active.status = WorkSessionStatus.CLOSED;
+        this.recomputeDerived(active, user);
+        await sessionRepo.save(active);
+      }
+
+      await this.persistRawEvent(manager, user, project, active ?? null, event, eventTime, 0);
+      return;
+    }
 
     const lastSession = await sessionRepo.findOne({
       where: {
@@ -130,27 +130,22 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
       ? eventTime.getTime() - lastSession.endedAt.getTime()
       : Number.POSITIVE_INFINITY;
 
-    const isContinuation = lastSession !== null && gapMs >= 0 && gapMs <= SESSION_GAP_MS;
+    const idleCreditSec = this.getIdleCreditSeconds(event);
 
     let currentSession: WorkSession;
 
-    if (isContinuation) {
+    if (lastSession !== null && gapMs >= 0 && gapMs <= SESSION_GAP_MS) {
+      this.accumulateLanguage(lastSession, eventTime);
+      this.applyEventLanguage(lastSession, event);
+
       lastSession.endedAt = eventTime;
       lastSession.idleSeconds += idleCreditSec;
 
       this.recomputeDerived(lastSession, user);
 
-      if (event.language) {
-        lastSession.primaryLanguage = event.language;
-      }
-
       currentSession = await sessionRepo.save(lastSession);
     } else {
-      if (lastSession) {
-        lastSession.status = WorkSessionStatus.CLOSED;
-        this.recomputeDerived(lastSession, user);
-        await sessionRepo.save(lastSession);
-      }
+      await this.closeAllActiveSessions(sessionRepo, user);
 
       const newSession = sessionRepo.create({
         user: user,
@@ -161,35 +156,123 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
         startedAt: eventTime,
         endedAt: eventTime,
         activeSeconds: 0,
-        idleSeconds: idleCreditSec,
+        idleSeconds: 0,
         focusScore: 0,
         earnedMoney: 0,
-        primaryLanguage: event.language ?? null,
+        primaryLanguage: null,
+        currentLanguage: null,
+        languageSeconds: {},
         status: WorkSessionStatus.ACTIVE,
       });
       newSession.id = typeIdGenerator('workSessions');
 
+      this.applyEventLanguage(newSession, event);
       this.recomputeDerived(newSession, user);
 
       currentSession = await sessionRepo.save(newSession);
     }
 
-    const filesChanged = event.filePath ? [event.filePath] : [];
-    const fileExtensions = event.language ? [event.language] : [];
+    await this.persistRawEvent(
+      manager,
+      user,
+      project,
+      currentSession,
+      event,
+      eventTime,
+      idleCreditSec,
+    );
+  }
 
-    const rawEvent = telemetryEventRepo.create({
-      user: user,
-      project: project ?? null,
-      session: currentSession,
-      gitBranch: event.gitBranch,
-      eventTimestamp: eventTime,
-      activeSeconds: 0,
-      idleSeconds: idleCreditSec,
-      filesChanged,
-      fileExtensions,
+  private async resolveProject(
+    manager: EntityManager,
+    user: User,
+    gitRemoteUrl: string | undefined,
+  ): Promise<Project | null> {
+    if (!gitRemoteUrl) return null;
+
+    const projectRepo = manager.getRepository(Project);
+
+    let project = await projectRepo.findOneBy({
+      gitRemoteUrl,
+      userId: user.id,
     });
-    rawEvent.id = typeIdGenerator('telemetryEvents');
-    await telemetryEventRepo.save(rawEvent);
+
+    if (!project) {
+      project = projectRepo.create({
+        gitRemoteUrl,
+        name: gitRemoteUrl.split('/').pop()?.replace('.git', '') ?? 'Unknown',
+        user,
+        userId: user.id,
+      });
+      project.id = typeIdGenerator('projects');
+      project = await projectRepo.save(project);
+    }
+
+    return project;
+  }
+
+  private async closeAllActiveSessions(
+    sessionRepo: Repository<WorkSession>,
+    user: User,
+  ): Promise<void> {
+    const actives = await sessionRepo.find({
+      where: {
+        userId: user.id,
+        status: WorkSessionStatus.ACTIVE,
+      },
+    });
+
+    for (const active of actives) {
+      active.status = WorkSessionStatus.CLOSED;
+      this.recomputeDerived(active, user);
+      await sessionRepo.save(active);
+    }
+  }
+
+  private accumulateLanguage(session: WorkSession, eventTime: Date): void {
+    const lastAt = session.endedAt?.getTime() ?? session.startedAt.getTime();
+    const deltaSec = Math.round((eventTime.getTime() - lastAt) / 1000);
+
+    if (deltaSec <= 0) return;
+    if (!session.currentLanguage) return;
+
+    const capped = Math.min(deltaSec, MAX_LANGUAGE_DELTA_SEC);
+    const buckets: Record<string, number> = { ...session.languageSeconds };
+    buckets[session.currentLanguage] = (buckets[session.currentLanguage] ?? 0) + capped;
+    session.languageSeconds = buckets;
+  }
+
+  private applyEventLanguage(session: WorkSession, event: TelemetryEventItemDto): void {
+    if (!event.language) return;
+
+    const lang = event.language.toLowerCase();
+    if (NOISY_LANGUAGES.has(lang)) return;
+
+    session.currentLanguage = lang;
+  }
+
+  private topLanguage(buckets: Record<string, number> | null | undefined): string | null {
+    if (!buckets) return null;
+
+    let best: string | null = null;
+    let bestSec = 0;
+
+    for (const [lang, sec] of Object.entries(buckets)) {
+      if (sec > bestSec) {
+        best = lang;
+        bestSec = sec;
+      }
+    }
+
+    return best;
+  }
+
+  private getIdleCreditSeconds(event: TelemetryEventItemDto): number {
+    if (event.type !== 'idle_end' || !event.durationMs) return 0;
+
+    const rawSec = Math.round(event.durationMs / 1000);
+    const capSec = Math.round(MAX_IDLE_CREDIT_MS / 1000);
+    return Math.min(rawSec, capSec);
   }
 
   private recomputeDerived(session: WorkSession, user: User): void {
@@ -204,5 +287,33 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
     const total = session.activeSeconds + session.idleSeconds;
     session.focusScore = total > 0 ? (session.activeSeconds / total) * 100 : 0;
     session.earnedMoney = (session.activeSeconds / 3600) * user.hourlyRate;
+
+    session.primaryLanguage = this.topLanguage(session.languageSeconds);
+  }
+
+  private async persistRawEvent(
+    manager: EntityManager,
+    user: User,
+    project: Project | null,
+    session: WorkSession | null,
+    event: TelemetryEventItemDto,
+    eventTime: Date,
+    idleCreditSec: number,
+  ): Promise<void> {
+    const repo = manager.getRepository(TelemetryEvent);
+
+    const rawEvent = repo.create({
+      user,
+      project,
+      session,
+      gitBranch: event.gitBranch,
+      eventTimestamp: eventTime,
+      activeSeconds: 0,
+      idleSeconds: idleCreditSec,
+      filesChanged: event.filePath ? [event.filePath] : [],
+      fileExtensions: event.language ? [event.language] : [],
+    });
+    rawEvent.id = typeIdGenerator('telemetryEvents');
+    await repo.save(rawEvent);
   }
 }
