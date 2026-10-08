@@ -138,6 +138,10 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
       this.accumulateLanguage(lastSession, eventTime);
       this.applyEventLanguage(lastSession, event);
 
+      if (lastSession.machineId === null && event.machineId) {
+        lastSession.machineId = event.machineId;
+      }
+
       lastSession.endedAt = eventTime;
       lastSession.idleSeconds += idleCreditSec;
 
@@ -162,6 +166,7 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
         primaryLanguage: null,
         currentLanguage: null,
         languageSeconds: {},
+        machineId: event.machineId ?? null,
         status: WorkSessionStatus.ACTIVE,
       });
       newSession.id = typeIdGenerator('workSessions');
@@ -310,6 +315,8 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
       eventTimestamp: eventTime,
       activeSeconds: 0,
       idleSeconds: idleCreditSec,
+      machineId: event.machineId ?? null,
+      vscodeSessionId: event.sessionId ?? null,
       filesChanged: event.filePath ? [event.filePath] : [],
       fileExtensions: event.language ? [event.language] : [],
     });

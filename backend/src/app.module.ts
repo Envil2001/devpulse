@@ -21,7 +21,6 @@ import { TelemetryModule } from './telemetry/telemetry.module';
 import { User } from './users/entities/user.entity';
 import { UserEncryption } from './users/entities/user-encryption.entity';
 import { WorklogModule } from './worklog/worklog.module';
-import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
 const throttlerProvider: Provider = {
@@ -69,7 +68,6 @@ const throttlerProvider: Provider = {
     EmailModule,
     WorklogModule,
   ],
-  controllers: [AppController],
   providers: [AppService, throttlerProvider],
 })
 export class AppModule {}

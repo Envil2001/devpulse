@@ -6,4 +6,6 @@ export interface TelemetryEventDto {
   language?: string;
   durationMs?: number | null;
   clientTimestamp?: string;
+  machineId?: string;
+  sessionId?: string;
 }

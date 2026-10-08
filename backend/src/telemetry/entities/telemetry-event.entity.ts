@@ -70,4 +70,10 @@ export class TelemetryEvent extends AppBaseEntity<'telemetryEvents'> {
 
   @Column({ name: 'session_id', type: 'varchar', length: 40, nullable: true })
   public sessionId!: TypeId<'workSessions'> | null;
+
+  @Column({ name: 'machine_id', type: 'varchar', length: 64, nullable: true })
+  public machineId!: string | null;
+
+  @Column({ name: 'vscode_session_id', type: 'varchar', length: 64, nullable: true })
+  public vscodeSessionId!: string | null;
 }
