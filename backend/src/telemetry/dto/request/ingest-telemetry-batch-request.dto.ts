@@ -48,6 +48,16 @@ export class TelemetryEventItemDto implements TelemetryEventDto {
   @IsDateString()
   @IsOptional()
   public clientTimestamp?: string;
+
+  @ApiProperty({ description: 'VS Code machine identifier', required: false })
+  @IsString()
+  @IsOptional()
+  public machineId?: string;
+
+  @ApiProperty({ description: 'VS Code session identifier', required: false })
+  @IsString()
+  @IsOptional()
+  public sessionId?: string;
 }
 
 export class IngestTelemetryBatchRequestDto {

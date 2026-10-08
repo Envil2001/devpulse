@@ -1,3 +1,5 @@
+import path from 'node:path';
+
 import * as vscode from 'vscode';
 
 import type { TelemetryEventDto } from '@devpulse/lib';
@@ -12,11 +14,15 @@ const FLUSH_INTERVAL_MS = 60_000;
 const FLUSH_SIZE_THRESHOLD = 50;
 const FLUSH_DEBOUNCE_MS = 5000;
 const HEARTBEAT_INTERVAL_MS = 60_000;
+const CONTEXT_LOSS_GRACE_MS = 2 * 60 * 1000;
 
 function isTrackedDocument(uri: vscode.Uri): boolean {
   return uri.scheme === 'file' || uri.scheme === 'untitled';
 }
-
+function isRelativeWorkspacePath(uri: vscode.Uri): boolean {
+  const rel = vscode.workspace.asRelativePath(uri, false);
+  return !path.isAbsolute(rel);
+}
 export class TelemetryBridge implements vscode.Disposable {
   private readonly disposables: Array<vscode.Disposable> = [];
   private readonly client: TelemetryApiClient;
@@ -25,6 +31,8 @@ export class TelemetryBridge implements vscode.Disposable {
   private timer: ReturnType<typeof setInterval> | undefined;
   private heartbeatTimer: ReturnType<typeof setInterval> | undefined;
   private debounceTimer: ReturnType<typeof setTimeout> | undefined;
+  private contextLossTimer: ReturnType<typeof setTimeout> | undefined;
+
   private queue: Array<TelemetryEventDto> = [];
   private flushing = false;
   private stopped = false;
@@ -65,7 +73,7 @@ export class TelemetryBridge implements vscode.Disposable {
       vscode.workspace.onDidSaveTextDocument((doc) => {
         if (doc.isClosed) return;
         if (!isTrackedDocument(doc.uri)) return;
-
+        if (!isRelativeWorkspacePath(doc.uri)) return;
         this.log?.appendLine(`[trace] file_save: ${this.toRelativePath(doc.uri)}`);
         this.enqueue(
           this.createEvent('file_save', {
@@ -78,7 +86,7 @@ export class TelemetryBridge implements vscode.Disposable {
       vscode.window.onDidChangeActiveTextEditor((editor) => {
         if (editor === undefined) return;
         if (!isTrackedDocument(editor.document.uri)) return;
-
+        if (!isRelativeWorkspacePath(editor.document.uri)) return;
         this.log?.appendLine(`[trace] file_switch: ${this.toRelativePath(editor.document.uri)}`);
         this.enqueue(
           this.createEvent('file_switch', {
@@ -111,6 +119,11 @@ export class TelemetryBridge implements vscode.Disposable {
 
   private sendHeartbeat(): void {
     if (this.stopped) return;
+
+    if (!vscode.env.isTelemetryEnabled) {
+      this.log?.appendLine('[debug] heartbeat skipped: VS Code telemetry disabled');
+      return;
+    }
 
     if (this.activityMonitor.currentState !== 'active') {
       this.log?.appendLine(`[debug] heartbeat skipped: state=${this.activityMonitor.currentState}`);
@@ -157,20 +170,11 @@ export class TelemetryBridge implements vscode.Disposable {
     );
 
     if (nextBranch === null) {
-      if (previousBranch !== null) {
-        this.enqueue(
-          this.createEvent('session_end', {
-            gitBranch: previousBranch,
-            gitRemoteUrl: previousRemoteUrl,
-          }),
-        );
-      }
-
-      this.lastObservedGitBranch = null;
-      this.lastObservedGitRemoteUrl = null;
-
+      this.scheduleContextLossEnd();
       return;
     }
+
+    this.clearContextLossTimer();
 
     if (previousBranch === nextBranch && previousRemoteUrl === nextRemoteUrl) {
       return;
@@ -201,6 +205,37 @@ export class TelemetryBridge implements vscode.Disposable {
     this.lastObservedGitRemoteUrl = nextRemoteUrl;
   }
 
+  private scheduleContextLossEnd(): void {
+    this.clearContextLossTimer();
+
+    this.contextLossTimer = setTimeout(() => {
+      this.contextLossTimer = undefined;
+
+      if (this.lastObservedGitBranch !== null) {
+        this.log?.appendLine(
+          `[debug] context loss grace period expired, ending session on ${this.lastObservedGitBranch}`,
+        );
+
+        this.enqueue(
+          this.createEvent('session_end', {
+            gitBranch: this.lastObservedGitBranch,
+            gitRemoteUrl: this.lastObservedGitRemoteUrl,
+          }),
+        );
+
+        this.lastObservedGitBranch = null;
+        this.lastObservedGitRemoteUrl = null;
+      }
+    }, CONTEXT_LOSS_GRACE_MS);
+  }
+
+  private clearContextLossTimer(): void {
+    if (this.contextLossTimer !== undefined) {
+      clearTimeout(this.contextLossTimer);
+      this.contextLossTimer = undefined;
+    }
+  }
+
   private createEvent(
     type: 'heartbeat' | 'file_save' | 'file_switch' | 'idle_start' | 'idle_end' | 'session_end',
     partial: {
@@ -222,10 +257,17 @@ export class TelemetryBridge implements vscode.Disposable {
       durationMs: partial.durationMs,
       filePath: partial.filePath ?? undefined,
       language: partial.language ?? undefined,
+      machineId: vscode.env.machineId,
+      sessionId: vscode.env.sessionId,
     };
   }
 
   private enqueue(event: TelemetryEventDto): void {
+    if (!vscode.env.isTelemetryEnabled) {
+      this.log?.appendLine(`[debug] skipped ${event.type}: VS Code telemetry disabled`);
+      return;
+    }
+
     if (event.gitBranch === null) {
       this.log?.appendLine(`[debug] skipped ${event.type}: no git branch`);
       return;
@@ -273,7 +315,7 @@ export class TelemetryBridge implements vscode.Disposable {
   public stop(): void {
     if (this.stopped) return;
     this.stopped = true;
-
+    this.clearContextLossTimer();
     if (this.heartbeatTimer !== undefined) {
       clearInterval(this.heartbeatTimer);
       this.heartbeatTimer = undefined;

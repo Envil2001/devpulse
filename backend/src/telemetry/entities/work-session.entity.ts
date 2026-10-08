@@ -55,6 +55,9 @@ export class WorkSession extends AppBaseEntity<'workSessions'> {
   @Column({ name: 'current_language', type: 'varchar', length: 50, nullable: true })
   public currentLanguage!: string | null;
 
+  @Column({ name: 'machine_id', type: 'varchar', length: 64, nullable: true })
+  public machineId!: string | null;
+
   @ManyToOne(() => User, (user) => user.workSessions, {
     nullable: false,
     onDelete: 'CASCADE',

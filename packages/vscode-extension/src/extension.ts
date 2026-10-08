@@ -9,20 +9,20 @@ import { GitContextProvider } from './git-context.js';
 let telemetryBridge: TelemetryBridge | undefined;
 const DEACTIVATE_FLUSH_TIMEOUT_MS = 3000;
 
+function canStartTelemetry(): boolean {
+  return vscode.workspace.isTrusted && vscode.env.isTelemetryEnabled;
+}
+
 export function activate(context: vscode.ExtensionContext): void {
   console.log('DevPulse extension is now active!');
 
   const outputChannel = vscode.window.createOutputChannel('DevPulse', { log: true });
-
   context.subscriptions.push(outputChannel, ...registerCommands(context));
 
   let isTelemetryStarted = false;
 
   const startTelemetry = (): void => {
-    if (isTelemetryStarted) {
-      return;
-    }
-
+    if (isTelemetryStarted) return;
     isTelemetryStarted = true;
 
     const activityMonitor = new ActivityMonitor();
@@ -42,22 +42,39 @@ export function activate(context: vscode.ExtensionContext): void {
     void gitStatusBar.show();
 
     telemetryBridge.start().catch((error: unknown) => {
-      outputChannel.appendLine(`[error] Telemetry failed to start: ${String(error)}`);
+      outputChannel.error(`Telemetry failed to start: ${String(error)}`);
     });
 
-    outputChannel.appendLine('[info] Workspace is trusted. Telemetry started.');
+    outputChannel.info('Telemetry started.');
   };
 
-  if (vscode.workspace.isTrusted) {
+  const stopTelemetry = (): void => {
+    if (!telemetryBridge || !isTelemetryStarted) return;
+    telemetryBridge.stop();
+    isTelemetryStarted = false;
+    outputChannel.warn('VS Code telemetry disabled. DevPulse stopped.');
+  };
+
+  context.subscriptions.push(
+    vscode.env.onDidChangeTelemetryEnabled((enabled) => {
+      if (!enabled) {
+        stopTelemetry();
+      } else if (vscode.workspace.isTrusted) {
+        startTelemetry();
+      }
+    }),
+  );
+
+  if (canStartTelemetry()) {
     startTelemetry();
   } else {
-    outputChannel.appendLine(
-      '[warn] Workspace is UNTRUSTED. Telemetry is paused to protect your data.',
-    );
+    outputChannel.warn('Telemetry is paused (untrusted workspace or VS Code telemetry disabled).');
 
     context.subscriptions.push(
       vscode.workspace.onDidGrantWorkspaceTrust(() => {
-        startTelemetry();
+        if (canStartTelemetry()) {
+          startTelemetry();
+        }
       }),
     );
   }
