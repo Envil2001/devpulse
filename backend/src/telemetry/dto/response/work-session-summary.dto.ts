@@ -27,4 +27,16 @@ export class WorkSessionSummaryDto {
 
   @ApiProperty({ description: 'Earned money' })
   public earnedMoney!: number;
+
+  @ApiProperty({
+    description: 'Primary language of the session',
+    nullable: true,
+  })
+  public primaryLanguage!: string | null;
+
+  @ApiProperty({
+    description: 'Session status',
+    enum: ['active', 'closed'],
+  })
+  public status!: 'active' | 'closed';
 }

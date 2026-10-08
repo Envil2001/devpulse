@@ -9,11 +9,15 @@ export interface WorkSessionSummary {
   durationMs: number;
   focusScore: number;
   earnedMoney: number;
+  primaryLanguage: string | null;
+  status: 'active' | 'closed';
 }
 
 export class SessionsService extends BaseService {
-  async list(): Promise<Array<WorkSessionSummary>> {
-    return this.get<Array<WorkSessionSummary>>('/telemetry/sessions');
+  async list(limit?: number): Promise<Array<WorkSessionSummary>> {
+    return this.get<Array<WorkSessionSummary>>('/telemetry/sessions', {
+      params: limit ? { limit } : undefined,
+    });
   }
 }
 

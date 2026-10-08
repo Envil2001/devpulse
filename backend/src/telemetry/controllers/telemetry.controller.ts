@@ -1,4 +1,13 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
@@ -48,12 +57,16 @@ export class TelemetryController {
   @HttpCode(HttpStatus.OK)
   public async getSessions(
     @CurrentUser() user: AuthenticatedUser,
+    @Query('limit') limit?: string,
   ): Promise<Array<WorkSessionSummaryDto>> {
+    const parsedLimit = limit ? Number.parseInt(limit, 10) : 50;
+    const safeLimit = Math.min(Math.max(Number.isNaN(parsedLimit) ? 50 : parsedLimit, 1), 100);
+
     const sessions = await this.sessionRepo.find({
       where: { userId: user.id },
       relations: ['project'],
       order: { startedAt: 'DESC' },
-      take: 50,
+      take: safeLimit,
     });
 
     return sessions.map((session): WorkSessionSummaryDto => {
@@ -66,6 +79,8 @@ export class TelemetryController {
         durationMs: session.activeSeconds * 1000,
         focusScore: Math.round(session.focusScore),
         earnedMoney: session.earnedMoney,
+        primaryLanguage: session.primaryLanguage,
+        status: session.status,
       };
     });
   }
