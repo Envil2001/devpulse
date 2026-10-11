@@ -58,6 +58,22 @@ export class WorkSession extends AppBaseEntity<'workSessions'> {
   @Column({ name: 'machine_id', type: 'varchar', length: 64, nullable: true })
   public machineId!: string | null;
 
+  @Column({ name: 'commands_run', type: 'int', default: 0 })
+  public commandsRun!: number;
+
+  @Column({ name: 'failed_commands', type: 'int', default: 0 })
+  public failedCommands!: number;
+
+  @Column({ name: 'terminal_commands', type: 'jsonb', default: () => "'[]'::jsonb" })
+  public terminalCommands!: Array<{
+    command: string;
+    cwd: string | null;
+    exitCode: number | null;
+    durationMs: number;
+    kind: string;
+    timestamp: string;
+  }>;
+
   @ManyToOne(() => User, (user) => user.workSessions, {
     nullable: false,
     onDelete: 'CASCADE',

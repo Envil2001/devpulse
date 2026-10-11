@@ -15,6 +15,7 @@ import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { type AuthenticatedUser } from '../../auth/interfaces/jwt-payload.interface';
 import { GetAnalyticsRangeRequestDto } from '../dto/request/get-analytics-range-request.dto';
 import { GetAnalyticsBranchesResponseDto } from '../dto/response/get-analytics-branches-response.dto';
+import { GetAnalyticsCommandsResponseDto } from '../dto/response/get-analytics-commands-response.dto';
 import { GetAnalyticsDashboardResponseDto } from '../dto/response/get-analytics-dashboard-response.dto';
 import { GetAnalyticsTimeseriesResponseDto } from '../dto/response/get-analytics-timeseries-response.dto';
 import { GetIntegrationLanguagesResponseDto } from '../dto/response/get-integration-languages-response.dto';
@@ -73,6 +74,15 @@ export class AnalyticsController {
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<GetIntegrationLanguagesResponseDto> {
     return this.integrationsService.getLanguagesBreakdown(user.id);
+  }
+
+  @Get('commands')
+  @HttpCode(HttpStatus.OK)
+  public async getCommands(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query() query: GetAnalyticsRangeRequestDto,
+  ): Promise<GetAnalyticsCommandsResponseDto> {
+    return this.analyticsService.getCommandsBreakdown(user.id, query);
   }
 
   @Get('export')

@@ -1,5 +1,14 @@
 export interface TelemetryEventDto {
-  type: 'heartbeat' | 'file_save' | 'file_switch' | 'idle_start' | 'idle_end' | 'session_end';
+  type:
+    | 'heartbeat'
+    | 'file_save'
+    | 'file_switch'
+    | 'idle_start'
+    | 'idle_end'
+    | 'session_end'
+    | 'terminal_command'
+    | 'task_run';
+
   gitBranch: string | null;
   gitRemoteUrl?: string;
   filePath?: string;
@@ -8,4 +17,11 @@ export interface TelemetryEventDto {
   clientTimestamp?: string;
   machineId?: string;
   sessionId?: string;
+
+  command?: string;
+  commandCwd?: string | null;
+  exitCode?: number | null;
+
+  taskName?: string;
+  taskSource?: string;
 }
