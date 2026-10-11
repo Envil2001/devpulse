@@ -76,4 +76,19 @@ export class TelemetryEvent extends AppBaseEntity<'telemetryEvents'> {
 
   @Column({ name: 'vscode_session_id', type: 'varchar', length: 64, nullable: true })
   public vscodeSessionId!: string | null;
+
+  @Column({ name: 'command', type: 'varchar', length: 500, nullable: true })
+  public command!: string | null;
+
+  @Column({ name: 'command_cwd', type: 'varchar', length: 500, nullable: true })
+  public commandCwd!: string | null;
+
+  @Column({ name: 'exit_code', type: 'int', nullable: true })
+  public exitCode!: number | null;
+
+  @Column({ name: 'task_name', type: 'varchar', length: 255, nullable: true })
+  public taskName!: string | null;
+
+  @Column({ name: 'task_source', type: 'varchar', length: 100, nullable: true })
+  public taskSource!: string | null;
 }

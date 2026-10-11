@@ -47,6 +47,20 @@ export interface LanguagesBreakdown {
   languages: Array<LanguageStat>;
 }
 
+export interface CommandStat {
+  command: string;
+  kind: 'test' | 'build' | 'lint' | 'install' | 'git' | 'task' | 'other';
+  runs: number;
+  failedRuns: number;
+  avgDurationMs: number;
+  successRate: number;
+}
+
+export interface CommandsBreakdown {
+  totalCommands: number;
+  commands: Array<CommandStat>;
+}
+
 export class AnalyticsService extends BaseService {
   async getDashboard(params: AnalyticsRangeParams = {}): Promise<DashboardStats> {
     return this.get<DashboardStats>('/analytics/dashboard', { params });
@@ -77,6 +91,10 @@ export class AnalyticsService extends BaseService {
 
   async getLanguages(): Promise<LanguagesBreakdown> {
     return this.get<LanguagesBreakdown>('/analytics/languages');
+  }
+
+  async getCommands(params: AnalyticsRangeParams = {}): Promise<CommandsBreakdown> {
+    return this.get<CommandsBreakdown>('/analytics/commands', { params });
   }
 }
 

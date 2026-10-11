@@ -7,6 +7,7 @@ import {
   BranchDataPoint,
   LiveStatus,
   LanguagesBreakdown,
+  CommandsBreakdown,
 } from './api';
 import { downloadBlob } from '@/shared/lib/download';
 import { QueryParams } from '@/shared/api/api-client';
@@ -22,6 +23,8 @@ export const analyticsKeys = {
   all: ['analytics'] as const,
   status: () => [...analyticsKeys.all, 'status'] as const,
   languages: () => [...analyticsKeys.all, 'languages'] as const,
+  commands: (range: DateRange, projectId?: string) =>
+    [...analyticsKeys.all, 'commands', range.startDate, range.endDate, projectId] as const,
   dashboard: (range: DateRange, projectId?: string) =>
     [...analyticsKeys.all, 'dashboard', range.startDate, range.endDate, projectId] as const,
   timeseries: (range: DateRange, projectId?: string) =>
@@ -98,6 +101,14 @@ export function useBranchesDistribution(range: DateRange, projectId?: string) {
   return useQuery<Array<BranchDataPoint>>({
     queryKey: analyticsKeys.branches(range, projectId),
     queryFn: () => analyticsService.getBranches({ ...range, projectId }),
+  });
+}
+
+export function useCommandsBreakdown(range: DateRange, projectId?: string) {
+  return useQuery<CommandsBreakdown>({
+    queryKey: analyticsKeys.commands(range, projectId),
+    queryFn: () => analyticsService.getCommands({ ...range, projectId }),
+    refetchInterval: 60_000,
   });
 }
 

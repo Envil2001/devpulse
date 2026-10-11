@@ -14,6 +14,7 @@ import { TelemetryEventItemDto } from './dto/request/ingest-telemetry-batch-requ
 import { TelemetryEvent } from './entities/telemetry-event.entity';
 import { WorkSession, WorkSessionStatus } from './entities/work-session.entity';
 import { TelemetryJobData } from './queue/telemetry.queue';
+import { classifyCommand } from './utils/command-classifier';
 
 const SESSION_GAP_MS = 15 * 60 * 1000;
 const MAX_IDLE_CREDIT_MS = 30 * 60 * 1000;
@@ -95,6 +96,11 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
     const project = await this.resolveProject(manager, user, event.gitRemoteUrl);
     const eventTime = new Date(event.clientTimestamp ?? new Date().toISOString());
 
+    if (event.gitBranch === null) {
+      this.logger.warn(`Skipping event with null gitBranch: type=${event.type}`);
+      return;
+    }
+
     if (event.type === 'session_end') {
       const active = await sessionRepo.findOne({
         where: {
@@ -137,6 +143,7 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
     if (lastSession !== null && gapMs >= 0 && gapMs <= SESSION_GAP_MS) {
       this.accumulateLanguage(lastSession, eventTime);
       this.applyEventLanguage(lastSession, event);
+      this.applyCommandTracking(lastSession, event, eventTime);
 
       if (lastSession.machineId === null && event.machineId) {
         lastSession.machineId = event.machineId;
@@ -166,12 +173,16 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
         primaryLanguage: null,
         currentLanguage: null,
         languageSeconds: {},
+        commandsRun: 0,
+        failedCommands: 0,
+        terminalCommands: [],
         machineId: event.machineId ?? null,
         status: WorkSessionStatus.ACTIVE,
       });
       newSession.id = typeIdGenerator('workSessions');
 
       this.applyEventLanguage(newSession, event);
+      this.applyCommandTracking(newSession, event, eventTime);
       this.recomputeDerived(newSession, user);
 
       currentSession = await sessionRepo.save(newSession);
@@ -256,6 +267,52 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
     session.currentLanguage = lang;
   }
 
+  private applyCommandTracking(
+    session: WorkSession,
+    event: TelemetryEventItemDto,
+    eventTime: Date,
+  ): void {
+    if (event.type !== 'terminal_command' && event.type !== 'task_run') return;
+
+    const MAX_COMMANDS = 500;
+    const commands = session.terminalCommands;
+
+    if (event.type === 'terminal_command') {
+      if (!event.command) return;
+
+      commands.push({
+        command: event.command,
+        cwd: event.commandCwd ?? null,
+        exitCode: event.exitCode ?? null,
+        durationMs: event.durationMs ?? 0,
+        kind: classifyCommand(event.command),
+        timestamp: eventTime.toISOString(),
+      });
+    }
+
+    if (event.type === 'task_run') {
+      if (!event.taskName) return;
+
+      commands.push({
+        command: event.taskName,
+        cwd: null,
+        exitCode: event.exitCode ?? null,
+        durationMs: event.durationMs ?? 0,
+        kind: 'task',
+        timestamp: eventTime.toISOString(),
+      });
+    }
+
+    session.terminalCommands =
+      commands.length > MAX_COMMANDS ? commands.slice(-MAX_COMMANDS) : commands;
+
+    session.commandsRun += 1;
+
+    if (event.exitCode !== null && event.exitCode !== undefined && event.exitCode !== 0) {
+      session.failedCommands += 1;
+    }
+  }
+
   private topLanguage(buckets: Record<string, number> | null | undefined): string | null {
     if (!buckets) return null;
 
@@ -315,10 +372,15 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
       eventTimestamp: eventTime,
       activeSeconds: 0,
       idleSeconds: idleCreditSec,
-      machineId: event.machineId ?? null,
-      vscodeSessionId: event.sessionId ?? null,
       filesChanged: event.filePath ? [event.filePath] : [],
       fileExtensions: event.language ? [event.language] : [],
+      machineId: event.machineId ?? null,
+      vscodeSessionId: event.sessionId ?? null,
+      command: event.command ?? null,
+      commandCwd: event.commandCwd ?? null,
+      exitCode: event.exitCode ?? null,
+      taskName: event.taskName ?? null,
+      taskSource: event.taskSource ?? null,
     });
     rawEvent.id = typeIdGenerator('telemetryEvents');
     await repo.save(rawEvent);

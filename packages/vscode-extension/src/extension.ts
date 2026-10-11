@@ -1,6 +1,8 @@
 import * as vscode from 'vscode';
 
 import { registerCommands } from './commands/index.js';
+import { TasksMonitor } from './signals/tasks-monitor.js';
+import { TerminalMonitor } from './signals/terminal-monitor.js';
 import { GitStatusBar } from './status-bar/git-status-bar.js';
 import { TelemetryBridge } from './telemetry/telemetry-bridge.js';
 import { ActivityMonitor } from './activity-monitor.js';
@@ -27,17 +29,28 @@ export function activate(context: vscode.ExtensionContext): void {
 
     const activityMonitor = new ActivityMonitor();
     const gitContextProvider = new GitContextProvider();
+    const taskMonitor = new TasksMonitor(outputChannel);
+    const terminalMonitor = new TerminalMonitor(outputChannel);
 
     telemetryBridge = new TelemetryBridge(
       context,
       activityMonitor,
       gitContextProvider,
+      terminalMonitor,
+      taskMonitor,
       outputChannel,
     );
 
     const gitStatusBar = new GitStatusBar(gitContextProvider);
 
-    context.subscriptions.push(activityMonitor, gitContextProvider, telemetryBridge, gitStatusBar);
+    context.subscriptions.push(
+      activityMonitor,
+      gitContextProvider,
+      telemetryBridge,
+      gitStatusBar,
+      terminalMonitor,
+      taskMonitor,
+    );
 
     void gitStatusBar.show();
 

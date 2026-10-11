@@ -21,6 +21,7 @@ import { ActivityChartPanel } from './activity-chart-panel';
 import { BranchesPanel } from './branches-panel';
 import { LanguagesPanel } from './languages-panel';
 import { RecentSessionsPanel } from '@/features/sessions/components/recent-sessions-panel';
+import { TerminalActivityPanel } from './terminal-activity-panel';
 
 function getInitialCustomDates() {
   const to = new Date();
@@ -74,6 +75,7 @@ export function DashboardView() {
       <ActivityChartPanel range={range} />
 
       <RecentSessionsPanel />
+    <TerminalActivityPanel range={range} />
 
       <AiWorklogCard />
 

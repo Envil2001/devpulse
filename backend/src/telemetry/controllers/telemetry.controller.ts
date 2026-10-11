@@ -4,6 +4,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Logger,
   Post,
   Query,
   UseGuards,
@@ -28,6 +29,8 @@ import { TelemetryQueue } from '../queue/telemetry.queue';
 
 @Controller('telemetry')
 export class TelemetryController {
+  private readonly logger = new Logger(TelemetryController.name);
+
   constructor(
     private readonly telemetryQueue: TelemetryQueue,
     @InjectRepository(WorkSession)
@@ -43,6 +46,8 @@ export class TelemetryController {
     @CurrentUser() user: User,
     @Body() dto: IngestTelemetryBatchRequestDto,
   ): Promise<IngestTelemetryBatchResponseDto> {
+    this.logger.log(`Received ${String(dto.events.length)} events from user ${user.id}`);
+
     await this.telemetryQueue.addEventsJob(user.id, dto.events);
 
     return {

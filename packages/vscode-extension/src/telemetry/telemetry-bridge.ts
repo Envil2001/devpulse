@@ -6,6 +6,9 @@ import type { TelemetryEventDto } from '@devpulse/lib';
 
 import type { ActivityMonitor, ActivityState } from '../activity-monitor.js';
 import type { GitContext, GitContextProvider } from '../git-context.js';
+import { sanitizeCommand } from '../signals/command-sanitizer.js';
+import { type TasksMonitor } from '../signals/tasks-monitor.js';
+import { type TerminalMonitor } from '../signals/terminal-monitor.js';
 
 import { TelemetryApiClient } from './api-client.js';
 import { TelemetryBufferStore } from './buffer-store.js';
@@ -47,6 +50,8 @@ export class TelemetryBridge implements vscode.Disposable {
     private readonly context: vscode.ExtensionContext,
     private readonly activityMonitor: ActivityMonitor,
     private readonly gitContextProvider: GitContextProvider,
+    private readonly terminalMonitor: TerminalMonitor,
+    private readonly tasksMonitor: TasksMonitor,
     private readonly log?: vscode.OutputChannel,
   ) {
     this.client = new TelemetryApiClient(context, log);
@@ -101,6 +106,39 @@ export class TelemetryBridge implements vscode.Disposable {
           void this.flush();
         }
       }),
+
+      this.terminalMonitor.onDidRunCommand((event) => {
+        const sanitized = sanitizeCommand(event.command);
+        if (!sanitized) return;
+
+        this.log?.appendLine(
+          `[trace] terminal: ${sanitized} (exit=${String(event.exitCode ?? 'n/a')}, ${String(event.durationMs)}ms)`,
+        );
+
+        this.enqueue(
+          this.createEvent('terminal_command', {
+            command: sanitized,
+            commandCwd: event.cwd,
+            exitCode: event.exitCode,
+            durationMs: event.durationMs,
+          }),
+        );
+      }),
+
+      this.tasksMonitor.onDidRunTask((event) => {
+        this.log?.appendLine(
+          `[trace] task: ${event.name} (exit=${String(event.exitCode ?? 'n/a')}, ${String(event.durationMs)}ms)`,
+        );
+
+        this.enqueue(
+          this.createEvent('task_run', {
+            taskName: event.name,
+            taskSource: event.source,
+            exitCode: event.exitCode,
+            durationMs: event.durationMs,
+          }),
+        );
+      }),
     );
 
     this.timer = setInterval(() => {
@@ -111,7 +149,7 @@ export class TelemetryBridge implements vscode.Disposable {
       this.sendHeartbeat();
     }, HEARTBEAT_INTERVAL_MS);
 
-    if (this.gitContextProvider.currentContext.gitBranch !== null) {
+    if (this.gitContextProvider.currentContext.gitBranch) {
       this.enqueue(this.createEvent('heartbeat', { durationMs: null }));
       await this.flush();
     }
@@ -130,7 +168,7 @@ export class TelemetryBridge implements vscode.Disposable {
       return;
     }
 
-    if (this.gitContextProvider.currentContext.gitBranch === null) {
+    if (!this.gitContextProvider.currentContext.gitBranch) {
       this.log?.appendLine('[debug] heartbeat skipped: no git branch');
       return;
     }
@@ -237,21 +275,34 @@ export class TelemetryBridge implements vscode.Disposable {
   }
 
   private createEvent(
-    type: 'heartbeat' | 'file_save' | 'file_switch' | 'idle_start' | 'idle_end' | 'session_end',
+    type:
+      | 'heartbeat'
+      | 'file_save'
+      | 'file_switch'
+      | 'idle_start'
+      | 'idle_end'
+      | 'session_end'
+      | 'terminal_command'
+      | 'task_run',
     partial: {
       durationMs?: number | null;
       filePath?: string | null;
       language?: string | null;
       clientTimestamp?: string;
-      gitBranch?: string | null;
+      gitBranch?: string;
       gitRemoteUrl?: string | null;
+      command?: string;
+      commandCwd?: string | null;
+      exitCode?: number | null;
+      taskName?: string;
+      taskSource?: string;
     } = {},
   ): TelemetryEventDto {
     const { gitBranch, gitRemoteUrl } = this.gitContextProvider.currentContext;
 
     return {
       type,
-      gitBranch: partial.gitBranch ?? gitBranch ?? null,
+      gitBranch: partial.gitBranch ?? gitBranch,
       gitRemoteUrl: partial.gitRemoteUrl ?? gitRemoteUrl ?? undefined,
       clientTimestamp: partial.clientTimestamp ?? new Date().toISOString(),
       durationMs: partial.durationMs,
@@ -259,6 +310,11 @@ export class TelemetryBridge implements vscode.Disposable {
       language: partial.language ?? undefined,
       machineId: vscode.env.machineId,
       sessionId: vscode.env.sessionId,
+      command: partial.command,
+      commandCwd: partial.commandCwd ?? undefined,
+      exitCode: partial.exitCode,
+      taskName: partial.taskName,
+      taskSource: partial.taskSource,
     };
   }
 
