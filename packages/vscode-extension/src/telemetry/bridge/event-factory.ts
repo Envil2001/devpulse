@@ -1,0 +1,60 @@
+import * as vscode from 'vscode';
+
+import type { TelemetryEventDto } from '@devpulse/lib';
+
+export type TelemetryEventType =
+  | 'heartbeat'
+  | 'file_save'
+  | 'file_switch'
+  | 'idle_start'
+  | 'idle_end'
+  | 'session_end'
+  | 'terminal_command'
+  | 'task_run';
+
+export interface EventPartial {
+  durationMs?: number | null;
+  filePath?: string | null;
+  language?: string | null;
+  clientTimestamp?: string;
+  gitBranch?: string;
+  gitRemoteUrl?: string | null;
+  command?: string;
+  commandCwd?: string | null;
+  exitCode?: number | null;
+  taskName?: string;
+  taskSource?: string;
+}
+
+export interface EventFactoryContext {
+  currentBranch: string | null;
+  currentRemoteUrl: string | null;
+  fallbackBranch: string | null;
+  fallbackRemoteUrl: string | null;
+}
+
+export function createEvent(
+  type: TelemetryEventType,
+  partial: EventPartial,
+  ctx: EventFactoryContext,
+): TelemetryEventDto {
+  const gitBranch = partial.gitBranch ?? ctx.currentBranch ?? ctx.fallbackBranch;
+  const gitRemoteUrl = partial.gitRemoteUrl ?? ctx.currentRemoteUrl ?? ctx.fallbackRemoteUrl;
+
+  return {
+    type,
+    gitBranch,
+    gitRemoteUrl: gitRemoteUrl ?? undefined,
+    clientTimestamp: partial.clientTimestamp ?? new Date().toISOString(),
+    durationMs: partial.durationMs,
+    filePath: partial.filePath ?? undefined,
+    language: partial.language ?? undefined,
+    machineId: vscode.env.machineId,
+    sessionId: vscode.env.sessionId,
+    command: partial.command,
+    commandCwd: partial.commandCwd ?? undefined,
+    exitCode: partial.exitCode,
+    taskName: partial.taskName,
+    taskSource: partial.taskSource,
+  };
+}
