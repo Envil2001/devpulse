@@ -10,7 +10,12 @@ import {
   AI_SUMMARY_GENERATOR,
   type AiSummaryGenerator,
 } from '../interfaces/ai-summary-generator.interface';
-import { SessionAggregate, UtcRange } from '../interfaces/worklog-internal.interfaces';
+import {
+  CommandAggregate,
+  CommandKindStats,
+  SessionAggregate,
+  UtcRange,
+} from '../interfaces/worklog-internal.interfaces';
 
 const DATE_FORMAT = 'yyyy-MM-dd';
 const MAX_RANGE_DAYS = 31;
@@ -67,6 +72,7 @@ export class WorklogService {
       branches: [...aggregate.branches].join(', ') || 'Unknown branch',
       languages: this.formatLanguages(aggregate.languages),
       focusScore: Math.round(aggregate.weightedFocus / aggregate.totalActiveSeconds),
+      commands: this.formatCommands(aggregate.commands),
     });
 
     return { date: period, summary };
@@ -109,6 +115,11 @@ export class WorklogService {
       branches: new Set<string>(),
       projects: new Map<string, number>(),
       languages: new Map<string, number>(),
+      commands: {
+        totalRuns: 0,
+        totalFailed: 0,
+        byKind: new Map<string, CommandKindStats>(),
+      },
     };
 
     for (const session of sessions) {
@@ -128,6 +139,8 @@ export class WorklogService {
       if (session.primaryLanguage) {
         this.addSeconds(aggregate.languages, session.primaryLanguage, active);
       }
+
+      this.aggregateCommands(aggregate.commands, session.terminalCommands);
     }
 
     return aggregate;
@@ -172,5 +185,92 @@ export class WorklogService {
     }
 
     return `${minutes.toString()}m`;
+  }
+
+  private aggregateCommands(
+    target: CommandAggregate,
+    commands:
+      | Array<{
+          command: string;
+          kind: string;
+          exitCode: number | null;
+          durationMs: number;
+        }>
+      | undefined
+      | null,
+  ): void {
+    if (!commands || commands.length === 0) return;
+
+    for (const cmd of commands) {
+      const kind = cmd.kind || 'other';
+      const stats = target.byKind.get(kind) ?? {
+        runs: 0,
+        failed: 0,
+        totalDurationMs: 0,
+      };
+
+      stats.runs += 1;
+      stats.totalDurationMs += cmd.durationMs;
+
+      const failed = cmd.exitCode !== null && cmd.exitCode !== 0;
+      if (failed) {
+        stats.failed += 1;
+        target.totalFailed += 1;
+      }
+
+      target.byKind.set(kind, stats);
+      target.totalRuns += 1;
+    }
+  }
+
+  private formatCommands(agg: CommandAggregate): string {
+    console.log(agg);
+    if (agg.totalRuns === 0) {
+      return 'No terminal commands recorded.';
+    }
+
+    const labels: Record<string, string> = {
+      test: 'Test runs',
+      build: 'Build runs',
+      lint: 'Lint runs',
+      task: 'Tasks',
+      install: 'Installs',
+      git: 'Git commands',
+      other: 'Other commands',
+    };
+
+    const orderedKinds = ['test', 'build', 'lint', 'task', 'install', 'git', 'other'];
+
+    const parts: Array<string> = [];
+
+    for (const kind of orderedKinds) {
+      const stats = agg.byKind.get(kind);
+      if (!stats) continue;
+
+      const label = labels[kind] ?? kind;
+      const passed = stats.runs - stats.failed;
+      const avgMs = stats.runs > 0 ? Math.round(stats.totalDurationMs / stats.runs) : 0;
+
+      if (kind === 'test' || kind === 'build' || kind === 'lint' || kind === 'task') {
+        parts.push(
+          `${label}: ${String(stats.runs)} (${String(passed)} passed, ${String(stats.failed)} failed) — avg ${this.formatMs(avgMs)}`,
+        );
+      } else {
+        parts.push(`${label}: ${String(stats.runs)}`);
+      }
+    }
+
+    return `${parts.join('. ')}.`;
+  }
+
+  private formatMs(ms: number): string {
+    if (ms < 1000) return `${String(ms)}ms`;
+
+    const seconds = Math.round(ms / 1000);
+    if (seconds < 60) return `${String(seconds)}s`;
+
+    const minutes = Math.floor(seconds / 60);
+    const restSeconds = seconds % 60;
+    return `${String(minutes)}m ${String(restSeconds)}s`;
   }
 }

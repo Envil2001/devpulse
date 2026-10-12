@@ -6,6 +6,7 @@ export interface SummaryInputData {
   branches: string;
   languages: string;
   focusScore: number;
+  commands: string;
 }
 
 export interface AiSummaryGenerator {
