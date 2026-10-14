@@ -9,6 +9,7 @@ import { Calendar } from '@/shared/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/shared/components/ui/popover';
 import { cn } from '@/shared/lib/cn';
 import { formatDateLabel, parseDateInput, toDateInput } from '@/shared/lib/date';
+import { useMemo, useState } from 'react';
 
 interface DateRangePickerProps {
   startDate: string;
@@ -23,9 +24,9 @@ export function DateRangePicker({
   onChange,
   active = false,
 }: DateRangePickerProps) {
-  const [open, setOpen] = React.useState(false);
+  const [open, setOpen] = useState(false);
 
-  const selected: DayPickerRange = React.useMemo(
+  const selected: DayPickerRange = useMemo(
     () => ({ from: parseDateInput(startDate), to: parseDateInput(endDate) }),
     [startDate, endDate],
   );
@@ -38,21 +39,30 @@ export function DateRangePicker({
     setOpen(false);
   };
 
+  const from = selected.from ?? new Date();
+  const to = selected.to ?? new Date();
+  const isSameDay = toDateInput(from) === toDateInput(to);
+
+  const label = isSameDay
+    ? formatDateLabel(from)
+    : `${formatDateLabel(from)} — ${formatDateLabel(to)}`;
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
-          variant="secondary"
+          variant="outline"
           className={cn(
-            'w-52 justify-start font-normal',
-            active && 'border-white/10 bg-neutral-800',
+            'min-w-44 justify-start gap-2 font-normal whitespace-nowrap',
+            active && 'border-gray-alpha-300 bg-gray-alpha-50',
           )}
         >
-          <CalendarDays className="text-neutral-500" aria-hidden="true" />
-          <span className="truncate text-sm">
-            {formatDateLabel(selected.from ?? new Date())} —{' '}
-            {formatDateLabel(selected.to ?? new Date())}
-          </span>
+          <CalendarDays
+            className="h-4 w-4 shrink-0 text-subtle"
+            strokeWidth={1.5}
+            aria-hidden="true"
+          />
+          <span className="text-[13px]">{label}</span>
         </Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-auto p-0">

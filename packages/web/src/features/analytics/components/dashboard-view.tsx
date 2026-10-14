@@ -45,10 +45,10 @@ export function DashboardView() {
           <PageHeaderHeading>
             <PageTitle>Hello, {user.displayName}</PageTitle>
             {liveStatus?.isCodingNow && (
-              <div className="flex items-center gap-2 rounded-full border border-green-spring/20 bg-green-spring/10 px-3 py-1 text-sm text-green-spring shadow-[0_0_15px_rgba(21,255,171,0.15)]">
+              <div className="flex items-center gap-2 rounded-full border border-brand/30 bg-brand-soft px-3 py-1 text-sm text-brand">
                 <span className="relative flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-spring opacity-75"></span>
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-green-spring"></span>
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand opacity-75" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-brand" />
                 </span>
                 <span className="font-medium">
                   Coding in {liveStatus.currentProject || 'Unknown'}
@@ -75,7 +75,8 @@ export function DashboardView() {
       <ActivityChartPanel range={range} />
 
       <RecentSessionsPanel />
-    <TerminalActivityPanel range={range} />
+
+      <TerminalActivityPanel range={range} />
 
       <AiWorklogCard />
 

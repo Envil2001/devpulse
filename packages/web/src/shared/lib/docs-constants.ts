@@ -1,9 +1,9 @@
 export const METHOD_STYLES = {
-  GET: 'bg-green-spring/10 text-green-spring border-green-spring/20',
-  POST: 'bg-blue-frosty/10 text-blue-frosty border-blue-frosty/20',
-  PUT: 'bg-purple-aspid/10 text-purple-aspid border-purple-aspid/20',
-  PATCH: 'bg-purple-aspid/10 text-purple-aspid border-purple-aspid/20',
-  DELETE: 'bg-red-fluor/10 text-red-fluor border-red-fluor/20',
+  GET: 'border-brand/30 bg-brand/10 text-brand',
+  POST: 'border-blue-frosty/30 bg-blue-frosty/10 text-blue-frosty',
+  PUT: 'border-yellow-amber/30 bg-yellow-amber/10 text-yellow-amber',
+  PATCH: 'border-orange-signal/30 bg-orange-signal/10 text-orange-signal',
+  DELETE: 'border-red-coral/30 bg-red-coral/10 text-red-coral',
 } as const;
 
 export type HttpMethod = keyof typeof METHOD_STYLES;

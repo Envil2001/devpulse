@@ -32,7 +32,11 @@ PageHeaderHeading.displayName = 'PageHeaderHeading';
 
 const PageTitle = React.forwardRef<HTMLHeadingElement, React.HTMLAttributes<HTMLHeadingElement>>(
   ({ className, ...props }, ref) => (
-    <h2 ref={ref} className={cn('title-1', className)} {...props} />
+    <h2
+      ref={ref}
+      className={cn('text-2xl font-semibold tracking-tight text-foreground', className)}
+      {...props}
+    />
   ),
 );
 PageTitle.displayName = 'PageTitle';
@@ -41,7 +45,7 @@ const PageDescription = React.forwardRef<
   HTMLParagraphElement,
   React.HTMLAttributes<HTMLParagraphElement>
 >(({ className, ...props }, ref) => (
-  <p ref={ref} className={cn('body-muted mt-1', className)} {...props} />
+  <p ref={ref} className={cn('mt-1 text-sm text-secondary', className)} {...props} />
 ));
 PageDescription.displayName = 'PageDescription';
 

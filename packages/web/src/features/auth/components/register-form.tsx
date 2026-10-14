@@ -123,8 +123,8 @@ export function RegisterForm() {
   const renderRegisterForm = () => (
     <>
       <div className="text-center lg:text-left">
-        <h2 className="title-2">Create Account</h2>
-        <p className="body-muted mt-1">Enter your details to create an account</p>
+        <h2 className="text-xl font-semibold tracking-tight text-foreground">Create account</h2>
+        <p className="mt-1 text-sm text-secondary">Enter your details to create an account</p>
       </div>
 
       <Form {...registerForm}>
@@ -193,12 +193,12 @@ export function RegisterForm() {
         </form>
       </Form>
 
-      <p className="body-muted flex items-center justify-center gap-1 text-center">
+      <p className="flex items-center justify-center gap-1 text-center text-sm text-secondary">
         Already have an account?
         <Button
           variant="link"
           asChild
-          className="h-auto p-0 font-bold text-neutral-100 no-underline hover:text-blue-frosty"
+          className="h-auto p-0 font-medium no-underline hover:text-brand"
         >
           <Link href="/login">Log in</Link>
         </Button>
@@ -209,8 +209,8 @@ export function RegisterForm() {
   const renderVerifyForm = () => (
     <>
       <div className="text-center lg:text-left">
-        <h2 className="title-2">Email Verification</h2>
-        <p className="body-muted mt-1">Enter the 6-digit code sent to your email</p>
+        <h2 className="text-xl font-semibold tracking-tight text-foreground">Email verification</h2>
+        <p className="mt-1 text-sm text-secondary">Enter the 6-digit code sent to your email</p>
       </div>
 
       <Form {...verifyForm}>
@@ -220,7 +220,7 @@ export function RegisterForm() {
             name="code"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Verification Code</FormLabel>
+                <FormLabel>Verification code</FormLabel>
                 <FormControl>
                   <Input
                     placeholder="123456"
@@ -236,19 +236,19 @@ export function RegisterForm() {
           />
 
           <Button type="submit" className="mt-2 w-full" loading={isLoading}>
-            Verify & Create
+            Verify & create
           </Button>
         </form>
       </Form>
 
-      <p className="body-muted flex items-center justify-center gap-1 text-center">
+      <p className="flex items-center justify-center gap-1 text-center text-sm text-secondary">
         Didn&apos;t receive the email?
         <Button
           variant="link"
           type="button"
           onClick={handleResendCode}
           disabled={isLoading}
-          className="h-auto p-0 font-bold text-neutral-100 no-underline hover:text-blue-frosty"
+          className="h-auto p-0 font-medium no-underline hover:text-brand"
         >
           Resend code
         </Button>
@@ -259,7 +259,7 @@ export function RegisterForm() {
   return (
     <div className="mx-auto flex w-full max-w-sm flex-col gap-8">
       {error && (
-        <div className="body-base rounded-xl border border-red-coral bg-red-coral/10 p-3 text-red-coral">
+        <div className="rounded-[10px] border border-red-coral/30 bg-red-coral/10 p-3 text-sm text-red-coral">
           {error}
         </div>
       )}

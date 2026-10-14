@@ -26,8 +26,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${martianMono.variable}`}>
-      <body className="bg-neutral-950 text-neutral-100 antialiased min-h-dvh flex flex-col relative">
+    <html lang="en" className={`dark ${inter.variable} ${martianMono.variable}`}>
+      <body className="min-h-dvh flex flex-col bg-background text-foreground antialiased">
         <Providers>{children}</Providers>
       </body>
     </html>

@@ -4,13 +4,16 @@ import Link from 'next/link';
 
 export function SidebarHeader() {
   return (
-    <div className="flex h-14 shrink-0 items-center gap-3 border-b border-white/5 px-4">
+    <div className="flex h-14 shrink-0 items-center px-3">
       <Link
         href="/"
-        className="flex items-center gap-3 outline-none focus-visible:ring-2 focus-visible:ring-green-spring/50 rounded-lg"
+        className="flex h-9 items-center gap-2 rounded-[10px] px-2 outline-none transition-colors hover:bg-gray-alpha-100 focus-visible:ring-2 focus-visible:ring-white/15"
       >
-        <div className="h-3 w-3 rounded-full bg-green-spring shadow-[0_0_12px_rgba(21,255,171,0.4)]" />
-        <span className="text-sm font-semibold tracking-tight text-neutral-100">DevPulse</span>
+        <span
+          aria-hidden="true"
+          className="h-3 w-3 rounded-full bg-brand shadow-[0_0_10px_var(--color-brand-glow)]"
+        />
+        <span className="text-sm font-medium tracking-tight text-foreground">DevPulse</span>
       </Link>
     </div>
   );

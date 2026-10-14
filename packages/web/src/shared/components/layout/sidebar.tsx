@@ -21,7 +21,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       {isOpen && (
         <div
           role="presentation"
-          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
           onClick={onClose}
         />
       )}
@@ -30,8 +30,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         aria-label="Main Navigation"
         className={cn(
           'fixed inset-y-0 left-0 z-50 flex w-64 flex-col',
-          'border-r border-white/5 bg-neutral-950/95 backdrop-blur-xl',
-          'transition-transform duration-300 ease-out lg:translate-x-0',
+          'border-r border-border bg-surface',
+          'transition-transform duration-200 ease-out lg:translate-x-0',
           isOpen ? 'translate-x-0' : '-translate-x-full',
         )}
       >

@@ -30,19 +30,20 @@ export function BranchesPanel({ range }: { range: DateRange }) {
       </PanelHeader>
 
       <PanelContent className="flex flex-col">
-        <div className="label-caps mb-2 grid grid-cols-12 gap-4 border-b border-white/5 pb-2">
-          <div className="col-span-8">BRANCH</div>
-          <div className="col-span-4 text-right">ACTIVE TIME</div>
+        <div className="mb-2 grid grid-cols-12 gap-4 border-b border-border pb-2 text-xs font-medium uppercase tracking-wider text-subtle">
+          <div className="col-span-8">Branch</div>
+          <div className="col-span-4 text-right">Active Time</div>
         </div>
 
         {isLoading && (
           <div className="py-8 text-center">
-            <span className="body-muted animate-pulse">Loading…</span>
+            <span className="animate-pulse text-sm text-secondary">Loading…</span>
           </div>
         )}
+
         {!isLoading && branches.length === 0 && (
           <div className="py-8 text-center">
-            <span className="body-muted">No branches</span>
+            <span className="text-sm text-secondary">No branches</span>
           </div>
         )}
 
@@ -50,18 +51,19 @@ export function BranchesPanel({ range }: { range: DateRange }) {
           <div
             key={branch.branchName}
             className={cn(
-              'grid grid-cols-12 items-center gap-4 py-3.5 text-sm transition-colors',
-              i !== branches.length - 1 && 'border-b border-white/5',
-              'hover:bg-white/2 -mx-2 rounded-lg px-2',
+              'relative grid grid-cols-12 items-center gap-4 py-3.5 text-sm transition-colors',
+              '-mx-2 rounded-lg px-2 hover:bg-gray-alpha-50',
+              i !== branches.length - 1 &&
+                'after:pointer-events-none after:absolute after:inset-x-2 after:bottom-0 after:h-px after:bg-border',
             )}
           >
-            <div className="col-span-8 flex items-center gap-2 min-w-0">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/3 px-3 py-0.5 text-xs text-neutral-300 font-mono">
-                <GitBranch className="h-3 w-3 text-neutral-500" />
+            <div className="col-span-8 flex min-w-0 items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-md border border-border bg-gray-alpha-50 px-2.5 py-1 font-mono text-xs text-foreground">
+                <GitBranch className="h-3 w-3 text-subtle" strokeWidth={1.5} aria-hidden="true" />
                 {branch.branchName}
               </span>
             </div>
-            <div className="mono-sm col-span-4 text-right text-neutral-200">
+            <div className="col-span-4 text-right font-mono text-xs font-medium tabular-nums text-foreground">
               {formatDuration(branch.activeSeconds)}
             </div>
           </div>

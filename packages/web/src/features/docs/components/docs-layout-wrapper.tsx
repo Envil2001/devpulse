@@ -20,25 +20,28 @@ export function DocsLayoutWrapper({ children, endpoints }: DocsLayoutWrapperProp
   const navigation = useMemo(() => groupEndpointsByPath(endpoints), [endpoints]);
 
   return (
-    <div className="flex h-screen w-full bg-neutral-950 text-neutral-100 overflow-hidden">
+    <div className="flex h-screen w-full overflow-hidden bg-background text-foreground">
       {isOpen && (
         <div
           role="presentation"
-          className="fixed inset-0 z-40 bg-black/80 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
           onClick={() => setIsOpen(false)}
         />
       )}
 
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-white/5 bg-neutral-950 transition-transform duration-300 lg:static lg:translate-x-0',
+          'fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-border bg-surface transition-transform duration-200 lg:static lg:translate-x-0',
           isOpen ? 'translate-x-0' : '-translate-x-full',
         )}
       >
-        <div className="flex h-14 items-center justify-between px-6 border-b border-white/5">
-          <Link href="/" className="flex items-center gap-2 group">
-            <ArrowLeft className="size-4 text-neutral-400 group-hover:text-neutral-100 transition-colors" />
-            <span className="mono-sm text-neutral-300 group-hover:text-neutral-100 transition-colors">
+        <div className="flex h-14 items-center justify-between border-b border-border px-4">
+          <Link href="/" className="group flex items-center gap-2">
+            <ArrowLeft
+              className="size-4 text-subtle transition-colors group-hover:text-foreground"
+              strokeWidth={1.5}
+            />
+            <span className="font-mono text-xs text-secondary transition-colors group-hover:text-foreground">
               Dashboard
             </span>
           </Link>
@@ -48,21 +51,21 @@ export function DocsLayoutWrapper({ children, endpoints }: DocsLayoutWrapperProp
             className="lg:hidden"
             onClick={() => setIsOpen(false)}
           >
-            <X className="size-4" />
+            <X strokeWidth={1.5} />
           </Button>
         </div>
 
-        <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-6">
+        <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-5">
           <div className="px-2">
-            <div className="label-caps mb-1 text-neutral-500 font-semibold tracking-wider">
+            <div className="mb-1 text-xs font-medium uppercase tracking-wider text-subtle">
               DevPulse API
             </div>
-            <div className="body-muted text-xs">v1.0 Public Reference</div>
+            <div className="text-xs text-secondary">v1.0 Public Reference</div>
           </div>
 
           {navigation.map((group) => (
             <div key={group.category} className="space-y-1">
-              <div className="px-2 label-caps text-neutral-500 text-[11px] mb-2">
+              <div className="mb-2 px-2 text-[11px] font-medium uppercase tracking-wider text-subtle">
                 {group.category}
               </div>
               <ul className="space-y-0.5">
@@ -76,10 +79,10 @@ export function DocsLayoutWrapper({ children, endpoints }: DocsLayoutWrapperProp
                         href={item.href}
                         onClick={() => setIsOpen(false)}
                         className={cn(
-                          'block rounded-lg px-2.5 py-1.5 text-xs transition-all duration-150',
+                          'block rounded-[10px] px-2.5 py-1.5 text-xs transition-colors',
                           isActive
-                            ? 'bg-white/10 font-medium text-neutral-100 border-l-2 border-green-spring pl-2'
-                            : 'text-neutral-400 hover:bg-white/5 hover:text-neutral-200',
+                            ? 'bg-gray-alpha-100 font-medium text-foreground'
+                            : 'text-secondary hover:bg-gray-alpha-100 hover:text-foreground',
                         )}
                       >
                         {item.title}
@@ -94,14 +97,14 @@ export function DocsLayoutWrapper({ children, endpoints }: DocsLayoutWrapperProp
       </aside>
 
       <div className="flex flex-1 flex-col overflow-hidden">
-        <header className="flex h-14 items-center gap-4 px-6 border-b border-white/5 lg:hidden bg-neutral-950/80 backdrop-blur-md">
+        <header className="flex h-14 items-center gap-4 border-b border-border bg-background/90 px-4 backdrop-blur-sm lg:hidden">
           <Button variant="ghost" size="icon" onClick={() => setIsOpen(true)}>
-            <Menu className="size-5" />
+            <Menu strokeWidth={1.5} />
           </Button>
-          <span className="body-base font-semibold">API Reference</span>
+          <span className="text-sm font-medium text-foreground">API Reference</span>
         </header>
 
-        <main ref={mainRef} className="flex-1 overflow-y-auto scroll-smooth">
+        <main ref={mainRef} className="flex-1 scroll-smooth overflow-y-auto">
           {children}
         </main>
       </div>

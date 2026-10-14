@@ -11,7 +11,7 @@ import {
   PageHeaderHeading,
   PageTitle,
 } from '@/shared/components/layout/page';
-import { Panel } from '@/shared/components/layout/panel';
+import { Panel, PanelHeader, PanelTitle } from '@/shared/components/layout/panel';
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
 import {
@@ -69,7 +69,7 @@ function TimezonePreference({ initialTimezone, onSave }: TimezonePreferenceProps
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="w-full sm:w-64">
           <Select value={timezone} onValueChange={setTimezone} disabled={isPending}>
             <SelectTrigger>
@@ -95,7 +95,7 @@ function TimezonePreference({ initialTimezone, onSave }: TimezonePreferenceProps
         </Button>
       </div>
 
-      {error && <p className="caption text-red-coral">{error}</p>}
+      {error && <p className="text-xs text-red-coral">{error}</p>}
     </div>
   );
 }
@@ -150,16 +150,16 @@ function OpenAiKeyPreference({ isSet, onSave }: OpenAiKeyPreferenceProps) {
   if (isSet && !isEditing) {
     return (
       <div className="flex flex-col gap-2">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="w-full sm:w-64">
-            <Input type="password" value={OPENAI_KEY_MASK} disabled className="bg-neutral-800/50" />
+            <Input type="password" value={OPENAI_KEY_MASK} disabled className="bg-gray-alpha-50" />
           </div>
           <div className="flex gap-2">
             <Button
               onClick={() => setIsEditing(true)}
               disabled={isPending}
               size="sm"
-              variant="secondary"
+              variant="outline"
             >
               Change
             </Button>
@@ -169,14 +169,14 @@ function OpenAiKeyPreference({ isSet, onSave }: OpenAiKeyPreferenceProps) {
           </div>
         </div>
 
-        {error && <p className="caption text-red-coral">{error}</p>}
+        {error && <p className="text-xs text-red-coral">{error}</p>}
       </div>
     );
   }
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="w-full sm:w-64">
           <Input
             type="password"
@@ -205,8 +205,8 @@ function OpenAiKeyPreference({ isSet, onSave }: OpenAiKeyPreferenceProps) {
         </div>
       </div>
 
-      {showFormatHint && <p className="caption text-red-coral">OpenAI keys start with sk-</p>}
-      {error && <p className="caption text-red-coral">{error}</p>}
+      {showFormatHint && <p className="text-xs text-red-coral">OpenAI keys start with sk-</p>}
+      {error && <p className="text-xs text-red-coral">{error}</p>}
     </div>
   );
 }
@@ -215,7 +215,7 @@ export function SettingsView() {
   const { user, updateProfile } = useRequireAuth();
 
   return (
-    <Page className="max-w-4xl mx-auto">
+    <Page className="mx-auto max-w-4xl">
       <PageHeader>
         <div>
           <PageHeaderHeading>
@@ -228,17 +228,19 @@ export function SettingsView() {
       <ApiKeysPanel />
 
       <Panel>
-        <p className="label-caps mb-5">Preferences</p>
+        <PanelHeader>
+          <PanelTitle>Preferences</PanelTitle>
+        </PanelHeader>
 
         <div className="flex flex-col gap-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
             <div className="flex items-start gap-3">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-neutral-900">
-                <Globe className="h-4.5 w-4.5 text-neutral-300" />
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-gray-alpha-50">
+                <Globe className="h-4.5 w-4.5 text-subtle" strokeWidth={1.5} />
               </div>
               <div>
-                <p className="body-base">Timezone</p>
-                <p className="caption mt-0.5">
+                <p className="text-sm font-medium text-foreground">Timezone</p>
+                <p className="mt-0.5 text-xs text-subtle">
                   Used for calculating daily active coding sessions and metrics
                 </p>
               </div>
@@ -251,14 +253,14 @@ export function SettingsView() {
             />
           </div>
 
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-6 border-t border-white/5">
+          <div className="flex flex-col justify-between gap-4 border-t border-border pt-6 sm:flex-row sm:items-center">
             <div className="flex items-start gap-3">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-neutral-900">
-                <Key className="h-4.5 w-4.5 text-neutral-300" />
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-gray-alpha-50">
+                <Key className="h-4.5 w-4.5 text-subtle" strokeWidth={1.5} />
               </div>
               <div>
-                <p className="body-base">OpenAI API Key</p>
-                <p className="caption mt-0.5 max-w-sm">
+                <p className="text-sm font-medium text-foreground">OpenAI API Key</p>
+                <p className="mt-0.5 max-w-sm text-xs text-subtle">
                   Required to generate AI summaries. Used only for your own requests.
                 </p>
               </div>

@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/shared/components/ui/select';
-import { Panel } from '@/shared/components/layout/panel';
+import { Panel, PanelHeader, PanelTitle, PanelContent } from '@/shared/components/layout/panel';
 import { useRequireAuth } from '@/features/auth/context';
 
 export function RateConfigPanel() {
@@ -50,60 +50,64 @@ export function RateConfigPanel() {
 
   return (
     <Panel>
-      <p className="label-caps mb-5">Rate Configuration</p>
+      <PanelHeader>
+        <PanelTitle>Rate configuration</PanelTitle>
+      </PanelHeader>
 
-      <div className="flex flex-wrap items-end gap-6">
-        <div className="flex flex-col gap-2">
-          <Label>Type</Label>
-          <Tabs value={rateType} onValueChange={handleRateTypeChange}>
-            <TabsList variant="secondary" aria-label="Select rate type">
-              <TabsTrigger variant="secondary" value="hourly" disabled={isSaving}>
-                Hourly
-              </TabsTrigger>
-              <TabsTrigger variant="secondary" value="monthly" disabled={isSaving}>
-                Monthly
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </div>
+      <PanelContent>
+        <div className="flex flex-wrap items-end gap-5">
+          <div className="flex flex-col gap-2">
+            <Label>Type</Label>
+            <Tabs value={rateType} onValueChange={handleRateTypeChange}>
+              <TabsList aria-label="Select rate type">
+                <TabsTrigger value="hourly" disabled={isSaving}>
+                  Hourly
+                </TabsTrigger>
+                <TabsTrigger value="monthly" disabled={isSaving}>
+                  Monthly
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
 
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="rate-amount">
-            {rateType === 'hourly' ? 'Hourly rate' : 'Monthly rate'}
-          </Label>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="rate-amount">
+              {rateType === 'hourly' ? 'Hourly rate' : 'Monthly rate'}
+            </Label>
 
-          <div className="flex items-center gap-2">
-            <div className="w-28">
-              <Select value={currencyInput} onValueChange={setCurrencyInput} disabled={isSaving}>
-                <SelectTrigger aria-label="Select currency">
-                  <SelectValue placeholder="Currency" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="USD">USD ($)</SelectItem>
-                  <SelectItem value="EUR">EUR (€)</SelectItem>
-                  <SelectItem value="GBP">GBP (£)</SelectItem>
-                  <SelectItem value="RUB">RUB (₽)</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="flex items-center gap-2">
+              <div className="w-28">
+                <Select value={currencyInput} onValueChange={setCurrencyInput} disabled={isSaving}>
+                  <SelectTrigger aria-label="Select currency">
+                    <SelectValue placeholder="Currency" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="USD">USD ($)</SelectItem>
+                    <SelectItem value="EUR">EUR (€)</SelectItem>
+                    <SelectItem value="GBP">GBP (£)</SelectItem>
+                    <SelectItem value="RUB">RUB (₽)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <Input
+                id="rate-amount"
+                type="number"
+                value={rateInput}
+                onChange={(e) => setRateInput(e.target.value)}
+                min="0"
+                step="0.1"
+                disabled={isSaving}
+                className="w-32 font-mono"
+              />
+
+              <Button onClick={handleSave} loading={isSaving} disabled={isSaving}>
+                Save
+              </Button>
             </div>
-
-            <Input
-              id="rate-amount"
-              type="number"
-              value={rateInput}
-              onChange={(e) => setRateInput(e.target.value)}
-              min="0"
-              step="0.1"
-              disabled={isSaving}
-              className="w-32 font-mono"
-            />
-
-            <Button size="default" onClick={handleSave} loading={isSaving} disabled={isSaving}>
-              Save
-            </Button>
           </div>
         </div>
-      </div>
+      </PanelContent>
     </Panel>
   );
 }

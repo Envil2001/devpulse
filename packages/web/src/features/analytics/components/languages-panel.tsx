@@ -24,19 +24,20 @@ export function LanguagesPanel() {
       </PanelHeader>
 
       <PanelContent className="flex flex-col">
-        <div className="label-caps mb-2 grid grid-cols-12 gap-4 border-b border-white/5 pb-2">
-          <div className="col-span-8">LANGUAGE</div>
-          <div className="col-span-4 text-right">ACTIVE TIME</div>
+        <div className="mb-2 grid grid-cols-12 gap-4 border-b border-border pb-2 text-xs font-medium uppercase tracking-wider text-subtle">
+          <div className="col-span-8">Language</div>
+          <div className="col-span-4 text-right">Active Time</div>
         </div>
 
         {isLoading && (
           <div className="py-8 text-center">
-            <span className="body-muted animate-pulse">Loading…</span>
+            <span className="animate-pulse text-sm text-secondary">Loading…</span>
           </div>
         )}
+
         {!isLoading && (!data || data.languages.length === 0) && (
           <div className="py-8 text-center">
-            <span className="body-muted">No data</span>
+            <span className="text-sm text-secondary">No data</span>
           </div>
         )}
 
@@ -44,26 +45,34 @@ export function LanguagesPanel() {
           <div
             key={lang.language}
             className={cn(
-              'grid grid-cols-12 items-center gap-4 py-3 text-sm transition-colors',
-              i !== data.languages.length - 1 && 'border-b border-white/5',
-              'hover:bg-white/2 -mx-2 rounded-lg px-2',
+              'relative grid grid-cols-12 items-center gap-4 py-3 text-sm transition-colors',
+              '-mx-2 rounded-lg px-2 hover:bg-gray-alpha-50',
+              i !== data.languages.length - 1 &&
+                'after:pointer-events-none after:absolute after:inset-x-2 after:bottom-0 after:h-px after:bg-border',
             )}
           >
-            <div className="col-span-8 flex flex-col gap-1 min-w-0">
+            <div className="col-span-8 flex min-w-0 flex-col gap-1.5">
               <div className="flex items-center gap-2 truncate">
-                <TerminalSquare className="h-4 w-4 shrink-0 text-neutral-500" />
-                <span className="body-base capitalize truncate">{lang.language}</span>
+                <TerminalSquare
+                  className="h-4 w-4 shrink-0 text-subtle"
+                  strokeWidth={1.5}
+                  aria-hidden="true"
+                />
+                <span className="truncate text-sm font-medium capitalize text-foreground">
+                  {lang.language}
+                </span>
               </div>
-              <div className="h-1.5 w-full overflow-hidden rounded-full bg-neutral-800">
+              <div className="h-1 w-full overflow-hidden rounded-full bg-gray-alpha-100">
                 <div
-                  className="h-full bg-green-spring/70 transition-all duration-500"
+                  className="h-full bg-brand transition-all duration-500"
                   style={{ width: `${lang.percentage}%` }}
                 />
               </div>
             </div>
-            <div className="mono-sm col-span-4 flex flex-col items-end justify-center text-right">
-              <span className="text-neutral-200">{lang.formattedTime}</span>
-              <span className="text-xs text-neutral-500">{lang.percentage}%</span>
+
+            <div className="col-span-4 flex flex-col items-end justify-center gap-0.5 text-right font-mono text-xs tabular-nums">
+              <span className="text-foreground">{lang.formattedTime}</span>
+              <span className="text-subtle">{lang.percentage}%</span>
             </div>
           </div>
         ))}

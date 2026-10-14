@@ -46,18 +46,18 @@ export function EndpointCard({
           <div className="flex items-center gap-3">
             <span
               className={cn(
-                'px-2.5 py-1 rounded-md border font-mono text-xs font-bold uppercase',
+                'rounded-md border px-2.5 py-1 font-mono text-xs font-medium uppercase',
                 methodStyle,
               )}
             >
               {method}
             </span>
-            <code className="font-mono text-sm text-neutral-300">{path}</code>
+            <code className="font-mono text-sm text-foreground">{path}</code>
           </div>
 
           <div>
-            <h3 className="title-3 mb-1">{summary}</h3>
-            {description && <p className="body-muted">{description}</p>}
+            <h3 className="mb-1 text-lg font-medium text-foreground">{summary}</h3>
+            {description && <p className="text-sm text-secondary">{description}</p>}
           </div>
 
           {scopes && scopes.length > 0 && (
@@ -65,9 +65,9 @@ export function EndpointCard({
               {scopes.map((scope) => (
                 <span
                   key={scope}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-purple-aspid/10 border border-purple-aspid/20 text-xs font-medium text-purple-aspid"
+                  className="inline-flex items-center gap-1.5 rounded-md border border-purple-aspid/20 bg-purple-aspid/10 px-2.5 py-1 text-xs font-medium text-purple-aspid"
                 >
-                  <span>🔒</span>
+                  <span aria-hidden="true">🔒</span>
                   {scope}
                 </span>
               ))}
@@ -76,46 +76,31 @@ export function EndpointCard({
         </div>
 
         {hasParameters && (
-          <div className="overflow-hidden rounded-xl border border-white/5 bg-neutral-950">
-            <div className="border-b border-white/5 px-4 py-2.5 bg-neutral-900/50">
-              <span className="label-caps text-neutral-400">Parameters</span>
+          <div className="overflow-hidden rounded-xl border border-border bg-surface">
+            <div className="border-b border-border bg-gray-alpha-50 px-4 py-2.5">
+              <span className="text-xs font-medium uppercase tracking-wider text-subtle">
+                Parameters
+              </span>
             </div>
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-white/5 bg-neutral-900/30">
-                  <th className="px-4 py-2 text-left font-medium text-neutral-400 w-32">
-                    Name
-                  </th>
-                  <th className="px-4 py-2 text-left font-medium text-neutral-400 w-24">
-                    Type
-                  </th>
-                  <th className="px-4 py-2 text-left font-medium text-neutral-400">
-                    Description
-                  </th>
+                <tr className="border-b border-border bg-gray-alpha-50">
+                  <th className="w-32 px-4 py-2 text-left font-medium text-subtle">Name</th>
+                  <th className="w-24 px-4 py-2 text-left font-medium text-subtle">Type</th>
+                  <th className="px-4 py-2 text-left font-medium text-subtle">Description</th>
                 </tr>
               </thead>
               <tbody>
                 {parameters.map((param) => (
-                  <tr
-                    key={param.name}
-                    className="border-b border-white/5 last:border-0"
-                  >
+                  <tr key={param.name} className="border-b border-border last:border-0">
                     <td className="px-4 py-2.5">
-                      <code className="font-mono text-neutral-200">
-                        {param.name}
-                      </code>
-                      {param.required && (
-                        <span className="ml-1.5 text-red-fluor text-xs">*</span>
-                      )}
+                      <code className="font-mono text-foreground">{param.name}</code>
+                      {param.required && <span className="ml-1.5 text-xs text-red-coral">*</span>}
                     </td>
                     <td className="px-4 py-2.5">
-                      <span className="mono-sm text-neutral-400 capitalize">
-                        {param.in}
-                      </span>
+                      <span className="font-mono text-xs capitalize text-subtle">{param.in}</span>
                     </td>
-                    <td className="px-4 py-2.5 text-neutral-400">
-                      {param.description || '-'}
-                    </td>
+                    <td className="px-4 py-2.5 text-secondary">{param.description || '-'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -123,14 +108,10 @@ export function EndpointCard({
           </div>
         )}
 
-        <CodeTabs
-          method={method}
-          path={path}
-          response={responseExample}
-        />
+        <CodeTabs method={method} path={path} response={responseExample} />
       </div>
 
-      <div className="my-8 border-t border-white/5" />
+      <div className="my-8 border-t border-border" />
     </div>
   );
 }

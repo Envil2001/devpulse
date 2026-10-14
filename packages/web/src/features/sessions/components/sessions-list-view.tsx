@@ -73,14 +73,15 @@ export function SessionsListView() {
           <div className="flex w-full flex-1 items-center gap-2.5 sm:w-auto">
             <div className="relative w-full sm:w-72">
               <Search
-                className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-500"
+                className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-subtle"
+                strokeWidth={1.5}
                 aria-hidden="true"
               />
               <Input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search by project or branch..."
-                className="pl-9"
+                className="pl-8"
               />
             </div>
 
@@ -101,15 +102,15 @@ export function SessionsListView() {
             </div>
           </div>
 
-          <div className="caption flex items-center gap-2 self-end sm:self-auto">
+          <div className="flex items-center gap-2 self-end text-xs text-subtle sm:self-auto">
             <span>Showing:</span>
-            <span className="mono-sm text-neutral-100">
+            <span className="font-mono text-xs font-medium text-foreground tabular-nums">
               {isLoading ? '—' : `${filteredSessions.length} of ${sessions.length}`}
             </span>
           </div>
         </PanelHeader>
 
-        <div className="label-caps mb-2 grid grid-cols-12 gap-4 border-b border-white/5 pb-3">
+        <div className="grid grid-cols-12 gap-4 border-b border-border pb-3 text-xs font-medium uppercase tracking-wider text-subtle">
           <div className="col-span-4 sm:col-span-3">Start Time</div>
           <div className="col-span-4 sm:col-span-3">Project</div>
           <div className="hidden sm:col-span-3 sm:block">Branch</div>
@@ -119,7 +120,7 @@ export function SessionsListView() {
 
         {isLoading && (
           <div className="py-16 text-center">
-            <span className="body-muted animate-pulse">Loading session history…</span>
+            <span className="animate-pulse text-sm text-secondary">Loading session history…</span>
           </div>
         )}
 
@@ -131,8 +132,8 @@ export function SessionsListView() {
 
         {!isLoading && !error && sessions.length === 0 && (
           <div className="py-12 text-center">
-            <p className="body-muted">No sessions recorded yet.</p>
-            <p className="caption mt-1">
+            <p className="text-sm text-secondary">No sessions recorded yet.</p>
+            <p className="mt-1 text-xs text-subtle">
               Make sure your VS Code extension is running to track your activity.
             </p>
           </div>
@@ -140,7 +141,7 @@ export function SessionsListView() {
 
         {!isLoading && !error && sessions.length > 0 && filteredSessions.length === 0 && (
           <div className="py-12 text-center">
-            <p className="body-muted">No sessions match your search filters.</p>
+            <p className="text-sm text-secondary">No sessions match your search filters.</p>
             {(searchQuery || projectFilter !== 'all') && (
               <Button
                 variant="link"
@@ -163,41 +164,48 @@ export function SessionsListView() {
               <div
                 key={session.id}
                 className={cn(
-                  'grid grid-cols-12 items-center gap-4 py-3.5 text-sm transition-colors',
-                  i !== filteredSessions.length - 1 && 'border-b border-white/5',
-                  'rounded-lg -mx-2 px-2 hover:bg-white/2',
+                  'relative grid grid-cols-12 items-center gap-4 py-3.5 text-sm transition-colors',
+                  '-mx-2 rounded-lg px-2 hover:bg-gray-alpha-50',
+                  i !== filteredSessions.length - 1 &&
+                    'after:pointer-events-none after:absolute after:inset-x-2 after:bottom-0 after:h-px after:bg-border',
                 )}
               >
                 <div className="col-span-4 flex items-center gap-2 sm:col-span-3">
                   <Calendar
-                    className="hidden h-3.5 w-3.5 shrink-0 text-neutral-500 sm:block"
+                    className="hidden h-3.5 w-3.5 shrink-0 text-subtle sm:block"
+                    strokeWidth={1.5}
                     aria-hidden="true"
                   />
-                  <span className="mono-sm text-neutral-400">
+                  <span className="font-mono text-xs text-secondary tabular-nums">
                     {formatDateTimeLabel(session.startedAt, user.timezone)}
                   </span>
                 </div>
 
-                <div className="body-base col-span-4 flex items-center gap-2 truncate sm:col-span-3">
+                <div className="col-span-4 flex items-center gap-2 truncate text-sm font-medium text-foreground sm:col-span-3">
                   <FolderGit2
-                    className="hidden h-4 w-4 shrink-0 text-neutral-500 sm:block"
+                    className="hidden h-4 w-4 shrink-0 text-subtle sm:block"
+                    strokeWidth={1.5}
                     aria-hidden="true"
                   />
                   <span className="truncate">{session.projectName}</span>
                 </div>
 
                 <div className="hidden items-center gap-1.5 truncate sm:col-span-3 sm:flex">
-                  <span className="mono-sm inline-flex items-center gap-1 truncate rounded-md border border-white/5 bg-neutral-950/40 px-2 py-0.5">
-                    <GitBranch className="h-3 w-3 shrink-0 text-neutral-500" aria-hidden="true" />
+                  <span className="inline-flex items-center gap-1 truncate rounded-md border border-border bg-gray-alpha-50 px-2 py-0.5 font-mono text-xs text-secondary">
+                    <GitBranch
+                      className="h-3 w-3 shrink-0 text-subtle"
+                      strokeWidth={1.5}
+                      aria-hidden="true"
+                    />
                     <span className="truncate">{session.gitBranch ?? 'main'}</span>
                   </span>
                 </div>
 
-                <div className="mono-sm col-span-2 text-neutral-200 sm:col-span-2">
+                <div className="col-span-2 font-mono text-xs text-foreground tabular-nums sm:col-span-2">
                   {formatDuration(session.durationMs)}
                 </div>
 
-                <div className="mono-sm col-span-2 text-right text-green-spring sm:col-span-1">
+                <div className="col-span-2 text-right font-mono text-xs text-brand tabular-nums sm:col-span-1">
                   {session.focusScore}%
                 </div>
               </div>

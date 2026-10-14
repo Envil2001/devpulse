@@ -10,37 +10,41 @@ const buttonVariants = cva(
   [
     'group/button relative inline-flex shrink-0 items-center justify-center whitespace-nowrap font-medium',
     'border border-transparent bg-clip-padding',
-    'transition-all duration-200',
+    'transition-colors duration-150',
     'select-none outline-none',
-    'focus-visible:border-white/20 focus-visible:ring-3 focus-visible:ring-white/20',
+    'focus-visible:ring-2 focus-visible:ring-white/15',
     'disabled:pointer-events-none disabled:opacity-50',
     '[&_svg]:pointer-events-none [&_svg]:shrink-0',
-    "[&_svg:not([class*='size-'])]:size-4",
+    "[&_svg:not([class*='size-'])]:size-[18px]",
   ].join(' '),
   {
     variants: {
       variant: {
-        default:
-          'bg-neutral-100 text-neutral-950 shadow-none hover:bg-neutral-100/80 active:bg-neutral-100/70',
+        default: 'bg-foreground text-background hover:bg-foreground/90 active:bg-foreground/80',
+
+        outline:
+          'border-gray-alpha-200 bg-background text-foreground hover:border-gray-alpha-300 hover:bg-gray-alpha-50 active:bg-gray-alpha-100',
 
         secondary:
-          'border-white/10 bg-neutral-900 text-neutral-100 hover:bg-neutral-900/80 hover:border-white/20 active:bg-neutral-900/70',
+          'bg-gray-alpha-100 text-foreground hover:bg-gray-alpha-150 active:bg-gray-alpha-200',
 
         ghost:
-          'bg-transparent text-neutral-300 hover:bg-white/5 hover:text-neutral-100 active:bg-white/10',
+          'bg-transparent text-secondary hover:bg-gray-alpha-100 hover:text-foreground active:bg-gray-alpha-150',
 
         danger:
-          'border-red-fluor bg-transparent text-red-fluor hover:bg-red-fluor/10 active:bg-red-fluor/20 disabled:border-red-fluor/50 disabled:text-red-fluor/50',
+          'bg-transparent text-red-coral hover:bg-red-coral/10 active:bg-red-coral/20 disabled:text-red-coral/50',
 
-        link: 'bg-transparent text-neutral-400 underline-offset-4 hover:text-neutral-100 hover:underline',
+        link: 'bg-transparent text-secondary underline-offset-4 hover:text-foreground hover:underline',
       },
 
       size: {
         xs: 'h-6 rounded-md px-1.5 text-xs [&_svg:not([class*="size-"])]:size-3',
-        sm: 'h-7 rounded-lg px-2 text-sm [&_svg:not([class*="size-"])]:size-3.5',
-        default: 'h-9 rounded-[10px] px-3 text-sm [&_svg:not([class*="size-"])]:size-4',
-        lg: 'h-10 rounded-xl px-4 text-sm [&_svg:not([class*="size-"])]:size-4',
-        icon: 'h-9 w-9 rounded-[10px]',
+        sm: 'h-7 rounded-lg px-2 text-xs [&_svg:not([class*="size-"])]:size-3.5',
+        default: 'h-8 rounded-[10px] px-2.5 text-[13px]',
+        lg: 'h-10 rounded-xl px-4 text-sm',
+        icon: 'h-8 w-8 rounded-[10px] p-0',
+        'icon-sm': 'h-7 w-7 rounded-lg p-0',
+        'icon-lg': 'h-10 w-10 rounded-xl p-0',
       },
     },
 
@@ -62,8 +66,8 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     if (asChild) {
       return (
         <Slot
-          className={cn(buttonVariants({ variant, size }), className)}
           ref={ref}
+          className={cn(buttonVariants({ variant, size }), className)}
           disabled={props.disabled || loading}
           {...props}
         >
@@ -74,8 +78,8 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
     return (
       <button
-        className={cn(buttonVariants({ variant, size }), className)}
         ref={ref}
+        className={cn(buttonVariants({ variant, size }), className)}
         disabled={props.disabled || loading}
         {...props}
       >

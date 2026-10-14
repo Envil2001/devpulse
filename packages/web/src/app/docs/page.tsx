@@ -63,7 +63,7 @@ async function getOpenAPISpec(): Promise<OpenAPISpec> {
 
 function extractScopes(security?: Array<Record<string, Array<string>>>): Array<string> {
   if (!security || security.length === 0) return [];
-  
+
   const scopes = new Set<string>();
   for (const securityItem of security) {
     const apiKeyScopes = securityItem['ApiKeyAuth'];
@@ -71,19 +71,20 @@ function extractScopes(security?: Array<Record<string, Array<string>>>): Array<s
       apiKeyScopes.forEach((scope) => scopes.add(scope));
     }
   }
-  
+
   return Array.from(scopes);
 }
 
 function extractResponseExample(responses?: Record<string, unknown>): string | undefined {
   if (!responses) return undefined;
-  
-  const successResponse = responses['200'] as { content?: Record<string, { example?: unknown }> } | undefined;
+
+  const successResponse = responses['200'] as
+    { content?: Record<string, { example?: unknown }> } | undefined;
   if (!successResponse?.content) return undefined;
-  
+
   const jsonContent = successResponse.content['application/json'];
   if (!jsonContent?.example) return undefined;
-  
+
   return JSON.stringify(jsonContent.example, null, 2);
 }
 
@@ -127,26 +128,29 @@ export default async function DocsPage() {
       <div className="min-h-full">
         <div className="mx-auto max-w-5xl px-6 py-12">
           <div id="introduction" className="mb-16 scroll-mt-24">
-            <h1 className="title-1 mb-4">{info?.title || 'DevPulse API'}</h1>
-            <p className="body-muted text-base leading-relaxed max-w-3xl">
+            <h1 className="mb-4 text-2xl font-semibold tracking-tight text-foreground">
+              {info?.title || 'DevPulse API'}
+            </h1>
+            <p className="max-w-3xl text-base leading-relaxed text-secondary">
               {info?.description || 'DevPulse API documentation for integration endpoints.'}
             </p>
             <div className="mt-4 flex items-center gap-2">
-              <span className="mono-sm text-neutral-400">Version</span>
-              <span className="mono-sm text-green-spring">{info?.version || '1.0'}</span>
+              <span className="font-mono text-xs text-subtle">Version</span>
+              <span className="font-mono text-xs text-brand">{info?.version || '1.0'}</span>
             </div>
           </div>
 
           <div id="authentication" className="mb-16 scroll-mt-24">
-            <h2 className="title-2 mb-4">Authentication</h2>
-            <div className="rounded-xl border border-white/5 bg-neutral-950 p-6">
-              <p className="body-base mb-4">
-                All API requests require authentication using an API key in the <code className="mono-sm text-green-spring">X-API-Key</code> header.
+            <h2 className="mb-4 text-xl font-semibold tracking-tight text-foreground">
+              Authentication
+            </h2>
+            <div className="rounded-xl border border-border bg-surface p-6">
+              <p className="mb-4 text-sm font-medium text-foreground">
+                All API requests require authentication using an API key in the{' '}
+                <code className="font-mono text-xs text-brand">X-API-Key</code> header.
               </p>
-              <pre className="overflow-x-auto rounded-lg bg-neutral-900/50 p-4 font-mono text-xs">
-                <code className="text-neutral-300">
-                  X-API-Key: dp_live_1234567890abcdef
-                </code>
+              <pre className="overflow-x-auto rounded-lg bg-gray-alpha-50 p-4 font-mono text-xs">
+                <code className="text-secondary">X-API-Key: dp_live_1234567890abcdef</code>
               </pre>
             </div>
           </div>

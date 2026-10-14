@@ -12,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/shared/components/ui/dialog';
-import { cn } from '@/shared/lib/cn';
+import { RadioCards, RadioCardsItem } from '@/shared/components/ui/radio-cards';
 import { useCreateApiKey } from '../hooks';
 
 interface CreateApiKeyDialogProps {
@@ -57,74 +57,34 @@ export function CreateApiKeyDialog({ open, onOpenChange, onKeyCreated }: CreateA
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-3 title-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-neutral-900">
-              <Key className="h-5 w-5 text-neutral-300" />
+          <DialogTitle className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-gray-alpha-50">
+              <Key className="h-5 w-5 text-subtle" strokeWidth={1.5} />
             </div>
-            Create API Key
+            Create API key
           </DialogTitle>
         </DialogHeader>
 
         <div className="mt-4 space-y-5">
           <div className="space-y-2">
-            <Label>Key Type</Label>
-            <div className="flex gap-4">
-              <label
-                className={cn(
-                  'flex-1 flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition-colors',
-                  type === 'extension'
-                    ? 'border-white/20 bg-white/5'
-                    : 'border-white/5 hover:bg-white/2',
-                )}
-              >
-                <input
-                  type="radio"
-                  name="keyType"
-                  value="extension"
-                  checked={type === 'extension'}
-                  onChange={() => setType('extension')}
-                  className="hidden"
-                />
-                <Terminal
-                  className={cn(
-                    'h-5 w-5 mt-0.5',
-                    type === 'extension' ? 'text-neutral-100' : 'text-neutral-500',
-                  )}
-                />
-                <div>
-                  <div className="text-sm font-medium text-neutral-200">Extension</div>
-                  <div className="caption mt-0.5">For tracking VS Code</div>
-                </div>
-              </label>
-
-              <label
-                className={cn(
-                  'flex-1 flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition-colors',
-                  type === 'integration'
-                    ? 'border-white/20 bg-white/5'
-                    : 'border-white/5 hover:bg-white/2',
-                )}
-              >
-                <input
-                  type="radio"
-                  name="keyType"
-                  value="integration"
-                  checked={type === 'integration'}
-                  onChange={() => setType('integration')}
-                  className="hidden"
-                />
-                <Blocks
-                  className={cn(
-                    'h-5 w-5 mt-0.5',
-                    type === 'integration' ? 'text-neutral-100' : 'text-neutral-500',
-                  )}
-                />
-                <div>
-                  <div className="text-sm font-medium text-neutral-200">Integration</div>
-                  <div className="caption mt-0.5">For reading analytics</div>
-                </div>
-              </label>
-            </div>
+            <Label>Key type</Label>
+            <RadioCards
+              value={type}
+              onValueChange={(v) => setType(v as 'extension' | 'integration')}
+            >
+              <RadioCardsItem
+                value="extension"
+                icon={Terminal}
+                title="Extension"
+                description="For tracking VS Code"
+              />
+              <RadioCardsItem
+                value="integration"
+                icon={Blocks}
+                title="Integration"
+                description="For reading analytics"
+              />
+            </RadioCards>
           </div>
 
           <div className="space-y-2">
@@ -141,7 +101,7 @@ export function CreateApiKeyDialog({ open, onOpenChange, onKeyCreated }: CreateA
 
           {type === 'extension' && (
             <div className="space-y-2">
-              <Label htmlFor="device-label">Device Label (Optional)</Label>
+              <Label htmlFor="device-label">Device label (optional)</Label>
               <Input
                 id="device-label"
                 value={deviceLabel}
@@ -154,16 +114,15 @@ export function CreateApiKeyDialog({ open, onOpenChange, onKeyCreated }: CreateA
         </div>
 
         <DialogFooter className="mt-6 gap-2">
-          <Button variant="secondary" size="sm" onClick={handleClose}>
+          <Button variant="outline" onClick={handleClose}>
             Cancel
           </Button>
           <Button
-            size="sm"
             onClick={handleCreate}
             disabled={name.trim().length === 0}
             loading={createKey.isPending}
           >
-            Create Key
+            Create key
           </Button>
         </DialogFooter>
       </DialogContent>

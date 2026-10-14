@@ -25,13 +25,13 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
       <Page>
         <PageHeader>
           <div className="space-y-2">
-            <div className="h-8 w-48 animate-pulse rounded-md bg-neutral-800" />
-            <div className="h-4 w-64 animate-pulse rounded-md bg-neutral-800" />
+            <div className="h-8 w-48 animate-pulse rounded-md bg-gray-alpha-100" />
+            <div className="h-4 w-64 animate-pulse rounded-md bg-gray-alpha-100" />
           </div>
         </PageHeader>
         <Panel>
           <div className="flex h-40 items-center justify-center">
-            <span className="body-muted animate-pulse">Loading project details…</span>
+            <span className="animate-pulse text-sm text-secondary">Loading project details…</span>
           </div>
         </Panel>
       </Page>
@@ -48,11 +48,15 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
         </PageHeader>
         <Panel>
           <div className="flex flex-col items-center justify-center py-12 text-center">
-            <AlertCircle className="mb-4 h-8 w-8 text-red-coral" />
-            <p className="body-base font-medium text-red-coral">
+            <AlertCircle
+              className="mb-4 h-8 w-8 text-red-coral"
+              strokeWidth={1.5}
+              aria-hidden="true"
+            />
+            <p className="text-sm font-medium text-red-coral">
               {error instanceof Error ? error.message : 'Project not found'}
             </p>
-            <p className="body-muted mt-2">
+            <p className="mt-2 text-sm text-secondary">
               The project might have been deleted or you don&apos;t have access to it.
             </p>
           </div>
@@ -75,31 +79,40 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
       <Panel>
         <PanelContent>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-            <div className="flex flex-col gap-2 rounded-xl border border-white/5 bg-neutral-950/40 p-5">
-              <span className="caption flex items-center gap-1.5 text-neutral-500">
-                <Clock className="h-4 w-4" aria-hidden="true" /> Active Time
+            <div className="flex flex-col gap-2 rounded-xl border border-border bg-surface p-5">
+              <span className="flex items-center gap-1.5 text-xs text-subtle">
+                <Clock className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
+                Active Time
               </span>
-              <span className="metric text-neutral-100">{project.activeTime}</span>
+              <span className="font-mono text-2xl font-semibold tracking-tight tabular-nums text-foreground">
+                {project.activeTime}
+              </span>
             </div>
 
-            <div className="flex flex-col gap-2 rounded-xl border border-white/5 bg-neutral-950/40 p-5">
-              <span className="caption flex items-center gap-1.5 text-neutral-500">
-                <Zap className="h-4 w-4" aria-hidden="true" /> Focus Score
+            <div className="flex flex-col gap-2 rounded-xl border border-border bg-surface p-5">
+              <span className="flex items-center gap-1.5 text-xs text-subtle">
+                <Zap className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
+                Focus Score
               </span>
-              <span className="metric text-green-spring">{project.focusScore}%</span>
+              <span className="font-mono text-2xl font-semibold tracking-tight tabular-nums text-brand">
+                {project.focusScore}%
+              </span>
             </div>
 
-            <div className="flex flex-col gap-2 rounded-xl border border-white/5 bg-neutral-950/40 p-5">
-              <span className="caption flex items-center gap-1.5 text-neutral-500">
-                <Layers className="h-4 w-4" aria-hidden="true" /> Sessions
+            <div className="flex flex-col gap-2 rounded-xl border border-border bg-surface p-5">
+              <span className="flex items-center gap-1.5 text-xs text-subtle">
+                <Layers className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
+                Sessions
               </span>
-              <span className="metric text-neutral-100">{project.sessions}</span>
+              <span className="font-mono text-2xl font-semibold tracking-tight tabular-nums text-foreground">
+                {project.sessions}
+              </span>
             </div>
           </div>
 
-          <div className="caption mt-8 flex items-center justify-between border-t border-white/5 pt-5">
-            <span className="text-neutral-500">Last active</span>
-            <span className="font-medium text-neutral-400" suppressHydrationWarning>
+          <div className="mt-8 flex items-center justify-between border-t border-border pt-5 text-xs text-subtle">
+            <span>Last active</span>
+            <span className="font-medium text-secondary" suppressHydrationWarning>
               {project.lastActive
                 ? formatDistanceToNow(new Date(project.lastActive), { addSuffix: true })
                 : 'Never'}
