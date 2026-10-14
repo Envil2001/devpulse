@@ -44,8 +44,8 @@ export function CodeTabs({ method, path, response }: CodeTabsProps) {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="overflow-hidden rounded-xl border border-white/5 bg-neutral-950">
-        <div className="flex items-center justify-between border-b border-white/5 px-4 py-2 bg-neutral-900/50">
+      <div className="overflow-hidden rounded-xl border border-border bg-surface">
+        <div className="flex items-center justify-between border-b border-border bg-gray-alpha-50 px-4 py-2">
           <div className="flex items-center gap-1">
             {(['curl', 'ts', 'python'] as const).map((tab) => (
               <button
@@ -53,10 +53,10 @@ export function CodeTabs({ method, path, response }: CodeTabsProps) {
                 type="button"
                 onClick={() => setActiveTab(tab)}
                 className={cn(
-                  'rounded-md px-2.5 py-1 font-mono text-xs font-medium transition-colors cursor-pointer',
+                  'cursor-pointer rounded-md px-2.5 py-1 font-mono text-xs font-medium transition-colors',
                   activeTab === tab
-                    ? 'bg-white/10 text-neutral-100'
-                    : 'text-neutral-400 hover:text-neutral-200',
+                    ? 'bg-gray-alpha-100 text-foreground'
+                    : 'text-subtle hover:text-secondary',
                 )}
               >
                 {tab === 'curl' ? 'cURL' : tab === 'ts' ? 'TypeScript' : 'Python'}
@@ -68,16 +68,16 @@ export function CodeTabs({ method, path, response }: CodeTabsProps) {
             type="button"
             onClick={copyCode}
             aria-label="Copy code"
-            className="flex items-center gap-1.5 text-xs text-neutral-400 hover:text-neutral-200 transition-colors cursor-pointer"
+            className="flex cursor-pointer items-center gap-1.5 text-xs text-subtle transition-colors hover:text-secondary"
           >
             {hasCopied ? (
               <>
-                <Check className="size-3.5 text-green-spring" />
-                <span className="text-green-spring">Copied</span>
+                <Check className="size-3.5 text-brand" strokeWidth={1.5} />
+                <span className="text-brand">Copied</span>
               </>
             ) : (
               <>
-                <Copy className="size-3.5" />
+                <Copy className="size-3.5" strokeWidth={1.5} />
                 <span>Copy</span>
               </>
             )}
@@ -90,10 +90,12 @@ export function CodeTabs({ method, path, response }: CodeTabsProps) {
       </div>
 
       {highlightedResponse && (
-        <div className="overflow-hidden rounded-xl border border-white/5 bg-neutral-950">
-          <div className="flex items-center justify-between border-b border-white/5 px-4 py-2.5 bg-neutral-900/50">
-            <span className="label-caps text-neutral-400">Response</span>
-            <span className="mono-sm text-green-spring bg-green-spring/10 px-2 py-0.5 rounded">
+        <div className="overflow-hidden rounded-xl border border-border bg-surface">
+          <div className="flex items-center justify-between border-b border-border bg-gray-alpha-50 px-4 py-2.5">
+            <span className="text-xs font-medium uppercase tracking-wider text-subtle">
+              Response
+            </span>
+            <span className="rounded bg-brand/10 px-2 py-0.5 font-mono text-xs text-brand">
               200 OK
             </span>
           </div>

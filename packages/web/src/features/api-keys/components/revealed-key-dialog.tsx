@@ -32,23 +32,21 @@ export function RevealedKeyDialog({ apiKey, onClose }: RevealedKeyDialogProps) {
     <Dialog open={apiKey !== null} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle className="title-3">Your new API key</DialogTitle>
-          <DialogDescription className="body-muted">
-            Copy it now — it won&apos;t be shown again.
-          </DialogDescription>
+          <DialogTitle>Your new API key</DialogTitle>
+          <DialogDescription>Copy it now — it won&apos;t be shown again.</DialogDescription>
         </DialogHeader>
 
-        <div className="mt-4 flex items-center gap-2 rounded-xl border border-white/10 bg-neutral-900 px-3 py-2.5">
-          <code className="flex-1 break-all font-mono text-sm text-neutral-100">{apiKey}</code>
+        <div className="mt-4 flex items-center gap-2 rounded-xl border border-border bg-gray-alpha-50 px-3 py-2.5">
+          <code className="flex-1 break-all font-mono text-xs text-foreground">{apiKey}</code>
           <Button size="sm" onClick={handleCopy}>
             {hasCopied ? (
               <>
-                <Check className="mr-1.5 h-4 w-4 text-green-spring" />
+                <Check className="mr-1.5 h-4 w-4 text-brand" strokeWidth={1.5} />
                 Copied
               </>
             ) : (
               <>
-                <Copy className="mr-1.5 h-4 w-4" />
+                <Copy className="mr-1.5 h-4 w-4" strokeWidth={1.5} />
                 Copy
               </>
             )}

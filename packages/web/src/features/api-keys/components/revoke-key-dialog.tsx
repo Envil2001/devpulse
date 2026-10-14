@@ -23,8 +23,8 @@ export function RevokeKeyDialog({ keyId, onClose, onConfirm, isPending }: Revoke
     <AlertDialog open={keyId !== null} onOpenChange={(open) => !open && onClose()}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle className="title-3">Are you sure?</AlertDialogTitle>
-          <AlertDialogDescription className="body-muted">
+          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+          <AlertDialogDescription>
             This will permanently revoke the API key. Any integrations using it will stop working
             immediately.
           </AlertDialogDescription>
@@ -32,7 +32,7 @@ export function RevokeKeyDialog({ keyId, onClose, onConfirm, isPending }: Revoke
         <AlertDialogFooter className="gap-2">
           <AlertDialogCancel onClick={onClose}>Cancel</AlertDialogCancel>
           <AlertDialogAction
-            className="bg-red-coral text-white hover:bg-red-coral/90"
+            className="bg-red-coral text-white hover:bg-red-coral/90 active:bg-red-coral/80"
             onClick={() => keyId && onConfirm(keyId)}
             disabled={isPending}
           >

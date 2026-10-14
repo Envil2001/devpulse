@@ -55,19 +55,19 @@ export function EarningsSummaryCards() {
           <Panel key={card.label} className="flex flex-col justify-between p-5">
             <div>
               <div className="flex items-center justify-between">
-                <p className="caption font-medium">{card.label}</p>
-                <Icon className="h-4 w-4 text-neutral-500" aria-hidden="true" />
+                <p className="text-xs font-medium text-subtle">{card.label}</p>
+                <Icon className="h-4 w-4 text-subtle" strokeWidth={1.5} aria-hidden="true" />
               </div>
               <p
                 className={cn(
-                  'metric mt-3',
-                  card.accent ? 'text-green-spring' : 'text-neutral-100',
+                  'mt-3 font-mono text-2xl font-semibold tracking-tight tabular-nums',
+                  card.accent ? 'text-brand' : 'text-foreground',
                 )}
               >
                 {card.value}
               </p>
             </div>
-            <p className="caption mt-2">{card.sub}</p>
+            <p className="mt-2 text-xs text-subtle">{card.sub}</p>
           </Panel>
         );
       })}

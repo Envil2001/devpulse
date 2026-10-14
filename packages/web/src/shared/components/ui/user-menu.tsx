@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '@/shared/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/shared/components/ui/avatar';
+import { Button } from '@/shared/components/ui/button';
 
 export function UserMenu() {
   const { user, logout } = useRequireAuth();
@@ -31,22 +32,22 @@ export function UserMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button
-          className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-white/20 transition-transform active:scale-95"
-          aria-label="User menu"
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label="Your profile"
+          className="rounded-full hover:bg-gray-alpha-100"
         >
-          <Avatar className="hover:bg-purple-blue/20 transition-colors">
-            <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
+          <Avatar>
+            <AvatarFallback>{getInitials(user.displayName, user.email)}</AvatarFallback>
           </Avatar>
-        </button>
+        </Button>
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="end" className="w-60">
-        <div className="p-1 mb-1">
-          <div className="flex flex-col gap-1 rounded-lg bg-neutral-900 border border-white/5 p-2.5 shadow-sm">
-            <span className="body-base truncate">{user.displayName}</span>
-            <span className="caption truncate">{user.email}</span>
-          </div>
+        <div className="px-2.5 py-2">
+          <p className="truncate text-sm font-medium text-foreground">{user.displayName}</p>
+          <p className="mt-0.5 truncate text-xs text-secondary">{user.email}</p>
         </div>
 
         <DropdownMenuSeparator />
@@ -54,7 +55,7 @@ export function UserMenu() {
         <DropdownMenuGroup>
           <DropdownMenuItem asChild>
             <Link href="/settings">
-              <Settings className="mr-2 h-4 w-4 text-neutral-400" aria-hidden="true" />
+              <Settings className="mr-2 h-4 w-4 text-subtle" strokeWidth={1.5} aria-hidden="true" />
               <span>Settings</span>
             </Link>
           </DropdownMenuItem>
@@ -65,7 +66,7 @@ export function UserMenu() {
         <DropdownMenuGroup>
           <DropdownMenuItem asChild>
             <a href="/docs" target="_blank" rel="noreferrer">
-              <BookOpen className="mr-2 h-4 w-4 text-neutral-400" aria-hidden="true" />
+              <BookOpen className="mr-2 h-4 w-4 text-subtle" strokeWidth={1.5} aria-hidden="true" />
               <span>Docs and resources</span>
             </a>
           </DropdownMenuItem>
@@ -75,9 +76,9 @@ export function UserMenu() {
 
         <DropdownMenuItem
           onClick={() => logout()}
-          className="text-neutral-300 hover:text-red-coral! hover:bg-red-coral/10! focus:text-red-coral! focus:bg-red-coral/10!"
+          className="text-secondary hover:bg-red-coral/10 hover:text-red-coral focus:bg-red-coral/10 focus:text-red-coral"
         >
-          <LogOut className="mr-2 h-4 w-4" aria-hidden="true" />
+          <LogOut className="mr-2 h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
           <span>Sign out</span>
         </DropdownMenuItem>
       </DropdownMenuContent>

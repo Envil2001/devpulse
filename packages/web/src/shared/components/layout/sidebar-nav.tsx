@@ -17,18 +17,14 @@ interface SidebarNavProps {
 
 export function SidebarNav({ onNavClick }: SidebarNavProps) {
   return (
-    <nav className="flex-1 overflow-y-auto py-4 px-3">
-      <div className="space-y-1">
+    <nav className="flex flex-1 flex-col overflow-y-auto scroll-subtle px-3 pb-3 pt-1.5">
+      <ul className="flex flex-col gap-1" aria-label="Main navigation">
         {mainNavItems.map((item) => (
-          <NavItem
-            key={item.name}
-            href={item.href}
-            icon={item.icon}
-            label={item.name}
-            onClick={onNavClick}
-          />
+          <li key={item.name}>
+            <NavItem href={item.href} icon={item.icon} label={item.name} onClick={onNavClick} />
+          </li>
         ))}
-      </div>
+      </ul>
     </nav>
   );
 }

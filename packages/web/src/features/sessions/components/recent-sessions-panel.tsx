@@ -37,8 +37,8 @@ function formatTimeRange(
 }
 
 function focusColorClass(score: number): string {
-  if (score >= 80) return 'text-green-spring';
-  if (score >= 50) return 'text-yellow-400';
+  if (score >= 80) return 'text-brand';
+  if (score >= 50) return 'text-yellow-amber';
   return 'text-red-coral';
 }
 
@@ -56,22 +56,22 @@ export function RecentSessionsPanel() {
       </PanelHeader>
 
       <PanelContent className="flex flex-col">
-        <div className="label-caps mb-2 grid grid-cols-12 gap-4 border-b border-white/5 pb-2">
-          <div className="col-span-3">TIME</div>
-          <div className="col-span-4">BRANCH</div>
-          <div className="col-span-3">LANGUAGE</div>
-          <div className="col-span-2 text-right">FOCUS</div>
+        <div className="mb-2 grid grid-cols-12 gap-4 border-b border-border pb-2 text-xs font-medium uppercase tracking-wider text-subtle">
+          <div className="col-span-3">Time</div>
+          <div className="col-span-4">Branch</div>
+          <div className="col-span-3">Language</div>
+          <div className="col-span-2 text-right">Focus</div>
         </div>
 
         {isLoading && (
           <div className="py-8 text-center">
-            <span className="body-muted animate-pulse">Loading…</span>
+            <span className="animate-pulse text-sm text-secondary">Loading…</span>
           </div>
         )}
 
         {!isLoading && sessions.length === 0 && (
           <div className="py-8 text-center">
-            <span className="body-muted">No sessions yet</span>
+            <span className="text-sm text-secondary">No sessions yet</span>
           </div>
         )}
 
@@ -79,13 +79,18 @@ export function RecentSessionsPanel() {
           <div
             key={session.id}
             className={cn(
-              'grid grid-cols-12 items-center gap-4 py-3.5 text-sm transition-colors',
-              i !== sessions.length - 1 && 'border-b border-white/5',
-              'hover:bg-white/2 -mx-2 rounded-lg px-2',
+              'relative grid grid-cols-12 items-center gap-4 py-3.5 text-sm transition-colors',
+              '-mx-2 rounded-lg px-2 hover:bg-gray-alpha-50',
+              i !== sessions.length - 1 &&
+                'after:pointer-events-none after:absolute after:inset-x-2 after:bottom-0 after:h-px after:bg-border',
             )}
           >
-            <div className="mono-sm col-span-3 flex items-center gap-2 text-neutral-300">
-              <Clock className="h-3.5 w-3.5 shrink-0 text-neutral-500" aria-hidden="true" />
+            <div className="col-span-3 flex items-center gap-2 font-mono text-xs text-secondary tabular-nums">
+              <Clock
+                className="h-3.5 w-3.5 shrink-0 text-subtle"
+                strokeWidth={1.5}
+                aria-hidden="true"
+              />
               <span className="truncate">
                 {formatTimeRange(
                   session.startedAt,
@@ -97,8 +102,12 @@ export function RecentSessionsPanel() {
             </div>
 
             <div className="col-span-4 flex min-w-0 items-center">
-              <span className="mono-sm inline-flex items-center gap-1 truncate rounded-md border border-white/5 bg-neutral-950/40 px-2 py-0.5">
-                <GitBranch className="h-3 w-3 shrink-0 text-neutral-500" aria-hidden="true" />
+              <span className="inline-flex items-center gap-1 truncate rounded-md border border-border bg-gray-alpha-50 px-2 py-0.5 font-mono text-xs text-secondary">
+                <GitBranch
+                  className="h-3 w-3 shrink-0 text-subtle"
+                  strokeWidth={1.5}
+                  aria-hidden="true"
+                />
                 <span className="truncate">{session.gitBranch ?? 'main'}</span>
               </span>
             </div>
@@ -107,19 +116,29 @@ export function RecentSessionsPanel() {
               {session.primaryLanguage ? (
                 <>
                   <TerminalSquare
-                    className="h-3.5 w-3.5 shrink-0 text-neutral-500"
+                    className="h-3.5 w-3.5 shrink-0 text-subtle"
+                    strokeWidth={1.5}
                     aria-hidden="true"
                   />
-                  <span className="body-base capitalize truncate">{session.primaryLanguage}</span>
+                  <span className="truncate text-sm font-medium capitalize text-foreground">
+                    {session.primaryLanguage}
+                  </span>
                 </>
               ) : (
-                <span className="body-muted">—</span>
+                <span className="text-sm text-secondary">—</span>
               )}
             </div>
 
             <div className="col-span-2 flex flex-col items-end justify-center text-right">
-              <span className="mono-sm text-neutral-200">{formatDuration(session.durationMs)}</span>
-              <span className={cn('mono-sm text-xs', focusColorClass(session.focusScore))}>
+              <span className="font-mono text-xs text-foreground tabular-nums">
+                {formatDuration(session.durationMs)}
+              </span>
+              <span
+                className={cn(
+                  'font-mono text-xs font-medium tabular-nums',
+                  focusColorClass(session.focusScore),
+                )}
+              >
                 {session.focusScore}%
               </span>
             </div>

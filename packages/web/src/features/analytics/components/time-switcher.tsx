@@ -34,7 +34,7 @@ export function TimeSwitcher({
       <Tabs value={value} onValueChange={onValueChange}>
         <TabsList>
           {periods.map((p) => (
-            <TabsTrigger key={p.id} value={p.id} variant="secondary">
+            <TabsTrigger key={p.id} value={p.id}>
               {p.label}
             </TabsTrigger>
           ))}

@@ -13,14 +13,14 @@ export function ActivityChartTooltip({ active, payload, label }: ActivityChartTo
   }
 
   return (
-    <div className="rounded-xl border border-white/10 bg-neutral-950/90 p-3 shadow-xl backdrop-blur-md">
-      <p className="caption font-medium">{label}</p>
+    <div className="rounded-xl border border-border bg-surface p-3 shadow-lg">
+      <p className="text-xs font-medium text-subtle">{label}</p>
       <div className="mt-1.5 flex items-center gap-2">
-        <div className="h-2 w-2 rounded-full bg-green-spring" aria-hidden="true" />
-        <span className="font-mono text-sm font-semibold text-neutral-100">
+        <div className="h-2 w-2 rounded-full bg-brand" aria-hidden="true" />
+        <span className="font-mono text-sm font-semibold tabular-nums text-foreground">
           {payload[0].value}h
         </span>
-        <span className="caption">active time</span>
+        <span className="text-xs text-subtle">active time</span>
       </div>
     </div>
   );

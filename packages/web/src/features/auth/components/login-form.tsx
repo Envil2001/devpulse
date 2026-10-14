@@ -77,12 +77,14 @@ export function LoginForm() {
   return (
     <div className="mx-auto flex w-full max-w-sm flex-col gap-8">
       <div className="text-center lg:text-left">
-        <h2 className="title-2">Welcome Back</h2>
-        <p className="body-muted mt-1">Enter your credentials to access your account.</p>
+        <h2 className="text-xl font-semibold tracking-tight text-foreground">Welcome back</h2>
+        <p className="mt-1 text-sm text-secondary">
+          Enter your credentials to access your account.
+        </p>
       </div>
 
       {error && (
-        <div className="body-base rounded-xl border border-red-coral bg-red-coral/10 p-3 text-red-coral">
+        <div className="rounded-[10px] border border-red-coral/30 bg-red-coral/10 p-3 text-sm text-red-coral">
           {error}
         </div>
       )}
@@ -119,7 +121,7 @@ export function LoginForm() {
                   <Button
                     variant="link"
                     asChild
-                    className="h-auto p-0 text-xs text-neutral-400 no-underline hover:text-neutral-100"
+                    className="h-auto p-0 text-xs font-medium no-underline"
                   >
                     <Link href="/forgot-password">Forgot?</Link>
                   </Button>
@@ -139,17 +141,17 @@ export function LoginForm() {
           />
 
           <Button type="submit" className="mt-4 w-full" loading={isLoading}>
-            Sign In
+            Sign in
           </Button>
         </form>
       </Form>
 
-      <p className="body-muted flex items-center justify-center gap-1 text-center">
+      <p className="flex items-center justify-center gap-1 text-center text-sm text-secondary">
         Don&apos;t have an account?
         <Button
           variant="link"
           asChild
-          className="h-auto p-0 font-bold text-neutral-100 no-underline hover:text-blue-frosty"
+          className="h-auto p-0 font-medium no-underline hover:text-brand"
         >
           <Link href="/register">Create one</Link>
         </Button>

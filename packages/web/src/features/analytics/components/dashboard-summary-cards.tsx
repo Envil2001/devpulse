@@ -48,14 +48,16 @@ export function DashboardSummaryCards({ range }: { range: DateRange }) {
           <Panel key={card.label} className="flex flex-col justify-between p-5">
             <div>
               <div className="flex items-center justify-between">
-                <p className="caption font-medium">{card.label}</p>
-                <Icon className="h-4 w-4 text-neutral-500" aria-hidden="true" />
+                <p className="text-xs font-medium text-subtle">{card.label}</p>
+                <Icon className="h-4 w-4 text-subtle" strokeWidth={1.5} aria-hidden="true" />
               </div>
               <div className="mt-2 flex items-baseline gap-2">
-                <span className="metric text-neutral-100">{card.value}</span>
+                <span className="font-mono text-2xl font-semibold tracking-tight tabular-nums text-foreground">
+                  {card.value}
+                </span>
               </div>
             </div>
-            <p className="caption mt-2">{card.sub}</p>
+            <p className="mt-2 text-xs text-subtle">{card.sub}</p>
           </Panel>
         );
       })}

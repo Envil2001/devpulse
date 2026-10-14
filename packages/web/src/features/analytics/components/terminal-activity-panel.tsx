@@ -28,17 +28,17 @@ const KIND_LABELS: Record<KindFilter, string> = {
 function kindIcon(kind: string) {
   switch (kind) {
     case 'test':
-      return <FlaskConical className="h-3.5 w-3.5" />;
+      return <FlaskConical className="h-3.5 w-3.5" strokeWidth={1.5} />;
     case 'build':
-      return <Hammer className="h-3.5 w-3.5" />;
+      return <Hammer className="h-3.5 w-3.5" strokeWidth={1.5} />;
     case 'lint':
-      return <Bug className="h-3.5 w-3.5" />;
+      return <Bug className="h-3.5 w-3.5" strokeWidth={1.5} />;
     case 'install':
-      return <Package className="h-3.5 w-3.5" />;
+      return <Package className="h-3.5 w-3.5" strokeWidth={1.5} />;
     case 'git':
-      return <GitBranch className="h-3.5 w-3.5" />;
+      return <GitBranch className="h-3.5 w-3.5" strokeWidth={1.5} />;
     default:
-      return <Terminal className="h-3.5 w-3.5" />;
+      return <Terminal className="h-3.5 w-3.5" strokeWidth={1.5} />;
   }
 }
 
@@ -51,8 +51,8 @@ function formatDuration(ms: number): string {
 }
 
 function successColorClass(rate: number): string {
-  if (rate >= 90) return 'text-green-spring';
-  if (rate >= 60) return 'text-yellow-400';
+  if (rate >= 90) return 'text-brand';
+  if (rate >= 60) return 'text-yellow-amber';
   return 'text-red-coral';
 }
 
@@ -61,9 +61,7 @@ export function TerminalActivityPanel({ range }: { range: DateRange }) {
   const [filter, setFilter] = useState<KindFilter>('all');
 
   const allCommands = data?.commands ?? [];
-  const commands = filter === 'all'
-    ? allCommands
-    : allCommands.filter((c) => c.kind === filter);
+  const commands = filter === 'all' ? allCommands : allCommands.filter((c) => c.kind === filter);
 
   const availableKinds = new Set(allCommands.map((c) => c.kind));
 
@@ -84,10 +82,10 @@ export function TerminalActivityPanel({ range }: { range: DateRange }) {
                 type="button"
                 onClick={() => setFilter(k)}
                 className={cn(
-                  'rounded-md px-2.5 py-1 text-xs transition-colors',
+                  'rounded-md px-2.5 py-1 text-xs font-medium transition-colors',
                   filter === k
-                    ? 'bg-white/10 text-neutral-100'
-                    : 'text-neutral-500 hover:text-neutral-300',
+                    ? 'bg-gray-alpha-200 text-foreground'
+                    : 'text-subtle hover:bg-gray-alpha-100 hover:text-secondary',
                 )}
               >
                 {KIND_LABELS[k]}
@@ -97,22 +95,22 @@ export function TerminalActivityPanel({ range }: { range: DateRange }) {
       </PanelHeader>
 
       <PanelContent className="flex flex-col">
-        <div className="label-caps mb-2 grid grid-cols-12 gap-4 border-b border-white/5 pb-2">
-          <div className="col-span-6">COMMAND</div>
-          <div className="col-span-2 text-right">RUNS</div>
-          <div className="col-span-2 text-right">AVG</div>
-          <div className="col-span-2 text-right">SUCCESS</div>
+        <div className="mb-2 grid grid-cols-12 gap-4 border-b border-border pb-2 text-xs font-medium uppercase tracking-wider text-subtle">
+          <div className="col-span-6">Command</div>
+          <div className="col-span-2 text-right">Runs</div>
+          <div className="col-span-2 text-right">Avg</div>
+          <div className="col-span-2 text-right">Success</div>
         </div>
 
         {isLoading && (
           <div className="py-8 text-center">
-            <span className="body-muted animate-pulse">Loading…</span>
+            <span className="animate-pulse text-sm text-secondary">Loading…</span>
           </div>
         )}
 
         {!isLoading && commands.length === 0 && (
           <div className="py-8 text-center">
-            <span className="body-muted">
+            <span className="text-sm text-secondary">
               {allCommands.length === 0
                 ? 'No terminal commands tracked yet'
                 : `No ${KIND_LABELS[filter]} commands`}
@@ -124,30 +122,40 @@ export function TerminalActivityPanel({ range }: { range: DateRange }) {
           <div
             key={`${cmd.kind}-${cmd.command}`}
             className={cn(
-              'grid grid-cols-12 items-center gap-4 py-3 text-sm transition-colors',
-              i !== commands.length - 1 && 'border-b border-white/5',
-              'hover:bg-white/2 -mx-2 rounded-lg px-2',
+              'relative grid grid-cols-12 items-center gap-4 py-3 text-sm transition-colors',
+              '-mx-2 rounded-lg px-2 hover:bg-gray-alpha-50',
+              i !== commands.length - 1 &&
+                'after:pointer-events-none after:absolute after:inset-x-2 after:bottom-0 after:h-px after:bg-border',
             )}
           >
             <div className="col-span-6 flex min-w-0 items-center gap-2">
-              <span className="text-neutral-500 shrink-0">{kindIcon(cmd.kind)}</span>
-              <span className="mono-sm truncate text-neutral-200" title={cmd.command}>
+              <span className="shrink-0 text-subtle">{kindIcon(cmd.kind)}</span>
+              <span className="truncate font-mono text-xs text-foreground" title={cmd.command}>
                 {cmd.command}
               </span>
               {cmd.failedRuns > 0 && (
-                <XCircle className="h-3.5 w-3.5 shrink-0 text-red-coral" aria-hidden="true" />
+                <XCircle
+                  className="h-3.5 w-3.5 shrink-0 text-red-coral"
+                  strokeWidth={1.5}
+                  aria-hidden="true"
+                />
               )}
             </div>
 
-            <div className="mono-sm col-span-2 text-right text-neutral-300">
+            <div className="col-span-2 text-right font-mono text-xs tabular-nums text-secondary">
               {cmd.runs}
             </div>
 
-            <div className="mono-sm col-span-2 text-right text-neutral-400">
+            <div className="col-span-2 text-right font-mono text-xs tabular-nums text-subtle">
               {formatDuration(cmd.avgDurationMs)}
             </div>
 
-            <div className={cn('mono-sm col-span-2 text-right', successColorClass(cmd.successRate))}>
+            <div
+              className={cn(
+                'col-span-2 text-right font-mono text-xs font-medium tabular-nums',
+                successColorClass(cmd.successRate),
+              )}
+            >
               {cmd.successRate}%
             </div>
           </div>

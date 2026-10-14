@@ -50,19 +50,20 @@ export function ProjectListView() {
         <PanelHeader>
           <div className="relative w-full sm:w-72">
             <Search
-              className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-500"
+              className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-subtle"
+              strokeWidth={1.5}
               aria-hidden="true"
             />
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search projects by name..."
-              className="pl-9"
+              className="pl-8"
             />
           </div>
-          <div className="caption flex items-center gap-2 self-end sm:self-auto">
+          <div className="flex items-center gap-2 self-end text-xs text-subtle sm:self-auto">
             <span>Total projects:</span>
-            <span className="mono-sm text-neutral-100">
+            <span className="font-mono text-xs font-medium text-foreground tabular-nums">
               {isLoading ? '—' : filteredProjects.length}
             </span>
           </div>
@@ -71,26 +72,26 @@ export function ProjectListView() {
         <PanelContent>
           {isLoading && (
             <div className="flex h-48 items-center justify-center">
-              <span className="body-muted animate-pulse">Loading repositories…</span>
+              <span className="animate-pulse text-sm text-secondary">Loading repositories…</span>
             </div>
           )}
 
           {error && (
             <div className="flex h-32 flex-col items-center justify-center rounded-xl border border-red-coral/20 bg-red-coral/10 p-4 text-center">
-              <p className="body-base font-medium text-red-coral">Failed to load projects</p>
-              <p className="caption mt-1 text-red-coral/80">
+              <p className="text-sm font-medium text-red-coral">Failed to load projects</p>
+              <p className="mt-1 text-xs text-red-coral/80">
                 {error instanceof Error ? error.message : 'Unknown error'}
               </p>
             </div>
           )}
 
           {!isLoading && !error && projects.length === 0 && (
-            <div className="flex flex-col items-center rounded-xl border border-white/5 bg-neutral-900/30 p-12 text-center">
-              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl border border-white/10 bg-neutral-900">
-                <FolderGit2 className="h-6 w-6 text-neutral-400" aria-hidden="true" />
+            <div className="flex flex-col items-center rounded-xl border border-border bg-surface p-12 text-center">
+              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl border border-border bg-gray-alpha-50">
+                <FolderGit2 className="h-6 w-6 text-subtle" strokeWidth={1.5} aria-hidden="true" />
               </div>
-              <h3 className="body-base font-medium">No projects found</h3>
-              <p className="body-muted mt-1 max-w-md">
+              <h3 className="text-sm font-medium text-foreground">No projects found</h3>
+              <p className="mt-1 max-w-md text-sm text-secondary">
                 Make sure your VS Code extension is active and tracking your workspace.
               </p>
             </div>
@@ -98,13 +99,10 @@ export function ProjectListView() {
 
           {!isLoading && !error && projects.length > 0 && filteredProjects.length === 0 && (
             <div className="py-12 text-center">
-              <p className="body-muted">No projects matching &ldquo;{searchQuery}&rdquo;</p>
-              <Button
-                variant="link"
-                size="sm"
-                onClick={() => setSearchQuery('')}
-                className="mt-2 text-neutral-400 hover:text-neutral-100"
-              >
+              <p className="text-sm text-secondary">
+                No projects matching &ldquo;{searchQuery}&rdquo;
+              </p>
+              <Button variant="link" size="sm" onClick={() => setSearchQuery('')} className="mt-2">
                 Clear search query
               </Button>
             </div>
