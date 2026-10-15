@@ -62,15 +62,20 @@ export function SessionsListView() {
         </div>
       </PageHeader>
 
-      <SessionsSummaryCards
-        sessions={sessions}
-        isLoading={isLoading}
-        uniqueProjectsCount={uniqueProjects.length}
-      />
+      <div data-tour="sessions-summary">
+        <SessionsSummaryCards
+          sessions={sessions}
+          isLoading={isLoading}
+          uniqueProjectsCount={uniqueProjects.length}
+        />
+      </div>
 
       <Panel>
         <PanelHeader>
-          <div className="flex w-full flex-1 items-center gap-2.5 sm:w-auto">
+          <div
+            data-tour="sessions-filters"
+            className="flex w-full flex-1 items-center gap-2.5 sm:w-auto"
+          >
             <div className="relative w-full sm:w-72">
               <Search
                 className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-subtle"
@@ -110,7 +115,10 @@ export function SessionsListView() {
           </div>
         </PanelHeader>
 
-        <div className="grid grid-cols-12 gap-4 border-b border-border pb-3 text-xs font-medium uppercase tracking-wider text-subtle">
+        <div
+          data-tour="sessions-columns"
+          className="grid grid-cols-12 gap-4 border-b border-border pb-3 text-xs font-medium uppercase tracking-wider text-subtle"
+        >
           <div className="col-span-4 sm:col-span-3">Start Time</div>
           <div className="col-span-4 sm:col-span-3">Project</div>
           <div className="hidden sm:col-span-3 sm:block">Branch</div>

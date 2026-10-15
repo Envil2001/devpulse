@@ -27,6 +27,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       )}
 
       <aside
+        data-tour="sidebar"
         aria-label="Main Navigation"
         className={cn(
           'fixed inset-y-0 left-0 z-50 flex w-64 flex-col',

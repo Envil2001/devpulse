@@ -22,8 +22,12 @@ export function EarningsView() {
         </div>
       </PageHeader>
 
-      <RateConfigPanel />
-      <EarningsSummaryCards />
+      <div data-tour="earnings-rate">
+        <RateConfigPanel />
+      </div>
+      <div data-tour="earnings-summary">
+        <EarningsSummaryCards />
+      </div>
     </Page>
   );
 }

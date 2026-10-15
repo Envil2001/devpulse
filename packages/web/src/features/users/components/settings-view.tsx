@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Globe, Key } from 'lucide-react';
+import { Compass, Globe, Key } from 'lucide-react';
 
 import { ApiKeysPanel } from '@/features/api-keys/components/api-keys-panel';
 import {
@@ -12,6 +12,7 @@ import {
   PageTitle,
 } from '@/shared/components/layout/page';
 import { Panel, PanelHeader, PanelTitle } from '@/shared/components/layout/panel';
+import { RestartTourButton } from '@/shared/components/onboarding/restart-tour-button';
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
 import {
@@ -225,7 +226,9 @@ export function SettingsView() {
         </div>
       </PageHeader>
 
-      <ApiKeysPanel />
+      <div data-tour="api-keys">
+        <ApiKeysPanel />
+      </div>
 
       <Panel>
         <PanelHeader>
@@ -233,7 +236,10 @@ export function SettingsView() {
         </PanelHeader>
 
         <div className="flex flex-col gap-6">
-          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+          <div
+            data-tour="settings-timezone"
+            className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center"
+          >
             <div className="flex items-start gap-3">
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-gray-alpha-50">
                 <Globe className="h-4.5 w-4.5 text-subtle" strokeWidth={1.5} />
@@ -253,7 +259,10 @@ export function SettingsView() {
             />
           </div>
 
-          <div className="flex flex-col justify-between gap-4 border-t border-border pt-6 sm:flex-row sm:items-center">
+          <div
+            data-tour="settings-openai"
+            className="flex flex-col justify-between gap-4 border-t border-border pt-6 sm:flex-row sm:items-center"
+          >
             <div className="flex items-start gap-3">
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-gray-alpha-50">
                 <Key className="h-4.5 w-4.5 text-subtle" strokeWidth={1.5} />
@@ -270,6 +279,25 @@ export function SettingsView() {
               isSet={user.hasOpenaiKey}
               onSave={(openaiKey) => updateProfile({ openaiKey })}
             />
+          </div>
+
+          <div
+            data-tour="settings-tour"
+            className="flex flex-col justify-between gap-4 border-t border-border pt-6 sm:flex-row sm:items-center"
+          >
+            <div className="flex items-start gap-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-gray-alpha-50">
+                <Compass className="h-4.5 w-4.5 text-subtle" strokeWidth={1.5} />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-foreground">Onboarding tour</p>
+                <p className="mt-0.5 max-w-sm text-xs text-subtle">
+                  Replay the guided tour of every page, starting from the dashboard
+                </p>
+              </div>
+            </div>
+
+            <RestartTourButton userId={user.id} />
           </div>
         </div>
       </Panel>

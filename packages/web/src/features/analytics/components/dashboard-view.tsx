@@ -61,26 +61,38 @@ export function DashboardView() {
         </div>
 
         <PageActions>
-          <TimeSwitcher
-            value={period}
-            onValueChange={(v) => setPeriod(v as AnalyticsPeriod)}
-            customRange={customDates}
-            onCustomRangeChange={setCustomDates}
-          />
+          <div data-tour="period-switcher">
+            <TimeSwitcher
+              value={period}
+              onValueChange={(v) => setPeriod(v as AnalyticsPeriod)}
+              customRange={customDates}
+              onCustomRangeChange={setCustomDates}
+            />
+          </div>
         </PageActions>
       </PageHeader>
 
-      <DashboardSummaryCards range={range} />
+      <div data-tour="stats-overview">
+        <DashboardSummaryCards range={range} />
+      </div>
 
-      <ActivityChartPanel range={range} />
+      <div data-tour="activity-chart">
+        <ActivityChartPanel range={range} />
+      </div>
 
-      <RecentSessionsPanel />
+      <div data-tour="recent-sessions">
+        <RecentSessionsPanel />
+      </div>
 
-      <TerminalActivityPanel range={range} />
+      <div data-tour="terminal-activity">
+        <TerminalActivityPanel range={range} />
+      </div>
 
-      <AiWorklogCard />
+      <div data-tour="ai-worklog">
+        <AiWorklogCard />
+      </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <div data-tour="breakdown" className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <BranchesPanel range={range} />
         <LanguagesPanel />
       </div>

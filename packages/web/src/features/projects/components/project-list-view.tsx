@@ -48,7 +48,7 @@ export function ProjectListView() {
 
       <Panel>
         <PanelHeader>
-          <div className="relative w-full sm:w-72">
+          <div data-tour="projects-search" className="relative w-full sm:w-72">
             <Search
               className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-subtle"
               strokeWidth={1.5}
@@ -70,51 +70,62 @@ export function ProjectListView() {
         </PanelHeader>
 
         <PanelContent>
-          {isLoading && (
-            <div className="flex h-48 items-center justify-center">
-              <span className="animate-pulse text-sm text-secondary">Loading repositories…</span>
-            </div>
-          )}
-
-          {error && (
-            <div className="flex h-32 flex-col items-center justify-center rounded-xl border border-red-coral/20 bg-red-coral/10 p-4 text-center">
-              <p className="text-sm font-medium text-red-coral">Failed to load projects</p>
-              <p className="mt-1 text-xs text-red-coral/80">
-                {error instanceof Error ? error.message : 'Unknown error'}
-              </p>
-            </div>
-          )}
-
-          {!isLoading && !error && projects.length === 0 && (
-            <div className="flex flex-col items-center rounded-xl border border-border bg-surface p-12 text-center">
-              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl border border-border bg-gray-alpha-50">
-                <FolderGit2 className="h-6 w-6 text-subtle" strokeWidth={1.5} aria-hidden="true" />
+          <div data-tour="projects-list">
+            {isLoading && (
+              <div className="flex h-48 items-center justify-center">
+                <span className="animate-pulse text-sm text-secondary">Loading repositories…</span>
               </div>
-              <h3 className="text-sm font-medium text-foreground">No projects found</h3>
-              <p className="mt-1 max-w-md text-sm text-secondary">
-                Make sure your VS Code extension is active and tracking your workspace.
-              </p>
-            </div>
-          )}
+            )}
 
-          {!isLoading && !error && projects.length > 0 && filteredProjects.length === 0 && (
-            <div className="py-12 text-center">
-              <p className="text-sm text-secondary">
-                No projects matching &ldquo;{searchQuery}&rdquo;
-              </p>
-              <Button variant="link" size="sm" onClick={() => setSearchQuery('')} className="mt-2">
-                Clear search query
-              </Button>
-            </div>
-          )}
+            {error && (
+              <div className="flex h-32 flex-col items-center justify-center rounded-xl border border-red-coral/20 bg-red-coral/10 p-4 text-center">
+                <p className="text-sm font-medium text-red-coral">Failed to load projects</p>
+                <p className="mt-1 text-xs text-red-coral/80">
+                  {error instanceof Error ? error.message : 'Unknown error'}
+                </p>
+              </div>
+            )}
 
-          {!isLoading && !error && filteredProjects.length > 0 && (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {filteredProjects.map((project) => (
-                <ProjectCard key={project.id} project={project} timezone={user.timezone} />
-              ))}
-            </div>
-          )}
+            {!isLoading && !error && projects.length === 0 && (
+              <div className="flex flex-col items-center rounded-xl border border-border bg-surface p-12 text-center">
+                <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl border border-border bg-gray-alpha-50">
+                  <FolderGit2
+                    className="h-6 w-6 text-subtle"
+                    strokeWidth={1.5}
+                    aria-hidden="true"
+                  />
+                </div>
+                <h3 className="text-sm font-medium text-foreground">No projects found</h3>
+                <p className="mt-1 max-w-md text-sm text-secondary">
+                  Make sure your VS Code extension is active and tracking your workspace.
+                </p>
+              </div>
+            )}
+
+            {!isLoading && !error && projects.length > 0 && filteredProjects.length === 0 && (
+              <div className="py-12 text-center">
+                <p className="text-sm text-secondary">
+                  No projects matching &ldquo;{searchQuery}&rdquo;
+                </p>
+                <Button
+                  variant="link"
+                  size="sm"
+                  onClick={() => setSearchQuery('')}
+                  className="mt-2"
+                >
+                  Clear search query
+                </Button>
+              </div>
+            )}
+
+            {!isLoading && !error && filteredProjects.length > 0 && (
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {filteredProjects.map((project) => (
+                  <ProjectCard key={project.id} project={project} timezone={user.timezone} />
+                ))}
+              </div>
+            )}
+          </div>
         </PanelContent>
       </Panel>
     </Page>
