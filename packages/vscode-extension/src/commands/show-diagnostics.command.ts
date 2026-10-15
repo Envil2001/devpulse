@@ -17,9 +17,10 @@ export function registerShowDiagnosticsCommand(
     const dashboardUrl = config.get<string>('dashboardUrl');
 
     const keyLabel = key ? `present (${key.slice(0, 12)}…${key.slice(-4)})` : 'missing';
+    const pkg = context.extension.packageJSON as { version?: string };
 
     outputChannel.info('───────────── DevPulse Diagnostics ─────────────');
-    outputChannel.info(`Version: ${String(context.extension.packageJSON.version)}`);
+    outputChannel.info(`Version: ${pkg.version ?? 'unknown'}`);
     outputChannel.info(`API URL: ${apiUrl ?? '(env fallback)'}`);
     outputChannel.info(`Dashboard URL: ${dashboardUrl ?? '(default)'}`);
     outputChannel.info(`API key: ${keyLabel}`);
