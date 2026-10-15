@@ -25,7 +25,8 @@ import {
 import { Panel, PanelHeader } from '@/shared/components/layout/panel';
 import { useRequireAuth } from '@/features/auth/context';
 
-import { SessionsSummaryCards, formatDuration } from './sessions-summary-cards';
+import { SessionsSummaryCards } from './sessions-summary-cards';
+import { formatDuration } from '@devpulse/lib';
 
 export function SessionsListView() {
   const { data: sessions = [], isLoading, error } = useSessions();

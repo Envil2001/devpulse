@@ -4,6 +4,8 @@ import { addDays, differenceInCalendarDays, format, isValid, parseISO } from 'da
 import { fromZonedTime } from 'date-fns-tz';
 import { Repository } from 'typeorm';
 
+import { formatDuration } from '@devpulse/lib';
+
 import { WorkSession } from '../../telemetry/entities/work-session.entity';
 import { User } from '../../users/entities/user.entity';
 import {
@@ -19,8 +21,6 @@ import {
 
 const DATE_FORMAT = 'yyyy-MM-dd';
 const MAX_RANGE_DAYS = 31;
-const SECONDS_PER_MINUTE = 60;
-const SECONDS_PER_HOUR = 3600;
 
 @Injectable()
 export class WorklogService {
@@ -67,7 +67,7 @@ export class WorklogService {
     const summary = await this.aiSummaryGenerator.generate({
       apiKey,
       date: period,
-      totalTime: this.formatSeconds(aggregate.totalActiveSeconds),
+      totalTime: formatDuration(aggregate.totalActiveSeconds),
       projects: this.formatProjects(aggregate.projects),
       branches: [...aggregate.branches].join(', ') || 'Unknown branch',
       languages: this.formatLanguages(aggregate.languages),
@@ -157,7 +157,7 @@ export class WorklogService {
   private formatProjects(projects: Map<string, number>): string {
     return (
       this.sortByDuration(projects)
-        .map(([name, seconds]) => `${name} (${this.formatSeconds(seconds)})`)
+        .map(([name, seconds]) => `${name} (${formatDuration(seconds)})`)
         .join(', ') || 'No project'
     );
   }
@@ -174,17 +174,6 @@ export class WorklogService {
         ([language, seconds]) => `${language} ${Math.round((seconds / total) * 100).toString()}%`,
       )
       .join(', ');
-  }
-
-  private formatSeconds(seconds: number): string {
-    const hours = Math.floor(seconds / SECONDS_PER_HOUR);
-    const minutes = Math.floor((seconds % SECONDS_PER_HOUR) / SECONDS_PER_MINUTE);
-
-    if (hours > 0) {
-      return `${hours.toString()}h ${minutes.toString()}m`;
-    }
-
-    return `${minutes.toString()}m`;
   }
 
   private aggregateCommands(

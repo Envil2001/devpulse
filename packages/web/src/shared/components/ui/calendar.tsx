@@ -7,7 +7,7 @@ import { cn } from '@/shared/lib/cn';
 
 export type CalendarProps = DayPickerProps;
 
-function Calendar({ className, classNames, showOutsideDays = true, ...props }: CalendarProps) {
+function Calendar({ className, showOutsideDays = true, ...props }: CalendarProps) {
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}

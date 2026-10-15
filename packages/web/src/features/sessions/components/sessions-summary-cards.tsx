@@ -3,14 +3,7 @@
 import { useMemo } from 'react';
 import { Clock, Zap, Layers, FolderGit2 } from 'lucide-react';
 import type { WorkSessionSummary } from '../api';
-
-export function formatDuration(ms: number): string {
-  const seconds = Math.floor(ms / 1000);
-  const minutes = Math.floor(seconds / 60);
-  const hours = Math.floor(minutes / 60);
-  if (hours > 0) return `${hours}h ${minutes % 60}m`;
-  return `${minutes}m ${seconds % 60}s`;
-}
+import { formatDuration } from '@devpulse/lib';
 
 interface SessionsSummaryCardsProps {
   sessions: WorkSessionSummary[];
@@ -40,7 +33,7 @@ export function SessionsSummaryCards({
           Total Time
         </span>
         <span className="mt-1 font-mono text-lg font-semibold tabular-nums text-foreground">
-          {isLoading ? '—' : formatDuration(totalMs)}
+          {isLoading ? '—' : formatDuration(totalMs / 1000)}
         </span>
       </div>
 

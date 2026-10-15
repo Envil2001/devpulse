@@ -15,7 +15,7 @@ export class TerminalMonitor implements vscode.Disposable {
 
   readonly onDidRunCommand = this.emitter.event;
 
-  constructor(private readonly log?: vscode.OutputChannel) {
+  constructor(private readonly log?: vscode.LogOutputChannel) {
     this.disposables.push(
       vscode.window.onDidStartTerminalShellExecution((event) => {
         this.onStart(event);
@@ -32,7 +32,7 @@ export class TerminalMonitor implements vscode.Disposable {
     if (!command) return;
 
     this.startedAt.set(event.execution, Date.now());
-    this.log?.appendLine(`[terminal] started: ${command}`);
+    this.log?.info(`started: ${command}`);
   }
 
   private onEnd(event: vscode.TerminalShellExecutionEndEvent): void {
@@ -49,8 +49,8 @@ export class TerminalMonitor implements vscode.Disposable {
 
     const cwd = event.execution.cwd?.fsPath ?? null;
 
-    this.log?.appendLine(
-      `[terminal] finished: ${command} (exit=${String(event.exitCode ?? 'n/a')}, ${String(durationMs)}ms)`,
+    this.log?.info(
+      `finished: ${command} (exit=${String(event.exitCode ?? 'n/a')}, ${String(durationMs)}ms)`,
     );
 
     this.emitter.fire({

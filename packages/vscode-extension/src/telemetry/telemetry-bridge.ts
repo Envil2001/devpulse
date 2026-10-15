@@ -37,6 +37,7 @@ export class TelemetryBridge implements vscode.Disposable {
   private queue: Array<TelemetryEventDto> = [];
   private flushing = false;
   private stopped = false;
+  private paused = false;
   private savePromise: Promise<void> = Promise.resolve();
 
   private lastActivityState: ActivityState | null = null;
@@ -48,7 +49,7 @@ export class TelemetryBridge implements vscode.Disposable {
     private readonly gitContextProvider: GitContextProvider,
     private readonly terminalMonitor: TerminalMonitor,
     private readonly tasksMonitor: TasksMonitor,
-    private readonly log?: vscode.OutputChannel,
+    private readonly log?: vscode.LogOutputChannel,
   ) {
     this.client = new TelemetryApiClient(context, log);
     this.contextTracker = new ContextTracker(log);
@@ -60,6 +61,19 @@ export class TelemetryBridge implements vscode.Disposable {
         this.sendHeartbeat();
       },
     });
+  }
+
+  public pause(): void {
+    if (this.paused) return;
+    this.paused = true;
+    this.log?.info('telemetry paused');
+    void this.flush();
+  }
+
+  public resume(): void {
+    if (!this.paused) return;
+    this.paused = false;
+    this.log?.info('telemetry resumed');
   }
 
   public async start(): Promise<void> {
@@ -103,7 +117,7 @@ export class TelemetryBridge implements vscode.Disposable {
 
       vscode.workspace.onDidSaveTextDocument((doc) => {
         if (!this.shouldTrack(doc.uri)) return;
-        this.log?.appendLine(`[trace] file_save: ${this.toRelativePath(doc.uri)}`);
+        this.log?.info(`file_save: ${this.toRelativePath(doc.uri)}`);
         this.enqueue(
           this.create('file_save', {
             filePath: this.toRelativePath(doc.uri),
@@ -115,7 +129,7 @@ export class TelemetryBridge implements vscode.Disposable {
       vscode.window.onDidChangeActiveTextEditor((editor) => {
         if (editor === undefined) return;
         if (!this.shouldTrack(editor.document.uri)) return;
-        this.log?.appendLine(`[trace] file_switch: ${this.toRelativePath(editor.document.uri)}`);
+        this.log?.info(`file_switch: ${this.toRelativePath(editor.document.uri)}`);
         this.enqueue(
           this.create('file_switch', {
             filePath: this.toRelativePath(editor.document.uri),
@@ -134,8 +148,8 @@ export class TelemetryBridge implements vscode.Disposable {
         const sanitized = sanitizeCommand(event.command);
         if (!sanitized) return;
 
-        this.log?.appendLine(
-          `[trace] terminal: ${sanitized} (exit=${String(event.exitCode ?? 'n/a')}, ${String(event.durationMs)}ms)`,
+        this.log?.info(
+          `terminal: ${sanitized} (exit=${String(event.exitCode ?? 'n/a')}, ${String(event.durationMs)}ms)`,
         );
 
         this.enqueueWithBuffer('terminal_command', {
@@ -147,8 +161,8 @@ export class TelemetryBridge implements vscode.Disposable {
       }),
 
       this.tasksMonitor.onDidRunTask((event) => {
-        this.log?.appendLine(
-          `[trace] task: ${event.name} (exit=${String(event.exitCode ?? 'n/a')}, ${String(event.durationMs)}ms)`,
+        this.log?.info(
+          `task: ${event.name} (exit=${String(event.exitCode ?? 'n/a')}, ${String(event.durationMs)}ms)`,
         );
 
         this.enqueueWithBuffer('task_run', {
@@ -177,26 +191,26 @@ export class TelemetryBridge implements vscode.Disposable {
   }
 
   private sendHeartbeat(): void {
-    if (this.stopped) return;
+    if (this.stopped || this.paused) return;
 
     if (!vscode.env.isTelemetryEnabled) {
-      this.log?.appendLine('[debug] heartbeat skipped: VS Code telemetry disabled');
+      this.log?.info('heartbeat skipped: VS Code telemetry disabled');
       return;
     }
 
     if (this.activityMonitor.currentState !== 'active') {
-      this.log?.appendLine(`[debug] heartbeat skipped: state=${this.activityMonitor.currentState}`);
+      this.log?.info(`heartbeat skipped: state=${this.activityMonitor.currentState}`);
       return;
     }
 
     const event = this.create('heartbeat', { durationMs: null });
 
     if (event.gitBranch === null) {
-      this.log?.appendLine('[debug] heartbeat skipped: no git branch');
+      this.log?.info('heartbeat skipped: no git branch');
       return;
     }
 
-    this.log?.appendLine('[debug] heartbeat sent');
+    this.log?.info('heartbeat sent');
     this.enqueue(event);
   }
 
@@ -208,7 +222,7 @@ export class TelemetryBridge implements vscode.Disposable {
     const prev = this.lastActivityState;
     const prevAt = this.lastActivityChangeAtMs;
 
-    this.log?.appendLine(`[debug] activity transition: ${prev ?? 'initial'} → ${next}`);
+    this.log?.info(`activity transition: ${prev ?? 'initial'} → ${next}`);
 
     if (prev !== null && prevAt !== null && prev !== next) {
       const durationMs = Math.max(0, changedAt - prevAt);
@@ -225,8 +239,8 @@ export class TelemetryBridge implements vscode.Disposable {
     const nextBranch = nextContext.gitBranch;
 
     if (providerPrevious !== nextBranch) {
-      this.log?.appendLine(
-        `[debug] git context transition: branch="${providerPrevious ?? 'n/a'}" → "${nextBranch ?? 'n/a'}"`,
+      this.log?.info(
+        `git context transition: branch="${providerPrevious ?? 'n/a'}" → "${nextBranch ?? 'n/a'}"`,
       );
     }
 
@@ -269,17 +283,22 @@ export class TelemetryBridge implements vscode.Disposable {
   }
 
   private enqueue(event: TelemetryEventDto): void {
+    if (this.paused) {
+      this.log?.info(`skipped ${event.type}: tracking paused`);
+      return;
+    }
+
     if (!vscode.env.isTelemetryEnabled) {
-      this.log?.appendLine(`[debug] skipped ${event.type}: VS Code telemetry disabled`);
+      this.log?.info(`skipped ${event.type}: VS Code telemetry disabled`);
       return;
     }
 
     if (event.gitBranch === null) {
-      this.log?.appendLine(`[debug] skipped ${event.type}: no git branch`);
+      this.log?.info(`skipped ${event.type}: no git branch`);
       return;
     }
 
-    this.log?.appendLine(`[trace] enqueue: type=${event.type} branch=${event.gitBranch}`);
+    this.log?.info(`enqueue: type=${event.type} branch=${event.gitBranch}`);
     this.queue.push(event);
     this.persistQueue();
 
@@ -294,8 +313,8 @@ export class TelemetryBridge implements vscode.Disposable {
 
     if (event.gitBranch === null) {
       this.pendingBuffer.push({ type, partial, createdAt: Date.now() });
-      this.log?.appendLine(
-        `[debug] buffered ${type}: waiting for git context (${String(this.pendingBuffer.size)} in buffer)`,
+      this.log?.info(
+        `buffered ${type}: waiting for git context (${String(this.pendingBuffer.size)} in buffer)`,
       );
       return;
     }
@@ -307,11 +326,11 @@ export class TelemetryBridge implements vscode.Disposable {
     const { valid, dropped } = this.pendingBuffer.drain();
 
     if (dropped > 0) {
-      this.log?.appendLine(`[debug] dropped ${String(dropped)} buffered events (too old)`);
+      this.log?.info(`dropped ${String(dropped)} buffered events (too old)`);
     }
 
     if (valid.length > 0) {
-      this.log?.appendLine(`[debug] flushing ${String(valid.length)} buffered events`);
+      this.log?.info(`flushing ${String(valid.length)} buffered events`);
     }
 
     for (const item of valid) {
@@ -328,7 +347,7 @@ export class TelemetryBridge implements vscode.Disposable {
     this.savePromise = this.savePromise
       .then(() => this.bufferStore.save(this.context, snapshot))
       .catch((error: unknown) => {
-        this.log?.appendLine(`[telemetry] buffer save failed: ${String(error)}`);
+        this.log?.error(`buffer save failed: ${String(error)}`);
       });
   }
 
@@ -362,22 +381,20 @@ export class TelemetryBridge implements vscode.Disposable {
     const batch = this.queue.splice(0, this.queue.length);
 
     try {
-      this.log?.appendLine(
-        `[debug] flush: sending ${String(batch.length)} events (queue: ${String(beforeSize)} → 0)`,
+      this.log?.info(
+        `flush: sending ${String(batch.length)} events (queue: ${String(beforeSize)} → 0)`,
       );
 
       await this.client.postEventsBatch({ events: batch }, signal);
       this.persistQueue();
 
-      this.log?.appendLine(`[info] flushed ${String(batch.length)} events`);
+      this.log?.info(`flushed ${String(batch.length)} events`);
     } catch (error) {
       this.queue.unshift(...batch);
       this.persistQueue();
 
       const message = error instanceof Error ? error.message : String(error);
-      this.log?.appendLine(
-        `[error] flush failed (${message}); buffered=${String(this.queue.length)}`,
-      );
+      this.log?.error(`flush failed (${message}); buffered=${String(this.queue.length)}`);
     } finally {
       this.flushing = false;
     }

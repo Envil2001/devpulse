@@ -4,7 +4,7 @@ import { startOfDay } from 'date-fns';
 import { toDate, toZonedTime } from 'date-fns-tz';
 import { Repository } from 'typeorm';
 
-import { type TypeId } from '@devpulse/lib';
+import { formatDuration, type TypeId } from '@devpulse/lib';
 
 import { WorkSession, WorkSessionStatus } from '../../telemetry/entities/work-session.entity';
 import { User } from '../../users/entities/user.entity';
@@ -49,7 +49,7 @@ export class IntegrationsAnalyticsService {
       timezone: userTimezone,
       currency: user.currency,
       totalActiveSeconds,
-      formattedTime: this.formatSeconds(totalActiveSeconds),
+      formattedTime: formatDuration(totalActiveSeconds),
       totalEarnedMoney: totalEarned,
       averageFocusScore: Math.round(avgFocusScore),
       sessionsCount: sessions.length,
@@ -163,7 +163,7 @@ export class IntegrationsAnalyticsService {
       return {
         language,
         activeSeconds: seconds,
-        formattedTime: this.formatSeconds(seconds),
+        formattedTime: formatDuration(seconds),
         percentage: Number(percentage.toFixed(1)),
       };
     });
@@ -172,15 +172,5 @@ export class IntegrationsAnalyticsService {
       totalActiveSeconds,
       languages,
     };
-  }
-
-  private formatSeconds(seconds: number): string {
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    const s = seconds % 60;
-
-    if (h > 0) return `${h.toString()}h ${m.toString()}m`;
-    if (m > 0) return `${m.toString()}m`;
-    return `${s.toString()}s`;
   }
 }

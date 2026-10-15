@@ -16,7 +16,6 @@ export function markTourSeen(tourId: string, userId: string): void {
   try {
     window.localStorage.setItem(storageKey(tourId, userId), '1');
   } catch {
-    // ignore
   }
 }
 
@@ -24,6 +23,5 @@ export function resetAllTours(userId: string): void {
   try {
     TOURS.forEach((tour) => window.localStorage.removeItem(storageKey(tour.id, userId)));
   } catch {
-    // ignore
   }
 }

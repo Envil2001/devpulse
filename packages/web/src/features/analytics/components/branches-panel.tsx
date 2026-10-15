@@ -10,12 +10,7 @@ import {
   PanelContent,
 } from '@/shared/components/layout/panel';
 import { useBranchesDistribution, type DateRange } from '../hooks';
-
-function formatDuration(totalSeconds: number): string {
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
-}
+import { formatDuration } from '@devpulse/lib';
 
 export function BranchesPanel({ range }: { range: DateRange }) {
   const { data: branches = [], isLoading } = useBranchesDistribution(range);
@@ -64,7 +59,7 @@ export function BranchesPanel({ range }: { range: DateRange }) {
               </span>
             </div>
             <div className="col-span-4 text-right font-mono text-xs font-medium tabular-nums text-foreground">
-              {formatDuration(branch.activeSeconds)}
+              {formatDuration(branch.activeSeconds / 1000)}
             </div>
           </div>
         ))}

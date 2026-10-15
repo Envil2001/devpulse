@@ -3,12 +3,7 @@
 import { Clock, Zap, Layers, Code2 } from 'lucide-react';
 import { Panel } from '@/shared/components/layout/panel';
 import { useDashboardStats, type DateRange } from '../hooks';
-
-function formatDuration(totalSeconds: number): string {
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
-}
+import { formatDuration } from '@devpulse/lib';
 
 export function DashboardSummaryCards({ range }: { range: DateRange }) {
   const { data: stats, isLoading } = useDashboardStats(range);
@@ -17,7 +12,7 @@ export function DashboardSummaryCards({ range }: { range: DateRange }) {
     {
       label: 'Active Time',
       icon: Clock,
-      value: isLoading || !stats ? '—' : formatDuration(stats.totalActiveSeconds),
+      value: isLoading || !stats ? '—' : formatDuration(stats.totalActiveSeconds / 1000),
       sub: 'this period',
     },
     {

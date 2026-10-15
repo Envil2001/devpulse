@@ -13,6 +13,7 @@ import {
 } from '@/shared/components/layout/panel';
 
 import { useCommandsBreakdown, type DateRange } from '../hooks';
+import { formatDuration } from '@devpulse/lib';
 
 type KindFilter = 'all' | 'test' | 'build' | 'lint' | 'install' | 'git';
 
@@ -40,14 +41,6 @@ function kindIcon(kind: string) {
     default:
       return <Terminal className="h-3.5 w-3.5" strokeWidth={1.5} />;
   }
-}
-
-function formatDuration(ms: number): string {
-  const seconds = Math.floor(ms / 1000);
-  if (seconds < 1) return `${String(ms)}ms`;
-  if (seconds < 60) return `${String(seconds)}s`;
-  const minutes = Math.floor(seconds / 60);
-  return `${String(minutes)}m ${String(seconds % 60)}s`;
 }
 
 function successColorClass(rate: number): string {
@@ -147,7 +140,7 @@ export function TerminalActivityPanel({ range }: { range: DateRange }) {
             </div>
 
             <div className="col-span-2 text-right font-mono text-xs tabular-nums text-subtle">
-              {formatDuration(cmd.avgDurationMs)}
+              {formatDuration(cmd.avgDurationMs / 1000)}
             </div>
 
             <div

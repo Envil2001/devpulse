@@ -14,7 +14,7 @@ export class ContextTracker implements vscode.Disposable {
   private readonly emitter = new vscode.EventEmitter<void>();
   readonly onGracePeriodExpired = this.emitter.event;
 
-  constructor(private readonly log?: vscode.OutputChannel) {}
+  constructor(private readonly log?: vscode.LogOutputChannel) {}
 
   get branch(): string | null {
     return this.branchValue;
@@ -58,9 +58,7 @@ export class ContextTracker implements vscode.Disposable {
       this.graceTimer = undefined;
 
       if (this.branchValue !== null) {
-        this.log?.appendLine(
-          `[debug] context loss grace expired, ending session on ${this.branchValue}`,
-        );
+        this.log?.info(`context loss grace expired, ending session on ${this.branchValue}`);
         this.emitter.fire();
       }
     }, CONTEXT_LOSS_GRACE_MS);

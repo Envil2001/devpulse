@@ -3,7 +3,10 @@ import * as vscode from 'vscode';
 import { registerCommands } from './commands/index.js';
 import { TasksMonitor } from './signals/tasks-monitor.js';
 import { TerminalMonitor } from './signals/terminal-monitor.js';
-import { GitStatusBar } from './status-bar/git-status-bar.js';
+import { DevPulseStatusBar } from './status-bar/devpulse-status-bar.js';
+import { StatsPoller } from './status-bar/stats-poller.js';
+import { StatusBarState } from './status-bar/status-bar-state.js';
+import { TelemetryApiClient } from './telemetry/api-client.js';
 import { TelemetryBridge } from './telemetry/telemetry-bridge.js';
 import { ActivityMonitor } from './activity-monitor.js';
 import { GitContextProvider } from './git-context.js';
@@ -19,7 +22,24 @@ export function activate(context: vscode.ExtensionContext): void {
   console.log('DevPulse extension is now active!');
 
   const outputChannel = vscode.window.createOutputChannel('DevPulse', { log: true });
-  context.subscriptions.push(outputChannel, ...registerCommands(context));
+  const state = new StatusBarState();
+  context.subscriptions.push(outputChannel, state);
+
+  const initialSubscriptions: Array<vscode.Disposable> = [
+    outputChannel,
+    state,
+    ...registerCommands(context, { state, getBridge: () => telemetryBridge, outputChannel }),
+  ];
+  context.subscriptions.push(...initialSubscriptions);
+
+  const gitContextProvider = new GitContextProvider();
+  const statusBar = new DevPulseStatusBar(gitContextProvider, state);
+  context.subscriptions.push(gitContextProvider, statusBar);
+  statusBar.show();
+
+  const apiClient = new TelemetryApiClient(context, outputChannel);
+  const statsPoller = new StatsPoller(apiClient, state, outputChannel);
+  context.subscriptions.push(statsPoller);
 
   let isTelemetryStarted = false;
 
@@ -28,7 +48,6 @@ export function activate(context: vscode.ExtensionContext): void {
     isTelemetryStarted = true;
 
     const activityMonitor = new ActivityMonitor();
-    const gitContextProvider = new GitContextProvider();
     const taskMonitor = new TasksMonitor(outputChannel);
     const terminalMonitor = new TerminalMonitor(outputChannel);
 
@@ -41,22 +60,17 @@ export function activate(context: vscode.ExtensionContext): void {
       outputChannel,
     );
 
-    const gitStatusBar = new GitStatusBar(gitContextProvider);
+    if (state.isPaused) {
+      telemetryBridge.pause();
+    }
 
-    context.subscriptions.push(
-      activityMonitor,
-      gitContextProvider,
-      telemetryBridge,
-      gitStatusBar,
-      terminalMonitor,
-      taskMonitor,
-    );
-
-    void gitStatusBar.show();
+    context.subscriptions.push(activityMonitor, telemetryBridge, terminalMonitor, taskMonitor);
 
     telemetryBridge.start().catch((error: unknown) => {
       outputChannel.error(`Telemetry failed to start: ${String(error)}`);
     });
+
+    statsPoller.start();
 
     outputChannel.info('Telemetry started.');
   };
@@ -64,6 +78,7 @@ export function activate(context: vscode.ExtensionContext): void {
   const stopTelemetry = (): void => {
     if (!telemetryBridge || !isTelemetryStarted) return;
     telemetryBridge.stop();
+    statsPoller.stop();
     isTelemetryStarted = false;
     outputChannel.warn('VS Code telemetry disabled. DevPulse stopped.');
   };

@@ -13,7 +13,7 @@ import {
 import { useRequireAuth } from '@/features/auth/context';
 
 import { useRecentSessions } from '../hooks';
-import { formatDuration } from './sessions-summary-cards';
+import { formatDuration } from '@devpulse/lib';
 
 const RECENT_LIMIT = 5;
 
