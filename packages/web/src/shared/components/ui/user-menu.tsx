@@ -18,8 +18,8 @@ import { Button } from '@/shared/components/ui/button';
 export function UserMenu() {
   const { user, logout } = useRequireAuth();
 
-  const getInitials = (name?: string, email?: string) => {
-    const target = name?.trim() || email?.trim() || 'U';
+  const getInitials = (name: string) => {
+    const target = name.trim();
     return target
       .split(' ')
       .filter(Boolean)
@@ -39,7 +39,7 @@ export function UserMenu() {
           className="rounded-full hover:bg-gray-alpha-100"
         >
           <Avatar>
-            <AvatarFallback>{getInitials(user.displayName, user.email)}</AvatarFallback>
+            <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>

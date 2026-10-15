@@ -141,7 +141,7 @@ export class GitContextProvider implements vscode.Disposable {
 
   readonly onDidChangeContext = this.emitter.event;
 
-  constructor(private readonly log?: vscode.OutputChannel) {
+  constructor(private readonly log?: vscode.LogOutputChannel) {
     this.disposables.push(
       vscode.window.onDidChangeActiveTextEditor(() => {
         this.handleActiveEditorChange();
@@ -194,12 +194,12 @@ export class GitContextProvider implements vscode.Disposable {
       }
 
       this.context = nextContext;
-      this.log?.appendLine(
-        `[info] workspace="${nextContext.workspaceName ?? 'n/a'}" branch="${nextContext.gitBranch ?? 'n/a'}" remote="${nextContext.gitRemoteUrl ?? 'n/a'}"`,
+      this.log?.info(
+        `workspace="${nextContext.workspaceName ?? 'n/a'}" branch="${nextContext.gitBranch ?? 'n/a'}" remote="${nextContext.gitRemoteUrl ?? 'n/a'}"`,
       );
       this.emitter.fire(nextContext);
     } catch (error) {
-      this.log?.appendLine(`[error] refresh failed: ${String(error)}`);
+      this.log?.error(`refresh failed: ${String(error)}`);
     }
   }
 
@@ -210,7 +210,7 @@ export class GitContextProvider implements vscode.Disposable {
     this.gitWatchers = [];
     this.watchedGitDir = gitDir;
 
-    this.log?.appendLine(`[debug] resetGitWatchers: gitDir="${gitDir ?? 'n/a'}"`);
+    this.log?.info(`resetGitWatchers: gitDir="${gitDir ?? 'n/a'}"`);
 
     if (gitDir === null) {
       return;
@@ -250,8 +250,8 @@ export class GitContextProvider implements vscode.Disposable {
     const workspaceFolderPath = folder?.uri.fsPath ?? null;
     const workspaceName = resolveWorkspaceName(folder);
 
-    this.log?.appendLine(
-      `[debug] detectContext: folder="${folder?.name ?? 'n/a'}" path="${workspaceFolderPath ?? 'n/a'}"`,
+    this.log?.info(
+      `detectContext: folder="${folder?.name ?? 'n/a'}" path="${workspaceFolderPath ?? 'n/a'}"`,
     );
 
     if (workspaceFolderPath === null) {

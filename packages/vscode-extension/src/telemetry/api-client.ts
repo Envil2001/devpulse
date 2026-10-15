@@ -16,6 +16,12 @@ const COMPRESSION_THRESHOLD_BYTES = 10_240; // 10 KB
 
 import { DEVPULSE_API_KEY_SECRET } from '../secret-keys.js';
 
+interface TodayStatsResponse {
+  totalActiveSeconds: number;
+  averageFocusScore: number;
+  sessionsCount: number;
+}
+
 export class TelemetryApiClientError extends Error {
   public readonly status: number;
   public readonly details?: unknown;
@@ -69,7 +75,7 @@ async function readJson<TResponse>(response: Response): Promise<TResponse> {
 export class TelemetryApiClient {
   constructor(
     private readonly context: vscode.ExtensionContext,
-    private readonly log?: vscode.OutputChannel,
+    private readonly log?: vscode.LogOutputChannel,
   ) {}
 
   public async postEventsBatch(
@@ -110,15 +116,15 @@ export class TelemetryApiClient {
       const compressedSize = compressed.byteLength;
       const ratio = ((1 - compressedSize / rawSize) * 100).toFixed(1);
 
-      this.log?.appendLine(
-        `[debug] compressed ${String(rawSize)}B → ${String(compressedSize)}B ` +
+      this.log?.info(
+        `compressed ${String(rawSize)}B → ${String(compressedSize)}B ` +
           `(${ratio}% reduction, ${(after - before).toFixed(2)}ms)`,
       );
     }
 
     let response: Response;
     try {
-      this.log?.appendLine(`[debug] POST ${url} size=${String(rawSize)}B`);
+      this.log?.info(`POST ${url} size=${String(rawSize)}B`);
       response = await fetch(url, {
         method: 'POST',
         headers,
@@ -126,7 +132,7 @@ export class TelemetryApiClient {
         signal: signal ?? AbortSignal.timeout(30_000), // 30 seconds
       });
     } catch (error) {
-      this.log?.appendLine(`[error] network error: ${String(error)}`);
+      this.log?.error(`network error: ${String(error)}`);
       throw new Error('TelemetryRequestNetworkError');
     }
 
@@ -134,8 +140,48 @@ export class TelemetryApiClient {
       await readJson<null>(response);
     } catch (error) {
       if (error instanceof TelemetryApiClientError) {
-        this.log?.appendLine(
-          `[error] request failed status=${String(error.status)} message=${error.message}`,
+        this.log?.error(`request failed status=${String(error.status)} message=${error.message}`);
+        throw new Error(`TelemetryRequestFailed:${String(error.status)}`);
+      }
+      throw error;
+    }
+  }
+
+  public async getTodayStats(): Promise<{
+    activeSeconds: number;
+    focusScore: number;
+    sessionsCount: number;
+  }> {
+    const apiKey = await this.context.secrets.get(DEVPULSE_API_KEY_SECRET);
+    if (apiKey === undefined || apiKey.trim().length === 0) {
+      throw new Error('MissingApiKey');
+    }
+
+    const url = `${resolveApiBaseUrl()}/integrations/analytics/today`;
+
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        method: 'GET',
+        headers: { 'x-api-key': apiKey.trim() },
+        signal: AbortSignal.timeout(10_000),
+      });
+    } catch (error) {
+      this.log?.error(`stats network error: ${String(error)}`);
+      throw new Error('TelemetryRequestNetworkError');
+    }
+
+    try {
+      const data = await readJson<TodayStatsResponse>(response);
+      return {
+        activeSeconds: data.totalActiveSeconds,
+        focusScore: data.averageFocusScore,
+        sessionsCount: data.sessionsCount,
+      };
+    } catch (error) {
+      if (error instanceof TelemetryApiClientError) {
+        this.log?.error(
+          `stats request failed status=${String(error.status)} message=${error.message}`,
         );
         throw new Error(`TelemetryRequestFailed:${String(error.status)}`);
       }

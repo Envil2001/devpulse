@@ -30,6 +30,34 @@
       {
         "command": "devpulse.clearApiKey",
         "title": "DevPulse: Clear API Key"
+      },
+      {
+        "command": "devpulse.showMenu",
+        "title": "DevPulse: Show Menu"
+      },
+      {
+        "command": "devpulse.pauseTracking",
+        "title": "DevPulse: Pause Tracking"
+      },
+      {
+        "command": "devpulse.resumeTracking",
+        "title": "DevPulse: Resume Tracking"
+      },
+      {
+        "command": "devpulse.openDashboard",
+        "title": "DevPulse: Open Dashboard"
+      },
+      {
+        "command": "devpulse.openSessions",
+        "title": "DevPulse: Open Sessions"
+      },
+      {
+        "command": "devpulse.showLog",
+        "title": "DevPulse: Show Log"
+      },
+      {
+        "command": "devpulse.showDiagnostics",
+        "title": "DevPulse: Show Diagnostics"
       }
     ],
     "configuration": {
@@ -39,6 +67,12 @@
           "type": "string",
           "default": "http://localhost:3000/api/v1",
           "description": "DevPulse backend base URL (example: http://localhost:3000/api/v1)",
+          "scope": "machine"
+        },
+        "devpulse.dashboardUrl": {
+          "type": "string",
+          "default": "http://localhost:3001",
+          "description": "DevPulse dashboard URL (used by quick-menu links)",
           "scope": "machine"
         }
       }

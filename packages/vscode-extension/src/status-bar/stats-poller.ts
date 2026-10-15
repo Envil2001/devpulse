@@ -1,0 +1,78 @@
+import * as vscode from 'vscode';
+
+import type { TelemetryApiClient } from '../telemetry/api-client.js';
+
+import type { StatusBarState } from './status-bar-state.js';
+
+const POLL_INTERVAL_MS = 60_000;
+const NOTIFICATION_DEBOUNCE_MS = 5 * 60 * 1000;
+
+export class StatsPoller implements vscode.Disposable {
+  private timer: ReturnType<typeof setInterval> | undefined;
+  private lastNotificationAt = 0;
+
+  constructor(
+    private readonly client: TelemetryApiClient,
+    private readonly state: StatusBarState,
+    private readonly log?: vscode.LogOutputChannel,
+  ) {}
+
+  public start(): void {
+    if (this.timer !== undefined) return;
+    void this.poll();
+    this.timer = setInterval(() => {
+      void this.poll();
+    }, POLL_INTERVAL_MS);
+  }
+
+  public stop(): void {
+    if (this.timer !== undefined) {
+      clearInterval(this.timer);
+      this.timer = undefined;
+    }
+  }
+
+  private async poll(): Promise<void> {
+    try {
+      const stats = await this.client.getTodayStats();
+      this.state.setTodayStats(stats);
+      this.state.setHealth('ok');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.log?.warn(`stats poll failed: ${message}`);
+
+      if (message.includes('TelemetryRequestFailed:401')) {
+        this.state.setHealth('invalid-key');
+        this.notifyInvalidKey();
+      } else if (message.includes('TelemetryRequestFailed:403')) {
+        this.state.setHealth('ok');
+      } else {
+        this.state.setHealth('offline');
+      }
+    }
+  }
+
+  private notifyInvalidKey(): void {
+    const now = Date.now();
+    if (now - this.lastNotificationAt < NOTIFICATION_DEBOUNCE_MS) return;
+    this.lastNotificationAt = now;
+
+    void vscode.window
+      .showWarningMessage(
+        'DevPulse: API key is invalid or revoked. Telemetry is not being sent.',
+        'Set new key',
+        'Show log',
+      )
+      .then((selected) => {
+        if (selected === 'Set new key') {
+          void vscode.commands.executeCommand('devpulse.setApiKey');
+        } else if (selected === 'Show log') {
+          void vscode.commands.executeCommand('devpulse.showLog');
+        }
+      });
+  }
+
+  public dispose(): void {
+    this.stop();
+  }
+}

@@ -17,11 +17,11 @@ export class TasksMonitor implements vscode.Disposable {
 
   readonly onDidRunTask = this.emitter.event;
 
-  constructor(private readonly log?: vscode.OutputChannel) {
+  constructor(private readonly log?: vscode.LogOutputChannel) {
     this.disposables.push(
       vscode.tasks.onDidStartTask((event) => {
         this.startedAt.set(event.execution, Date.now());
-        this.log?.appendLine(`[task] started: ${event.execution.task.name}`);
+        this.log?.info(`started: ${event.execution.task.name}`);
       }),
 
       vscode.tasks.onDidEndTaskProcess((event) => {
@@ -46,8 +46,8 @@ export class TasksMonitor implements vscode.Disposable {
     const { task } = execution;
     const durationMs = Math.max(0, Date.now() - startedAt);
 
-    this.log?.appendLine(
-      `[task] finished: ${task.name} (exit=${String(exitCode ?? 'n/a')}, ${String(durationMs)}ms)`,
+    this.log?.info(
+      `finished: ${task.name} (exit=${String(exitCode ?? 'n/a')}, ${String(durationMs)}ms)`,
     );
 
     this.emitter.fire({

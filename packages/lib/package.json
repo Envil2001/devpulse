@@ -3,20 +3,21 @@
   "version": "0.0.1",
   "private": true,
   "type": "module",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.js",
       "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
     "./ids": {
-      "import": "./dist/ids/index.js",
       "types": "./dist/ids/index.d.ts",
+      "import": "./dist/ids/index.js",
       "default": "./dist/ids/index.js"
     },
     "./auth": {
-      "import": "./dist/auth/srp/index.js",
       "types": "./dist/auth/srp/index.d.ts",
+      "import": "./dist/auth/srp/index.js",
       "default": "./dist/auth/srp/index.js"
     }
   },
