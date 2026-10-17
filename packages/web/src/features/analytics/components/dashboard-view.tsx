@@ -14,6 +14,7 @@ import {
   PageActions,
 } from '@/shared/components/layout/page';
 import { TimeSwitcher } from './time-switcher';
+import { ProjectSelector } from './project-selector';
 import { AiWorklogCard } from '@/features/worklog/components/ai-worklog-card';
 
 import { DashboardSummaryCards } from './dashboard-summary-cards';
@@ -38,6 +39,8 @@ export function DashboardView() {
   const [customDates, setCustomDates] = useState(getInitialCustomDates);
   const range = useMemo(() => periodToDateRange(period, customDates), [period, customDates]);
 
+  const [projectId, setProjectId] = useState<string | undefined>();
+
   return (
     <Page>
       <PageHeader>
@@ -61,31 +64,34 @@ export function DashboardView() {
         </div>
 
         <PageActions>
-          <div data-tour="period-switcher">
-            <TimeSwitcher
-              value={period}
-              onValueChange={(v) => setPeriod(v as AnalyticsPeriod)}
-              customRange={customDates}
-              onCustomRangeChange={setCustomDates}
-            />
+          <div className="flex flex-wrap items-center gap-3">
+            <ProjectSelector value={projectId} onChange={setProjectId} /> {/* <-- NEW */}
+            <div data-tour="period-switcher">
+              <TimeSwitcher
+                value={period}
+                onValueChange={(v) => setPeriod(v as AnalyticsPeriod)}
+                customRange={customDates}
+                onCustomRangeChange={setCustomDates}
+              />
+            </div>
           </div>
         </PageActions>
       </PageHeader>
 
       <div data-tour="stats-overview">
-        <DashboardSummaryCards range={range} />
+        <DashboardSummaryCards range={range} projectId={projectId} />
       </div>
 
       <div data-tour="activity-chart">
-        <ActivityChartPanel range={range} />
+        <ActivityChartPanel range={range} projectId={projectId} />
       </div>
 
       <div data-tour="recent-sessions">
-        <RecentSessionsPanel />
+        <RecentSessionsPanel projectId={projectId} />
       </div>
 
       <div data-tour="terminal-activity">
-        <TerminalActivityPanel range={range} />
+        <TerminalActivityPanel range={range} projectId={projectId} />
       </div>
 
       <div data-tour="ai-worklog">
@@ -93,8 +99,8 @@ export function DashboardView() {
       </div>
 
       <div data-tour="breakdown" className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <BranchesPanel range={range} />
-        <LanguagesPanel />
+        <BranchesPanel range={range} projectId={projectId} />
+        <LanguagesPanel projectId={projectId} />
       </div>
     </Page>
   );

@@ -42,9 +42,9 @@ function focusColorClass(score: number): string {
   return 'text-red-coral';
 }
 
-export function RecentSessionsPanel() {
+export function RecentSessionsPanel({ projectId }: { projectId?: string }) {
   const { user } = useRequireAuth();
-  const { data: sessions = [], isLoading } = useRecentSessions(RECENT_LIMIT);
+  const { data: sessions = [], isLoading } = useRecentSessions(RECENT_LIMIT, projectId);
 
   return (
     <Panel>

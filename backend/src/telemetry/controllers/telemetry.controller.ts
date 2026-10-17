@@ -66,12 +66,18 @@ export class TelemetryController {
   public async getSessions(
     @CurrentUser() user: AuthenticatedUser,
     @Query('limit') limit?: string,
+    @Query('projectId') projectId?: string,
   ): Promise<Array<WorkSessionSummaryDto>> {
     const parsedLimit = limit ? Number.parseInt(limit, 10) : 50;
     const safeLimit = Math.min(Math.max(Number.isNaN(parsedLimit) ? 50 : parsedLimit, 1), 100);
 
+    const where: Record<string, unknown> = { userId: user.id };
+    if (projectId) {
+      where.projectId = projectId;
+    }
+
     const sessions = await this.sessionRepo.find({
-      where: { userId: user.id },
+      where,
       relations: ['project'],
       order: { startedAt: 'DESC' },
       take: safeLimit,

@@ -11,8 +11,8 @@ import {
 } from '@/shared/components/layout/panel';
 import { useLanguagesBreakdown } from '../hooks';
 
-export function LanguagesPanel() {
-  const { data, isLoading } = useLanguagesBreakdown();
+export function LanguagesPanel({ projectId }: { projectId?: string }) {
+  const { data, isLoading } = useLanguagesBreakdown(projectId);
 
   return (
     <Panel>

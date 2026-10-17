@@ -17,8 +17,8 @@ import { formatChartAxisLabel, toDateInput } from '@/shared/lib/date';
 import { useAnalyticsTimeseries, useExportSessions, type DateRange } from '../hooks';
 import { ActivityChartTooltip } from './activity-chart-tooltip';
 
-export function ActivityChartPanel({ range }: { range: DateRange }) {
-  const { data: timeseries = [], isLoading } = useAnalyticsTimeseries(range);
+export function ActivityChartPanel({ range, projectId }: { range: DateRange; projectId?: string }) {
+  const { data: timeseries = [], isLoading } = useAnalyticsTimeseries(range, projectId);
   const exportMutation = useExportSessions();
 
   const chartData = useMemo(() => {

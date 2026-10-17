@@ -22,7 +22,7 @@ export interface DateRange extends QueryParams {
 export const analyticsKeys = {
   all: ['analytics'] as const,
   status: () => [...analyticsKeys.all, 'status'] as const,
-  languages: () => [...analyticsKeys.all, 'languages'] as const,
+  languages: (projectId?: string) => [...analyticsKeys.all, 'languages', projectId] as const,
   commands: (range: DateRange, projectId?: string) =>
     [...analyticsKeys.all, 'commands', range.startDate, range.endDate, projectId] as const,
   dashboard: (range: DateRange, projectId?: string) =>
@@ -76,10 +76,10 @@ export function useLiveStatus() {
   });
 }
 
-export function useLanguagesBreakdown() {
+export function useLanguagesBreakdown(projectId?: string) {
   return useQuery<LanguagesBreakdown>({
-    queryKey: analyticsKeys.languages(),
-    queryFn: () => analyticsService.getLanguages(),
+    queryKey: analyticsKeys.languages(projectId),
+    queryFn: () => analyticsService.getLanguages({ projectId }),
   });
 }
 
