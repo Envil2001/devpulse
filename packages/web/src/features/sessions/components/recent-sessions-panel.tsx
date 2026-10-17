@@ -1,7 +1,7 @@
 'use client';
 
-import { Clock, GitBranch, TerminalSquare } from 'lucide-react';
-
+import { ChevronRight, Clock, GitBranch, TerminalSquare } from 'lucide-react';
+import Link from 'next/link';
 import { cn } from '@/shared/lib/cn';
 import {
   Panel,
@@ -76,10 +76,11 @@ export function RecentSessionsPanel() {
         )}
 
         {sessions.map((session, i) => (
-          <div
+          <Link
             key={session.id}
+            href={`/sessions/${session.id}`}
             className={cn(
-              'relative grid grid-cols-12 items-center gap-4 py-3.5 text-sm transition-colors',
+              'group relative grid grid-cols-12 items-center gap-4 py-3.5 text-sm transition-colors',
               '-mx-2 rounded-lg px-2 hover:bg-gray-alpha-50',
               i !== sessions.length - 1 &&
                 'after:pointer-events-none after:absolute after:inset-x-2 after:bottom-0 after:h-px after:bg-border',
@@ -131,7 +132,7 @@ export function RecentSessionsPanel() {
 
             <div className="col-span-2 flex flex-col items-end justify-center text-right">
               <span className="font-mono text-xs text-foreground tabular-nums">
-                {formatDuration(session.durationMs)}
+                {formatDuration(session.durationMs / 1000)}
               </span>
               <span
                 className={cn(
@@ -142,7 +143,13 @@ export function RecentSessionsPanel() {
                 {session.focusScore}%
               </span>
             </div>
-          </div>
+
+            <ChevronRight
+              className="absolute right-1 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-subtle opacity-0 transition-opacity group-hover:opacity-100"
+              strokeWidth={1.5}
+              aria-hidden="true"
+            />
+          </Link>
         ))}
       </PanelContent>
     </Panel>
