@@ -11,6 +11,7 @@ import {
 } from './api';
 import { downloadBlob } from '@/shared/lib/download';
 import { QueryParams } from '@/shared/api/api-client';
+import { useMemo } from 'react';
 
 export type AnalyticsPeriod = 'today' | '7d' | '30d' | 'custom';
 
@@ -121,4 +122,47 @@ export function useExportSessions() {
       downloadBlob(blob, `devpulse-sessions_${start}_${end}.csv`);
     },
   });
+}
+
+/**
+ * Вычисляет предыдущий период той же длительности.
+ *
+ * Для «7 дней» → предыдущие 7 дней, заканчивающиеся за мгновение
+ * до старта текущего. Для «сегодня» → вчера. Для custom — тот же
+ * сдвиг назад.
+ *
+ * Формула: duration = end - start; prev_end = start - 1ms;
+ * prev_start = prev_end - duration.
+ */
+export function previousPeriod(range: DateRange): DateRange {
+  const start = new Date(range.startDate).getTime();
+  const end = new Date(range.endDate).getTime();
+  const duration = end - start;
+
+  const prevEnd = start - 1;
+  const prevStart = prevEnd - duration;
+
+  return {
+    startDate: new Date(prevStart).toISOString(),
+    endDate: new Date(prevEnd).toISOString(),
+  };
+}
+
+/**
+ * Сравнение текущего и предыдущего периода.
+ *
+ * Делаем два параллельных запроса через useDashboardStats.
+ * React Query кэширует оба по ключам, так что если пользователь
+ * вернётся к тому же периоду — второго запроса не будет.
+ */
+export function useDashboardComparison(range: DateRange, projectId?: string) {
+  const current = useDashboardStats(range, projectId);
+  const prevRange = useMemo(() => previousPeriod(range), [range]);
+  const previous = useDashboardStats(prevRange, projectId);
+
+  return {
+    current: current.data,
+    previous: previous.data,
+    isLoading: current.isLoading || previous.isLoading,
+  };
 }
