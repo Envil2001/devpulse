@@ -23,6 +23,7 @@ import { BranchesPanel } from './branches-panel';
 import { LanguagesPanel } from './languages-panel';
 import { RecentSessionsPanel } from '@/features/sessions/components/recent-sessions-panel';
 import { TerminalActivityPanel } from './terminal-activity-panel';
+import { ComparisonPanel } from './comparison-panel';
 
 function getInitialCustomDates() {
   const to = new Date();
@@ -80,6 +81,10 @@ export function DashboardView() {
 
       <div data-tour="stats-overview">
         <DashboardSummaryCards range={range} projectId={projectId} />
+      </div>
+
+      <div data-tour="comparison">
+        <ComparisonPanel range={range} projectId={projectId} />
       </div>
 
       <div data-tour="activity-chart">

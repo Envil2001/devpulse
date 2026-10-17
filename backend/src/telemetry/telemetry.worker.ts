@@ -18,10 +18,34 @@ import { classifyCommand } from './utils/command-classifier';
 
 const SESSION_GAP_MS = 15 * 60 * 1000;
 const MAX_IDLE_CREDIT_MS = 30 * 60 * 1000;
+const FOCUS_FAILURE_MAX_PENALTY = 20;
 
 const MAX_LANGUAGE_DELTA_SEC = 300;
 
 const NOISY_LANGUAGES = new Set(['plaintext', 'log', 'jsonc']);
+const FOCUS_RELEVANT_KINDS = new Set(['test', 'build', 'lint', 'task']);
+
+function computeFocusScore(
+  activeSeconds: number,
+  idleSeconds: number,
+  commands: Array<{ kind: string; exitCode: number | null }>,
+): number {
+  const total = activeSeconds + idleSeconds;
+  const baseFocus = total > 0 ? (activeSeconds / total) * 100 : 0;
+
+  const meaningful = commands.filter((c) => FOCUS_RELEVANT_KINDS.has(c.kind));
+
+  if (meaningful.length === 0) {
+    return baseFocus;
+  }
+
+  const failed = meaningful.filter((c) => c.exitCode !== null && c.exitCode !== 0).length;
+
+  const failureRate = failed / meaningful.length;
+  const penalty = failureRate * FOCUS_FAILURE_MAX_PENALTY;
+
+  return Math.max(0, Math.min(100, baseFocus - penalty));
+}
 
 @Injectable()
 export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
@@ -346,10 +370,13 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
 
     session.activeSeconds = Math.max(0, wallSec - session.idleSeconds);
 
-    const total = session.activeSeconds + session.idleSeconds;
-    session.focusScore = total > 0 ? (session.activeSeconds / total) * 100 : 0;
-    session.earnedMoney = (session.activeSeconds / 3600) * user.hourlyRate;
+    session.focusScore = computeFocusScore(
+      session.activeSeconds,
+      session.idleSeconds,
+      session.terminalCommands,
+    );
 
+    session.earnedMoney = (session.activeSeconds / 3600) * user.hourlyRate;
     session.primaryLanguage = this.topLanguage(session.languageSeconds);
   }
 
