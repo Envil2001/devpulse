@@ -4,7 +4,7 @@ import { WorkSessionDetail, WorkSessionSummary, sessionsService } from './api';
 export const sessionsKeys = {
   all: ['sessions'] as const,
   list: () => ['sessions', 'list'] as const,
-  recent: (limit: number) => ['sessions', 'recent', limit] as const,
+  recent: (limit: number, projectId?: string) => ['sessions', 'recent', limit, projectId] as const,
   detail: (id: string) => ['sessions', 'detail', id] as const,
 };
 
@@ -15,10 +15,10 @@ export function useSessions() {
   });
 }
 
-export function useRecentSessions(limit: number) {
+export function useRecentSessions(limit: number, projectId?: string) {
   return useQuery<Array<WorkSessionSummary>>({
-    queryKey: sessionsKeys.recent(limit),
-    queryFn: () => sessionsService.list(limit),
+    queryKey: sessionsKeys.recent(limit, projectId),
+    queryFn: () => sessionsService.list(limit, projectId),
     refetchInterval: 60_000,
   });
 }

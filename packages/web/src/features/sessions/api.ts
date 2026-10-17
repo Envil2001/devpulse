@@ -41,9 +41,12 @@ export interface WorkSessionDetail {
 }
 
 export class SessionsService extends BaseService {
-  async list(limit?: number): Promise<Array<WorkSessionSummary>> {
+  async list(limit?: number, projectId?: string): Promise<Array<WorkSessionSummary>> {
     return this.get<Array<WorkSessionSummary>>('/telemetry/sessions', {
-      params: limit ? { limit } : undefined,
+      params: {
+        ...(limit ? { limit } : {}),
+        ...(projectId ? { projectId } : {}),
+      },
     });
   }
   async getById(id: string): Promise<WorkSessionDetail> {

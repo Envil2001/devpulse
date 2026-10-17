@@ -5,8 +5,14 @@ import { Panel } from '@/shared/components/layout/panel';
 import { useDashboardStats, type DateRange } from '../hooks';
 import { formatDuration } from '@devpulse/lib';
 
-export function DashboardSummaryCards({ range }: { range: DateRange }) {
-  const { data: stats, isLoading } = useDashboardStats(range);
+export function DashboardSummaryCards({
+  range,
+  projectId,
+}: {
+  range: DateRange;
+  projectId?: string;
+}) {
+  const { data: stats, isLoading } = useDashboardStats(range, projectId);
 
   const cards = [
     {

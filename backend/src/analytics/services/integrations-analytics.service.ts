@@ -59,9 +59,15 @@ export class IntegrationsAnalyticsService {
   public async getRecentSessions(
     userId: TypeId<'users'>,
     limit: number,
+    projectId?: string,
   ): Promise<Array<GetIntegrationSessionItemDto>> {
+    const where: Record<string, unknown> = { userId };
+    if (projectId) {
+      where.projectId = projectId;
+    }
+
     const sessions = await this.sessionRepo.find({
-      where: { userId },
+      where,
       relations: ['project'],
       order: { startedAt: 'DESC' },
       take: limit,
@@ -126,7 +132,16 @@ export class IntegrationsAnalyticsService {
 
   public async getLanguagesBreakdown(
     userId: TypeId<'users'>,
+    projectId?: string,
   ): Promise<GetIntegrationLanguagesResponseDto> {
+    const params: Array<unknown> = [userId];
+    let whereClause = 'ws.user_id = $1';
+
+    if (projectId) {
+      params.push(projectId);
+      whereClause += ` AND ws.project_id = $${String(params.length)}`;
+    }
+
     const rawStats: Array<{ language: string; totalSeconds: string }> =
       await this.sessionRepo.query(
         `
@@ -143,11 +158,11 @@ export class IntegrationsAnalyticsService {
                  ELSE ws.language_seconds
                END
              ) AS lang(key, value)
-        WHERE ws.user_id = $1
+        WHERE ${whereClause}
         GROUP BY lang.key
         ORDER BY "totalSeconds" DESC
       `,
-        [userId],
+        params,
       );
 
     let totalActiveSeconds = 0;

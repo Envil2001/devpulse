@@ -72,8 +72,9 @@ export class AnalyticsController {
   @HttpCode(HttpStatus.OK)
   public async getLanguages(
     @CurrentUser() user: AuthenticatedUser,
+    @Query('projectId') projectId?: string,
   ): Promise<GetIntegrationLanguagesResponseDto> {
-    return this.integrationsService.getLanguagesBreakdown(user.id);
+    return this.integrationsService.getLanguagesBreakdown(user.id, projectId);
   }
 
   @Get('commands')

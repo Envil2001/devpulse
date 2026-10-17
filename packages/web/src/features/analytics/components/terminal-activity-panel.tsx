@@ -49,8 +49,14 @@ function successColorClass(rate: number): string {
   return 'text-red-coral';
 }
 
-export function TerminalActivityPanel({ range }: { range: DateRange }) {
-  const { data, isLoading } = useCommandsBreakdown(range);
+export function TerminalActivityPanel({
+  range,
+  projectId,
+}: {
+  range: DateRange;
+  projectId?: string;
+}) {
+  const { data, isLoading } = useCommandsBreakdown(range, projectId);
   const [filter, setFilter] = useState<KindFilter>('all');
 
   const allCommands = data?.commands ?? [];

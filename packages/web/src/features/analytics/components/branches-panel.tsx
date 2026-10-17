@@ -12,8 +12,8 @@ import {
 import { useBranchesDistribution, type DateRange } from '../hooks';
 import { formatDuration } from '@devpulse/lib';
 
-export function BranchesPanel({ range }: { range: DateRange }) {
-  const { data: branches = [], isLoading } = useBranchesDistribution(range);
+export function BranchesPanel({ range, projectId }: { range: DateRange; projectId?: string }) {
+  const { data: branches = [], isLoading } = useBranchesDistribution(range, projectId);
 
   return (
     <Panel>

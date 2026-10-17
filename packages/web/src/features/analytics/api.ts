@@ -89,8 +89,8 @@ export class AnalyticsService extends BaseService {
     return this.get<LiveStatus>('/analytics/status');
   }
 
-  async getLanguages(): Promise<LanguagesBreakdown> {
-    return this.get<LanguagesBreakdown>('/analytics/languages');
+  async getLanguages(params: AnalyticsRangeParams = {}): Promise<LanguagesBreakdown> {
+    return this.get<LanguagesBreakdown>('/analytics/languages', { params });
   }
 
   async getCommands(params: AnalyticsRangeParams = {}): Promise<CommandsBreakdown> {
