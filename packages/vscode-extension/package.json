@@ -1,18 +1,42 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
-  "name": "devpulse.devpulse",
+  "name": "devpulse",
   "displayName": "DevPulse",
-  "icon": "images/icon.png",
-  "description": "DevPulse: time-tracking and workflow analytics for developers",
+  "description": "Automatic worklog and standup draft generator for developers. Tracks coding activity, git commits, and terminal commands locally — then uses AI to write your daily report.",
   "version": "0.0.1",
   "publisher": "devpulse",
-  "type": "module",
-  "engines": {
-    "vscode": "^1.85.0"
+  "license": "MIT",
+  "icon": "images/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Envil2001/devpulse"
   },
-  "categories": [
-    "Other"
+  "bugs": {
+    "url": "https://github.com/Envil2001/devpulse/issues"
+  },
+  "homepage": "https://github.com/Envil2001/devpulse#readme",
+  "keywords": [
+    "time tracking",
+    "standup",
+    "worklog",
+    "productivity",
+    "ai",
+    "developer tools",
+    "git",
+    "telemetry"
   ],
+  "categories": [
+    "Other",
+    "Visualization",
+    "Machine Learning"
+  ],
+  "galleryBanner": {
+    "color": "#0f0e0d",
+    "theme": "dark"
+  },
+  "engines": {
+    "vscode": "^1.93.0"
+  },
   "activationEvents": [
     "onStartupFinished"
   ],
@@ -80,8 +104,8 @@
   },
   "scripts": {
     "vscode:prepublish": "pnpm run compile",
-    "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./",
+    "compile": "node esbuild.mjs",
+    "watch": "node esbuild.mjs --watch",
     "pretest": "pnpm run compile && pnpm run lint",
     "lint": "eslint src",
     "typecheck": "tsc --noEmit",
@@ -96,6 +120,8 @@
     "@types/vscode": "1.93.0",
     "@vscode/test-cli": "^0.0.12",
     "@vscode/test-electron": "^2.5.2",
+    "@vscode/vsce": "^4.0.0",
+    "esbuild": "^0.28.2",
     "eslint": "^9.39.3",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.56.1"
