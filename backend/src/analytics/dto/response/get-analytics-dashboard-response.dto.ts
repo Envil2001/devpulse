@@ -1,6 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-export class GetAnalyticsDashboardResponseDto {
+import { type DashboardStats } from '@devpulse/lib';
+
+export class GetAnalyticsDashboardResponseDto implements DashboardStats {
   @ApiProperty({ description: 'Total active coding time in seconds' })
   public totalActiveSeconds!: number;
 

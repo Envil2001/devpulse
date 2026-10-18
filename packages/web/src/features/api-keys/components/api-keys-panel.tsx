@@ -15,11 +15,11 @@ import {
 } from '@/shared/components/layout/panel';
 
 import { useApiKeys, useRevokeApiKey } from '../hooks';
-import type { ApiKeySummary } from '../api';
 
 import { CreateApiKeyDialog } from './create-api-key-dialog';
 import { RevealedKeyDialog } from './revealed-key-dialog';
 import { RevokeKeyDialog } from './revoke-key-dialog';
+import { ApiKeySummary } from '@/shared/types';
 
 export function ApiKeysPanel() {
   const { data: keys = [], isLoading, isError } = useApiKeys();

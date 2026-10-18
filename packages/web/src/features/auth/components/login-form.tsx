@@ -10,7 +10,7 @@ import Link from 'next/link';
 import { buildLoginCryptoPayload, generateKeyPair } from '../crypto';
 import { ApiClientError } from '@/shared/api/api-client';
 import { useAuth } from '../context';
-import { AuthService } from '../api';
+import { authService } from '@/shared/api/services';
 
 import {
   Form,
@@ -39,8 +39,6 @@ export function LoginForm() {
   const { login } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const authService = new AuthService();
 
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),

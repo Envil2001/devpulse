@@ -1,5 +1,6 @@
+import { sessionsService } from '@/shared/api/services';
+import { WorkSessionSummary, WorkSessionDetail } from '@/shared/types';
 import { useQuery } from '@tanstack/react-query';
-import { WorkSessionDetail, WorkSessionSummary, sessionsService } from './api';
 
 export const sessionsKeys = {
   all: ['sessions'] as const,

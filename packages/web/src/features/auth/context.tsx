@@ -3,16 +3,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { getJson, postJson, patchJson } from '@/shared/api/api-client';
-
-export interface User {
-  id: string;
-  email: string;
-  displayName: string;
-  timezone: string;
-  hourlyRate: number;
-  currency: string;
-  hasOpenaiKey: boolean;
-}
+import type { User } from '@/shared/types';
 
 export interface UpdateProfileDto {
   displayName?: string;

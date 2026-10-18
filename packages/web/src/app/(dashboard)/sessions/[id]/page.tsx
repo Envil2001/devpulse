@@ -1,7 +1,7 @@
 import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
 import { getQueryClient } from '@/shared/api/get-query-client';
 import { sessionsKeys } from '@/features/sessions/hooks';
-import { sessionsService } from '@/features/sessions/api';
+import { sessionsService } from '@/shared/api/services';
 import { SessionDetailView } from '@/features/sessions/components/session-detail-view';
 
 interface PageProps {

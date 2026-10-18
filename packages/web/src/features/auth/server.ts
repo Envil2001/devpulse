@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers';
-import type { User } from './api';
+import type { User } from '@/shared/types';
 
 export async function getServerUser(): Promise<User | null> {
   const cookieStore = await cookies();

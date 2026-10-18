@@ -1,5 +1,5 @@
 import { BaseService } from '@/shared/api/base.service';
-import { User } from '../auth/api';
+import type { User } from '@/shared/types';
 
 export interface UpdateUserDto {
   displayName?: string;
@@ -13,5 +13,3 @@ export class UsersService extends BaseService {
     return this.patch<User, UpdateUserDto>('/users/me', dto);
   }
 }
-
-export const usersService = new UsersService();

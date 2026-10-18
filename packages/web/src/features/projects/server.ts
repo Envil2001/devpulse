@@ -1,5 +1,5 @@
 import { serverGet } from '@/shared/api/server-client';
-import type { ProjectSummary } from './api';
+import { ProjectSummary } from '@/shared/types';
 
 export const getProjectsServer = () => serverGet<Array<ProjectSummary>>('/projects');
 

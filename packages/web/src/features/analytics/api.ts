@@ -1,64 +1,18 @@
 import { QueryParams } from '@/shared/api/api-client';
 import { BaseService } from '@/shared/api/base.service';
-
-export interface DashboardStats {
-  totalActiveSeconds: number;
-  totalEarnedMoney: number;
-  averageFocusScore: number;
-  totalSessionsCount: number;
-  topLanguage: string | null;
-}
-
-export interface TimeseriesPoint {
-  date: string;
-  activeSeconds: number;
-  earnedMoney: number;
-}
-
-export interface BranchDataPoint {
-  branchName: string;
-  activeSeconds: number;
-}
+import type {
+  BranchDataPoint,
+  CommandsBreakdown,
+  DashboardStats,
+  LanguagesBreakdown,
+  LiveStatus,
+  TimeseriesPoint,
+} from '@/shared/types';
 
 export interface AnalyticsRangeParams extends QueryParams {
   startDate?: string;
   endDate?: string;
   projectId?: string;
-}
-
-export interface LiveStatus {
-  isCodingNow: boolean;
-  currentProject: string | null;
-  currentBranch: string | null;
-  currentLanguage: string | null;
-  currentSessionDurationSeconds: number | null;
-  sessionStartedAt: string | null;
-}
-
-export interface LanguageStat {
-  language: string;
-  activeSeconds: number;
-  formattedTime: string;
-  percentage: number;
-}
-
-export interface LanguagesBreakdown {
-  totalActiveSeconds: number;
-  languages: Array<LanguageStat>;
-}
-
-export interface CommandStat {
-  command: string;
-  kind: 'test' | 'build' | 'lint' | 'install' | 'git' | 'task' | 'other';
-  runs: number;
-  failedRuns: number;
-  avgDurationMs: number;
-  successRate: number;
-}
-
-export interface CommandsBreakdown {
-  totalCommands: number;
-  commands: Array<CommandStat>;
 }
 
 export class AnalyticsService extends BaseService {
@@ -97,5 +51,3 @@ export class AnalyticsService extends BaseService {
     return this.get<CommandsBreakdown>('/analytics/commands', { params });
   }
 }
-
-export const analyticsService = new AnalyticsService();
