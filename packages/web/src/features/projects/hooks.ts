@@ -1,5 +1,6 @@
+import { projectsService } from '@/shared/api/services';
+import { ProjectSummary } from '@/shared/types';
 import { useQuery } from '@tanstack/react-query';
-import { ProjectSummary, projectsService } from './api';
 
 export const projectsKeys = {
   all: ['projects'] as const,

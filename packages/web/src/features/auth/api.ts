@@ -1,14 +1,5 @@
 import { BaseService } from '@/shared/api/base.service';
-
-export interface User {
-  id: string;
-  email: string;
-  displayName: string;
-  timezone: string;
-  hourlyRate: number;
-  currency: string;
-  hasOpenaiKey: boolean;
-}
+import type { User } from '@/shared/types';
 
 interface BeginSignupRequest {
   displayName: string;

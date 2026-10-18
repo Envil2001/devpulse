@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
-import type { User } from '@/features/auth/api';
 import { AuthenticatedUserProvider } from '@/features/auth/context';
 import { DashboardTour } from '@/shared/components/onboarding/dashboard-tour';
 import { Sidebar } from './sidebar';
 import { Header } from './header';
+import { User } from '@/shared/types';
 
 interface DashboardShellProps {
   children: ReactNode;

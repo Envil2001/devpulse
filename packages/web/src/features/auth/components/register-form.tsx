@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import Link from 'next/link';
 
-import { AuthService } from '@/features/auth/api';
+import { authService } from '@/shared/api/services';
 import { buildSignupCryptoPayload } from '@/features/auth/crypto';
 import { ApiClientError } from '@/shared/api/api-client';
 
@@ -50,8 +50,6 @@ export function RegisterForm() {
   const [step, setStep] = useState<'register' | 'verify'>('register');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const authService = new AuthService();
 
   const registerForm = useForm<z.infer<typeof registerSchema>>({
     resolver: zodResolver(registerSchema),

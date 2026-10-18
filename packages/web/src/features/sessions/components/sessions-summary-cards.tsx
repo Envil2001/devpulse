@@ -2,8 +2,8 @@
 
 import { useMemo } from 'react';
 import { Clock, Zap, Layers, FolderGit2 } from 'lucide-react';
-import type { WorkSessionSummary } from '../api';
 import { formatDuration } from '@devpulse/lib';
+import { WorkSessionSummary } from '@/shared/types';
 
 interface SessionsSummaryCardsProps {
   sessions: WorkSessionSummary[];

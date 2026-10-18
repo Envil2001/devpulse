@@ -1,6 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-export class GetIntegrationTodayResponseDto {
+import { type IntegrationTodayStats } from '@devpulse/lib';
+
+export class GetIntegrationTodayResponseDto implements IntegrationTodayStats {
   @ApiProperty({ example: '2026-09-18' })
   public date!: string;
 

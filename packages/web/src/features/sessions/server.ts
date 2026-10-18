@@ -1,4 +1,4 @@
 import { serverGet } from '@/shared/api/server-client';
-import type { WorkSessionSummary } from './api';
+import { WorkSessionSummary } from '@/shared/types';
 
 export const getSessionsServer = () => serverGet<Array<WorkSessionSummary>>('/telemetry/sessions');

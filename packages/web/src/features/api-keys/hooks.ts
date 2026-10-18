@@ -1,10 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  apiKeysService,
-  CreateApiKeyRequest,
-  type ApiKeySummary,
-  type CreateApiKeyResponse,
-} from './api';
+import { apiKeysService } from '@/shared/api/services';
+import type { ApiKeySummary, CreateApiKeyRequest, CreateApiKeyResponse } from '@/shared/types';
 
 export const apiKeysKeys = {
   all: ['api-keys'] as const,

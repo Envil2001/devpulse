@@ -1,14 +1,5 @@
 import { BaseService } from '@/shared/api/base.service';
-
-export interface ProjectSummary {
-  id: string;
-  name: string;
-  remote: string | null;
-  activeTime: string;
-  focusScore: number;
-  sessions: number;
-  lastActive: string | null;
-}
+import type { ProjectSummary } from '@/shared/types';
 
 export class ProjectsService extends BaseService {
   async list(): Promise<Array<ProjectSummary>> {
@@ -19,5 +10,3 @@ export class ProjectsService extends BaseService {
     return this.get<ProjectSummary>(`/projects/${id}`);
   }
 }
-
-export const projectsService = new ProjectsService();

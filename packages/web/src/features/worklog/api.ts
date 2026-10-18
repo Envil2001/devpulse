@@ -1,10 +1,6 @@
 import { QueryParams } from '@/shared/api/api-client';
 import { BaseService } from '@/shared/api/base.service';
-
-export interface DailyWorklogResponse {
-  date: string;
-  summary: string;
-}
+import type { DailyWorklogResponse } from '@/shared/types';
 
 export interface GenerateWorklogParams extends QueryParams {
   startDate: string;
@@ -16,5 +12,3 @@ export class WorklogService extends BaseService {
     return this.get<DailyWorklogResponse>('/worklog/generate', { params });
   }
 }
-
-export const worklogService = new WorklogService();

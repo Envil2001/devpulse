@@ -1,12 +1,7 @@
 import { serverGet } from '@/shared/api/server-client';
-import type {
-  DashboardStats,
-  AnalyticsRangeParams,
-  TimeseriesPoint,
-  BranchDataPoint,
-  LanguagesBreakdown,
-  LiveStatus,
-} from './api';
+import { TimeseriesPoint, BranchDataPoint, LanguagesBreakdown, LiveStatus } from '@/shared/types';
+import { DashboardStats } from '@devpulse/lib';
+import { AnalyticsRangeParams } from './api';
 
 export const getDashboardStatsServer = (params: AnalyticsRangeParams = {}) =>
   serverGet<DashboardStats>('/analytics/dashboard', { params });

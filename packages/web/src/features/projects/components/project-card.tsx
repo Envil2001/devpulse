@@ -5,7 +5,7 @@ import { Clock, Zap, Layers, FolderGit2, ArrowUpRight } from 'lucide-react';
 
 import { cn } from '@/shared/lib/cn';
 import { formatDateTimeLabel } from '@/shared/lib/date';
-import type { ProjectSummary } from '../api';
+import { ProjectSummary } from '@/shared/types';
 
 interface ProjectCardProps {
   project: ProjectSummary;
