@@ -24,6 +24,7 @@ import { LanguagesPanel } from './languages-panel';
 import { RecentSessionsPanel } from '@/features/sessions/components/recent-sessions-panel';
 import { TerminalActivityPanel } from './terminal-activity-panel';
 import { ComparisonPanel } from './comparison-panel';
+import { HeatmapPanel } from './heatmap-panel';
 
 function getInitialCustomDates() {
   const to = new Date();
@@ -89,6 +90,10 @@ export function DashboardView() {
 
       <div data-tour="activity-chart">
         <ActivityChartPanel range={range} projectId={projectId} />
+      </div>
+
+      <div data-tour="heatmap">
+        <HeatmapPanel projectId={projectId} />
       </div>
 
       <div data-tour="recent-sessions">
