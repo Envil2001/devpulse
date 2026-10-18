@@ -7,7 +7,8 @@ export interface TelemetryEventDto {
     | 'idle_end'
     | 'session_end'
     | 'terminal_command'
-    | 'task_run';
+    | 'task_run'
+    | 'git_commit';
 
   gitBranch: string | null;
   gitRemoteUrl?: string;
@@ -24,4 +25,11 @@ export interface TelemetryEventDto {
 
   taskName?: string;
   taskSource?: string;
+
+  commitHash?: string;
+  commitMessage?: string;
+  filesChanged?: number;
+  insertions?: number;
+  deletions?: number;
+  filesList?: Array<string>;
 }

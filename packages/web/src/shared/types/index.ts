@@ -31,6 +31,16 @@ export interface WorkSessionSummary {
   status: 'active' | 'closed';
 }
 
+export interface SessionCommit {
+  hash: string;
+  message: string;
+  filesChanged: number;
+  insertions: number;
+  deletions: number;
+  filesList: Array<string>;
+  timestamp: string;
+}
+
 export interface WorkSessionDetail {
   id: string;
   projectName: string | null;
@@ -47,6 +57,8 @@ export interface WorkSessionDetail {
   failedCommands: number;
   terminalCommands: Array<SessionCommand>;
   status: 'active' | 'closed';
+  commitsCount: number;
+  commits: Array<SessionCommit>;
 }
 
 export interface SessionCommand {

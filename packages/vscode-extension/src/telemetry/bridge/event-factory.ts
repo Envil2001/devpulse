@@ -10,7 +10,8 @@ export type TelemetryEventType =
   | 'idle_end'
   | 'session_end'
   | 'terminal_command'
-  | 'task_run';
+  | 'task_run'
+  | 'git_commit';
 
 export interface EventPartial {
   durationMs?: number | null;
@@ -24,6 +25,12 @@ export interface EventPartial {
   exitCode?: number | null;
   taskName?: string;
   taskSource?: string;
+  commitHash?: string;
+  commitMessage?: string;
+  filesChanged?: number;
+  insertions?: number;
+  deletions?: number;
+  filesList?: Array<string>;
 }
 
 export interface EventFactoryContext {
@@ -56,5 +63,11 @@ export function createEvent(
     exitCode: partial.exitCode,
     taskName: partial.taskName,
     taskSource: partial.taskSource,
+    commitHash: partial.commitHash,
+    commitMessage: partial.commitMessage,
+    filesChanged: partial.filesChanged,
+    insertions: partial.insertions,
+    deletions: partial.deletions,
+    filesList: partial.filesList,
   };
 }

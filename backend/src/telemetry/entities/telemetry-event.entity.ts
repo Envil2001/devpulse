@@ -91,4 +91,16 @@ export class TelemetryEvent extends AppBaseEntity<'telemetryEvents'> {
 
   @Column({ name: 'task_source', type: 'varchar', length: 100, nullable: true })
   public taskSource!: string | null;
+
+  @Column({ name: 'commit_hash', type: 'varchar', length: 40, nullable: true })
+  public commitHash!: string | null;
+
+  @Column({ name: 'commit_message', type: 'varchar', length: 500, nullable: true })
+  public commitMessage!: string | null;
+
+  @Column({ name: 'insertions', type: 'int', nullable: true })
+  public insertions!: number | null;
+
+  @Column({ name: 'deletions', type: 'int', nullable: true })
+  public deletions!: number | null;
 }

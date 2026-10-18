@@ -12,6 +12,7 @@ export interface SessionAggregate {
   projects: Map<string, number>;
   languages: Map<string, number>;
   commands: CommandAggregate;
+  commits: Array<{ message: string; insertions: number; deletions: number }>;
 }
 
 export interface CommandKindStats {

@@ -7,6 +7,7 @@ import type { TelemetryEventDto } from '@devpulse/lib';
 import type { ActivityMonitor, ActivityState } from '../activity-monitor.js';
 import type { GitContext, GitContextProvider } from '../git-context.js';
 import { sanitizeCommand } from '../signals/command-sanitizer.js';
+import { type GitCommitWatcher } from '../signals/git-commit-watcher.js';
 import type { TasksMonitor } from '../signals/tasks-monitor.js';
 import type { TerminalMonitor } from '../signals/terminal-monitor.js';
 
@@ -49,6 +50,7 @@ export class TelemetryBridge implements vscode.Disposable {
     private readonly gitContextProvider: GitContextProvider,
     private readonly terminalMonitor: TerminalMonitor,
     private readonly tasksMonitor: TasksMonitor,
+    private readonly gitCommitWatcher: GitCommitWatcher,
     private readonly log?: vscode.LogOutputChannel,
   ) {
     this.client = new TelemetryApiClient(context, log);
@@ -86,7 +88,7 @@ export class TelemetryBridge implements vscode.Disposable {
 
     this.registerListeners();
     this.flushScheduler.start();
-
+    void this.gitCommitWatcher.setWorkspaceFolder(initialContext.workspaceFolderPath);
     if (initialContext.gitBranch) {
       this.enqueue(this.create('heartbeat', { durationMs: null }));
       await this.flush();
@@ -172,6 +174,23 @@ export class TelemetryBridge implements vscode.Disposable {
           durationMs: event.durationMs,
         });
       }),
+
+      this.gitCommitWatcher.onDidCommit((event) => {
+        this.log?.info(
+          `commit: ${event.hash.slice(0, 7)} (${String(event.insertions)}+/${String(event.deletions)}-)`,
+        );
+
+        this.enqueue(
+          this.create('git_commit', {
+            commitHash: event.hash,
+            commitMessage: event.message,
+            filesChanged: event.filesChanged,
+            insertions: event.insertions,
+            deletions: event.deletions,
+            filesList: event.filesList,
+          }),
+        );
+      }),
     );
   }
 
@@ -248,6 +267,7 @@ export class TelemetryBridge implements vscode.Disposable {
     const previousRemoteUrl = this.contextTracker.remoteUrl;
 
     const result = this.contextTracker.update(nextContext);
+    void this.gitCommitWatcher.setWorkspaceFolder(nextContext.workspaceFolderPath);
 
     if (result === 'lost' || result === 'noop') {
       return;
@@ -309,6 +329,7 @@ export class TelemetryBridge implements vscode.Disposable {
   }
 
   private enqueueWithBuffer(type: 'terminal_command' | 'task_run', partial: EventPartial): void {
+    if (this.stopped || this.paused) return;
     const event = this.create(type, partial);
 
     if (event.gitBranch === null) {

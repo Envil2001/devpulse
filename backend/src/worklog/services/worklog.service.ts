@@ -73,6 +73,7 @@ export class WorklogService {
       languages: this.formatLanguages(aggregate.languages),
       focusScore: Math.round(aggregate.weightedFocus / aggregate.totalActiveSeconds),
       commands: this.formatCommands(aggregate.commands),
+      commits: this.formatCommits(aggregate.commits),
     });
 
     return { date: period, summary };
@@ -120,6 +121,7 @@ export class WorklogService {
         totalFailed: 0,
         byKind: new Map<string, CommandKindStats>(),
       },
+      commits: [],
     };
 
     for (const session of sessions) {
@@ -138,6 +140,14 @@ export class WorklogService {
 
       if (session.primaryLanguage) {
         this.addSeconds(aggregate.languages, session.primaryLanguage, active);
+      }
+
+      for (const commit of session.commits) {
+        aggregate.commits.push({
+          message: commit.message,
+          insertions: commit.insertions,
+          deletions: commit.deletions,
+        });
       }
 
       this.aggregateCommands(aggregate.commands, session.terminalCommands);
@@ -213,7 +223,6 @@ export class WorklogService {
   }
 
   private formatCommands(agg: CommandAggregate): string {
-    console.log(agg);
     if (agg.totalRuns === 0) {
       return 'No terminal commands recorded.';
     }
@@ -242,7 +251,7 @@ export class WorklogService {
 
       if (kind === 'test' || kind === 'build' || kind === 'lint' || kind === 'task') {
         parts.push(
-          `${label}: ${String(stats.runs)} (${String(passed)} passed, ${String(stats.failed)} failed) — avg ${this.formatMs(avgMs)}`,
+          `${label}: ${String(stats.runs)} (${String(passed)} passed, ${String(stats.failed)} failed) — avg ${formatDuration(avgMs)}`,
         );
       } else {
         parts.push(`${label}: ${String(stats.runs)}`);
@@ -252,14 +261,15 @@ export class WorklogService {
     return `${parts.join('. ')}.`;
   }
 
-  private formatMs(ms: number): string {
-    if (ms < 1000) return `${String(ms)}ms`;
+  private formatCommits(
+    commits: Array<{ message: string; insertions: number; deletions: number }>,
+  ): string {
+    if (commits.length === 0) return 'No commits.';
 
-    const seconds = Math.round(ms / 1000);
-    if (seconds < 60) return `${String(seconds)}s`;
+    const recent = commits.slice(-10);
 
-    const minutes = Math.floor(seconds / 60);
-    const restSeconds = seconds % 60;
-    return `${String(minutes)}m ${String(restSeconds)}s`;
+    return recent
+      .map((c) => `"${c.message.slice(0, 80)}" (+${String(c.insertions)}/−${String(c.deletions)})`)
+      .join(', ');
   }
 }

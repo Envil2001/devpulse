@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 
 import { registerCommands } from './commands/index.js';
+import { GitCommitWatcher } from './signals/git-commit-watcher.js';
 import { TasksMonitor } from './signals/tasks-monitor.js';
 import { TerminalMonitor } from './signals/terminal-monitor.js';
 import { DevPulseStatusBar } from './status-bar/devpulse-status-bar.js';
@@ -50,6 +51,7 @@ export function activate(context: vscode.ExtensionContext): void {
     const activityMonitor = new ActivityMonitor();
     const taskMonitor = new TasksMonitor(outputChannel);
     const terminalMonitor = new TerminalMonitor(outputChannel);
+    const gitCommitWatcher = new GitCommitWatcher(outputChannel);
 
     telemetryBridge = new TelemetryBridge(
       context,
@@ -57,6 +59,7 @@ export function activate(context: vscode.ExtensionContext): void {
       gitContextProvider,
       terminalMonitor,
       taskMonitor,
+      gitCommitWatcher,
       outputChannel,
     );
 
@@ -64,7 +67,13 @@ export function activate(context: vscode.ExtensionContext): void {
       telemetryBridge.pause();
     }
 
-    context.subscriptions.push(activityMonitor, telemetryBridge, terminalMonitor, taskMonitor);
+    context.subscriptions.push(
+      activityMonitor,
+      telemetryBridge,
+      terminalMonitor,
+      taskMonitor,
+      gitCommitWatcher,
+    );
 
     telemetryBridge.start().catch((error: unknown) => {
       outputChannel.error(`Telemetry failed to start: ${String(error)}`);
