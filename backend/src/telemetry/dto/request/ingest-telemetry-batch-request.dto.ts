@@ -36,6 +36,7 @@ export class TelemetryEventItemDto implements TelemetryEventDto {
     'session_end',
     'terminal_command',
     'task_run',
+    'git_commit',
   ])
   public type!:
     | 'heartbeat'
@@ -45,7 +46,8 @@ export class TelemetryEventItemDto implements TelemetryEventDto {
     | 'idle_end'
     | 'session_end'
     | 'terminal_command'
-    | 'task_run';
+    | 'task_run'
+    | 'git_commit';
 
   @ApiProperty({ description: 'Git branch name (e.g., main, develop)' })
   @IsString()
@@ -112,6 +114,37 @@ export class TelemetryEventItemDto implements TelemetryEventDto {
   @IsString()
   @IsOptional()
   public taskSource?: string;
+
+  @ApiProperty({ description: 'Commit SHA', required: false })
+  @IsString()
+  @IsOptional()
+  public commitHash?: string;
+
+  @ApiProperty({ description: 'Commit message subject', required: false })
+  @IsString()
+  @IsOptional()
+  public commitMessage?: string;
+
+  @ApiProperty({ description: 'Files changed in commit', required: false })
+  @IsInt()
+  @IsOptional()
+  public filesChanged?: number;
+
+  @ApiProperty({ description: 'Lines inserted', required: false })
+  @IsInt()
+  @IsOptional()
+  public insertions?: number;
+
+  @ApiProperty({ description: 'Lines deleted', required: false })
+  @IsInt()
+  @IsOptional()
+  public deletions?: number;
+
+  @ApiProperty({ description: 'List of changed files', required: false })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  public filesList?: Array<string>;
 }
 
 export class IngestTelemetryBatchRequestDto {

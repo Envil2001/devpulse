@@ -140,6 +140,8 @@ export class TelemetryController {
         timestamp: cmd.timestamp,
       })),
       status: session.status,
+      commitsCount: session.commitsCount,
+      commits: session.commits,
     };
   }
 }
