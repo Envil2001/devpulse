@@ -1,13 +1,13 @@
 {
   "compilerOptions": {
-    "module": "Node16",
     "target": "ES2022",
     "outDir": "out",
     "lib": ["ES2022", "DOM"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
     "types": ["node", "vscode", "mocha"],
     "sourceMap": true,
     "rootDir": "src",
-    "strict": true,
-    "moduleResolution": "Node16"
+    "strict": true
   }
 }

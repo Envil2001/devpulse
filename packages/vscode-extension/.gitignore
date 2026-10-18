@@ -3,3 +3,10 @@ dist
 node_modules
 .vscode-test/
 *.vsix
+# OS
+.DS_Store
+
+# Docker / Database
+data/
+pgdata/
+postgres/
