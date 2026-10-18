@@ -67,7 +67,7 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
       },
       {
         connection: this.redisConnection,
-        concurrency: 5,
+        concurrency: 1,
       },
     );
 

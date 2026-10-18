@@ -157,7 +157,7 @@ export class TelemetryApiClient {
       throw new Error('MissingApiKey');
     }
 
-    const url = `${resolveApiBaseUrl()}/integrations/analytics/today`;
+    const url = `${resolveApiBaseUrl()}/telemetry/today`;
 
     let response: Response;
     try {
