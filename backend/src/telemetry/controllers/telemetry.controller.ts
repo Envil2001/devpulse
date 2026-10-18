@@ -14,6 +14,8 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
+import { GetIntegrationTodayResponseDto } from '../../analytics/dto/response/get-integration-today-response.dto';
+import { IntegrationsAnalyticsService } from '../../analytics/services/integrations-analytics.service';
 import { RequireScopes } from '../../api-keys/decorators/require-scopes.decorator';
 import { ApiKeyScope } from '../../api-keys/enums/api-key.enums';
 import { ApiKeyGuard } from '../../api-keys/guards/api-key.guard';
@@ -36,6 +38,7 @@ export class TelemetryController {
 
   constructor(
     private readonly telemetryQueue: TelemetryQueue,
+    private readonly integrationsService: IntegrationsAnalyticsService,
     @InjectRepository(WorkSession)
     private readonly sessionRepo: Repository<WorkSession>,
   ) {}
@@ -143,5 +146,13 @@ export class TelemetryController {
       commitsCount: session.commitsCount,
       commits: session.commits,
     };
+  }
+
+  @Get('today')
+  @UseGuards(ApiKeyGuard, ScopesGuard)
+  @RequireScopes(ApiKeyScope.TELEMETRY_WRITE)
+  @HttpCode(HttpStatus.OK)
+  public async getToday(@CurrentUser() user: User): Promise<GetIntegrationTodayResponseDto> {
+    return this.integrationsService.getTodaySummary(user);
   }
 }

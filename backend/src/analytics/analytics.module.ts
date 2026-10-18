@@ -24,5 +24,6 @@ import { IntegrationsAnalyticsService } from './services/integrations-analytics.
     IntegrationsAnalyticsService,
     ProjectsService,
   ],
+  exports: [IntegrationsAnalyticsService],
 })
 export class AnalyticsModule {}
