@@ -14,16 +14,30 @@ interface DashboardShellProps {
 
 export function DashboardShell({ children, user }: DashboardShellProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   return (
     <AuthenticatedUserProvider initialUser={user}>
-      <div className="relative min-h-dvh w-full bg-background text-foreground">
-        <Sidebar isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
+      <div
+        className="relative flex min-h-dvh w-full bg-background text-foreground"
+        style={
+          {
+            '--sidebar-width': isSidebarCollapsed ? 'var(--sidebar-width-collapsed)' : '16rem',
+          } as React.CSSProperties
+        }
+      >
+        <Sidebar
+          isOpen={isMobileMenuOpen}
+          onClose={() => setIsMobileMenuOpen(false)}
+          isCollapsed={isSidebarCollapsed}
+        />
 
-        <div className="relative flex min-h-dvh flex-1 flex-col lg:pl-64">
+        <div className="relative flex min-h-dvh min-w-0 flex-1 flex-col lg:pl-(--sidebar-width) transition-[padding] duration-200 ease-out">
           <Header
             onMenuToggle={() => setIsMobileMenuOpen((p) => !p)}
             isMenuOpen={isMobileMenuOpen}
+            isSidebarCollapsed={isSidebarCollapsed}
+            onToggleSidebar={() => setIsSidebarCollapsed((p) => !p)}
           />
 
           <main className="flex-1 overflow-y-auto pt-14">

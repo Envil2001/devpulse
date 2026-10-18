@@ -7,9 +7,10 @@ import { SidebarNav } from './sidebar-nav';
 interface SidebarProps {
   isOpen?: boolean;
   onClose?: () => void;
+  isCollapsed?: boolean;
 }
 
-export function Sidebar({ isOpen, onClose }: SidebarProps) {
+export function Sidebar({ isOpen, onClose, isCollapsed }: SidebarProps) {
   const handleNavClick = () => {
     if (typeof window !== 'undefined' && window.innerWidth < 1024) {
       onClose?.();
@@ -21,7 +22,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       {isOpen && (
         <div
           role="presentation"
-          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden"
           onClick={onClose}
         />
       )}
@@ -30,14 +31,15 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         data-tour="sidebar"
         aria-label="Main Navigation"
         className={cn(
-          'fixed inset-y-0 left-0 z-50 flex w-64 flex-col',
-          'border-r border-border bg-surface',
-          'transition-transform duration-200 ease-out lg:translate-x-0',
+          'fixed inset-y-0 left-0 z-50 flex flex-col',
+          'bg-surface border-r border-border',
+          'transition-[width,transform] duration-200 ease-out',
+          'lg:translate-x-0 w-[var(--sidebar-width)]',
           isOpen ? 'translate-x-0' : '-translate-x-full',
         )}
       >
-        <SidebarHeader />
-        <SidebarNav onNavClick={handleNavClick} />
+        <SidebarHeader isCollapsed={isCollapsed} />
+        <SidebarNav onNavClick={handleNavClick} isCollapsed={isCollapsed} />
       </aside>
     </>
   );

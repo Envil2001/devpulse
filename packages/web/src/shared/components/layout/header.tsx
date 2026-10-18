@@ -1,21 +1,29 @@
 'use client';
 
-import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Search, Menu, X } from 'lucide-react';
+import { Search, Menu, X, PanelLeft } from 'lucide-react';
 import { useState } from 'react';
+import Link from 'next/link'; // <--- Добавили Link
 
-import { cn } from '@/shared/lib/cn';
 import { Button } from '@/shared/components/ui/button';
+import { inputVariants } from '@/shared/components/ui/input'; // <--- Импортируем варианты
 import { UserMenu } from '@/shared/components/ui/user-menu';
+import { cn } from '@/shared/lib/cn';
 import { CommandMenu } from '../ui/command-menu';
 
 interface HeaderProps {
   onMenuToggle?: () => void;
   isMenuOpen?: boolean;
+  isSidebarCollapsed?: boolean;
+  onToggleSidebar?: () => void;
 }
 
-export function Header({ onMenuToggle, isMenuOpen }: HeaderProps) {
+export function Header({
+  onMenuToggle,
+  isMenuOpen,
+  isSidebarCollapsed,
+  onToggleSidebar,
+}: HeaderProps) {
   const pathname = usePathname();
   const [isCommandOpen, setIsCommandOpen] = useState(false);
 
@@ -31,102 +39,71 @@ export function Header({ onMenuToggle, isMenuOpen }: HeaderProps) {
   return (
     <header
       className={cn(
-        'fixed left-0 right-0 top-0 z-30 h-12 border-b border-border',
-        'bg-background/90 backdrop-blur-sm',
-        'lg:left-64',
+        'fixed top-0 right-0 z-30 h-14',
+        'w-full lg:w-[calc(100%-var(--sidebar-width))]',
+        'border-b border-border bg-background/90 backdrop-blur-[8px]',
+        'transition-[width] duration-200 ease-out',
       )}
     >
-      <div className="grid h-12 grid-cols-[1fr_minmax(0,auto)_1fr] items-center gap-2 px-2.5">
+      <div className="grid h-full w-full grid-cols-[1fr_auto_1fr] items-center gap-2 px-3">
+        {/* Левая часть */}
         <div className="flex min-w-0 items-center gap-2">
           <Button
             variant="ghost"
             size="icon"
-            aria-label="Toggle sidebar"
-            className="hidden lg:inline-flex"
+            onClick={onMenuToggle}
+            className="h-8 w-8 text-secondary hover:text-foreground lg:hidden"
           >
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-              <rect
-                x="7"
-                y="6.5"
-                width="7"
-                height="1.5"
-                rx="0.75"
-                transform="rotate(90 7 6.5)"
-                fill="currentColor"
-              />
-              <rect
-                x="3"
-                y="4"
-                width="14"
-                height="12"
-                rx="2.8"
-                stroke="currentColor"
-                strokeWidth="1.5"
-              />
-            </svg>
+            {isMenuOpen ? <X /> : <Menu />}
           </Button>
 
           <Button
             variant="ghost"
             size="icon"
-            onClick={onMenuToggle}
-            aria-label={isMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
-            aria-expanded={isMenuOpen}
-            className="lg:hidden"
+            onClick={onToggleSidebar}
+            className="hidden lg:flex h-8 w-8 text-secondary hover:text-foreground transition-colors"
+            title={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
-            {isMenuOpen ? (
-              <X strokeWidth={1.5} aria-hidden="true" />
-            ) : (
-              <Menu strokeWidth={1.5} aria-hidden="true" />
-            )}
+            <PanelLeft className="h-4 w-4" strokeWidth={1.5} />
           </Button>
 
-          <div className="flex min-w-0 items-center gap-1.5">
-            <h1 className="truncate text-sm font-medium text-foreground">{getPageTitle()}</h1>
-            <span className="hidden h-5 shrink-0 items-center rounded-full border border-transparent bg-gray-alpha-150 px-2 text-[11px] font-medium text-foreground sm:inline-flex">
-              Alpha
-            </span>
-          </div>
+          <h1 className="text-sm font-medium truncate text-foreground ml-1">{getPageTitle()}</h1>
         </div>
 
-        <button
-          type="button"
-          aria-label="Global search"
-          onClick={() => setIsCommandOpen(true)}
-          className="group hidden h-8 w-64 max-w-full items-center justify-between gap-4 rounded-xl border border-gray-alpha-200 bg-background pl-2 pr-1.75 text-secondary outline-none transition-colors hover:border-gray-alpha-300 hover:bg-gray-alpha-50 focus-visible:ring-2 focus-visible:ring-white/15 lg:flex"
-        >
-          <span className="flex min-w-0 items-center gap-1.5">
-            <Search
-              className="h-4.5 w-4.5 shrink-0 text-subtle transition-colors group-hover:text-secondary"
-              strokeWidth={1.5}
-              aria-hidden="true"
-            />
-            <span className="truncate text-[13px] font-normal">Search everything...</span>
-          </span>
-
-          <span className="flex shrink-0 gap-1" aria-hidden="true">
-            <kbd className="flex h-4.5 w-fit items-center justify-center rounded-md border border-foreground/15 bg-gray-alpha-50 px-1 text-[11px] font-medium text-secondary">
-              ⌘
-            </kbd>
-            <kbd className="flex h-4.5 w-fit items-center justify-center rounded-md border border-foreground/15 bg-gray-alpha-50 px-1 text-[11px] font-medium text-secondary">
-              K
-            </kbd>
-          </span>
-        </button>
-
-        <div className="flex items-center justify-end gap-2">
-          <Button
-            variant="outline"
-            asChild
-            className="hidden rounded-[0.6rem] px-2.5 text-[13px] lg:inline-flex"
+        {/* Центральная часть (Поиск) */}
+        <div className="flex justify-center w-full max-w-md">
+          <button
+            type="button"
+            onClick={() => setIsCommandOpen(true)}
+            className={cn(
+              inputVariants({ size: 'default' }),
+              'flex items-center justify-between gap-3 text-subtle cursor-pointer hover:bg-gray-alpha-50',
+            )}
           >
-            <Link href="/docs">Docs</Link>
-          </Button>
+            <div className="flex min-w-0 items-center gap-2">
+              <Search className="h-4 w-4 shrink-0" strokeWidth={1.5} />
+              <span className="truncate text-[13px]">Search everything…</span>
+            </div>
+            <div className="flex shrink-0 items-center gap-0.5">
+              <kbd className="mono-sm hidden h-5 items-center justify-center rounded-md border border-border bg-background px-1.5 text-[10px] text-subtle sm:inline-flex">
+                ⌘
+              </kbd>
+              <kbd className="mono-sm hidden h-5 items-center justify-center rounded-md border border-border bg-background px-1.5 text-[10px] text-subtle sm:inline-flex">
+                K
+              </kbd>
+            </div>
+          </button>
+        </div>
 
+        <div className="flex items-center justify-end gap-3 shrink-0">
+          <Button variant="ghost" size="sm" className="hidden md:inline-flex" asChild>
+            <Link href="/docs" target="_blank" rel="noreferrer">
+              Docs
+            </Link>
+          </Button>
           <UserMenu />
         </div>
       </div>
-
       <CommandMenu open={isCommandOpen} onOpenChange={setIsCommandOpen} />
     </header>
   );
