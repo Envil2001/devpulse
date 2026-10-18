@@ -10,9 +10,10 @@ interface NavItemProps {
   icon: LucideIcon;
   label: string;
   onClick?: () => void;
+  isCollapsed?: boolean;
 }
 
-export function NavItem({ href, icon: Icon, label, onClick }: NavItemProps) {
+export function NavItem({ href, icon: Icon, label, onClick, isCollapsed }: NavItemProps) {
   const pathname = usePathname();
   const isActive =
     href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(`${href}/`);
@@ -21,26 +22,18 @@ export function NavItem({ href, icon: Icon, label, onClick }: NavItemProps) {
     <Link
       href={href}
       onClick={onClick}
+      title={isCollapsed ? label : undefined}
       aria-current={isActive ? 'page' : undefined}
       className={cn(
-        'group flex h-9 items-center gap-2 rounded-[10px] px-2 text-sm font-medium outline-none transition-colors',
-        'focus-visible:ring-2 focus-visible:ring-white/15',
+        'group flex h-8 items-center rounded-[10px] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-white/20',
+        isCollapsed ? 'justify-center px-0' : 'gap-2 px-2',
         isActive
-          ? 'bg-gray-alpha-100 text-foreground'
-          : 'text-secondary hover:bg-gray-alpha-100 hover:text-foreground',
+          ? 'bg-white/[0.06] text-foreground'
+          : 'text-secondary hover:bg-white/[0.04] hover:text-foreground',
       )}
     >
-      <span className="flex h-8 min-w-5 -mx-0.5 items-center justify-center">
-        <Icon
-          aria-hidden="true"
-          strokeWidth={1.5}
-          className={cn(
-            'h-4.5 w-4.5 shrink-0 transition-colors',
-            isActive ? 'text-foreground' : 'text-subtle group-hover:text-secondary',
-          )}
-        />
-      </span>
-      <span className="truncate">{label}</span>
+      <Icon aria-hidden="true" className="h-[18px] w-[18px] shrink-0" strokeWidth={1.5} />
+      {!isCollapsed && <span className="truncate text-sm font-medium">{label}</span>}
     </Link>
   );
 }

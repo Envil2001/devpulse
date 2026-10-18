@@ -13,15 +13,22 @@ const mainNavItems = [
 
 interface SidebarNavProps {
   onNavClick?: () => void;
+  isCollapsed?: boolean;
 }
 
-export function SidebarNav({ onNavClick }: SidebarNavProps) {
+export function SidebarNav({ onNavClick, isCollapsed }: SidebarNavProps) {
   return (
-    <nav className="flex flex-1 flex-col overflow-y-auto scroll-subtle px-3 pb-3 pt-1.5">
+    <nav className="flex flex-1 min-h-0 flex-col overflow-y-auto scroll-subtle px-3 pb-3 pt-1.5">
       <ul className="flex flex-col gap-1" aria-label="Main navigation">
         {mainNavItems.map((item) => (
           <li key={item.name}>
-            <NavItem href={item.href} icon={item.icon} label={item.name} onClick={onNavClick} />
+            <NavItem
+              href={item.href}
+              icon={item.icon}
+              label={item.name}
+              onClick={onNavClick}
+              isCollapsed={isCollapsed}
+            />
           </li>
         ))}
       </ul>

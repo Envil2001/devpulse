@@ -70,6 +70,9 @@
 
   --color-yellow-amber: #ffbe0c;
   --color-yellow-laser: #fffc00;
+
+  --sidebar-width: 16rem;
+  --sidebar-width-collapsed: 4rem;
 }
 
 @layer base {
