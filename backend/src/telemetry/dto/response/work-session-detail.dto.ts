@@ -1,5 +1,28 @@
 import { ApiProperty } from '@nestjs/swagger';
 
+export class SessionCommitDto {
+  @ApiProperty()
+  public hash!: string;
+
+  @ApiProperty()
+  public message!: string;
+
+  @ApiProperty()
+  public filesChanged!: number;
+
+  @ApiProperty()
+  public insertions!: number;
+
+  @ApiProperty()
+  public deletions!: number;
+
+  @ApiProperty({ type: [String] })
+  public filesList!: Array<string>;
+
+  @ApiProperty()
+  public timestamp!: string;
+}
+
 export class SessionCommandDto {
   @ApiProperty()
   public command!: string;
@@ -65,4 +88,10 @@ export class WorkSessionDetailDto {
 
   @ApiProperty({ enum: ['active', 'closed'] })
   public status!: 'active' | 'closed';
+
+  @ApiProperty()
+  public commitsCount!: number;
+
+  @ApiProperty({ type: [SessionCommitDto] })
+  public commits!: Array<SessionCommitDto>;
 }

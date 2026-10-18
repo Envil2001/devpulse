@@ -8,6 +8,7 @@ import {
   Clock,
   FolderGit2,
   GitBranch,
+  GitCommit,
   Hourglass,
   Play,
   Terminal,
@@ -348,6 +349,49 @@ export function SessionDetailView({ id }: SessionDetailViewProps) {
           )}
         </PanelContent>
       </Panel>
+
+      {data.commits.length > 0 && (
+        <Panel>
+          <PanelHeader>
+            <div>
+              <PanelTitle>Commits</PanelTitle>
+              <PanelDescription>
+                {data.commitsCount} {data.commitsCount === 1 ? 'commit' : 'commits'} in this session
+              </PanelDescription>
+            </div>
+          </PanelHeader>
+          <PanelContent>
+            <div className="flex flex-col">
+              {data.commits.map((commit, i) => (
+                <div
+                  key={commit.hash}
+                  className={cn(
+                    'grid grid-cols-12 gap-4 py-3 text-sm',
+                    i !== data.commits.length - 1 && 'border-b border-border',
+                  )}
+                >
+                  <div className="col-span-8 flex min-w-0 items-start gap-2">
+                    <GitCommit className="mt-0.5 h-4 w-4 shrink-0 text-subtle" strokeWidth={1.5} />
+                    <div className="flex min-w-0 flex-col gap-0.5">
+                      <span className="truncate text-foreground" title={commit.message}>
+                        {commit.message}
+                      </span>
+                      <span className="font-mono text-xs text-subtle">
+                        {commit.hash.slice(0, 7)} · {commit.filesChanged}{' '}
+                        {commit.filesChanged === 1 ? 'file' : 'files'}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="mono-sm col-span-4 flex items-center justify-end gap-3 text-xs tabular-nums">
+                    <span className="text-brand">+{commit.insertions}</span>
+                    <span className="text-red-coral">−{commit.deletions}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </PanelContent>
+        </Panel>
+      )}
     </Page>
   );
 }

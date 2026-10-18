@@ -168,7 +168,7 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
       this.accumulateLanguage(lastSession, eventTime);
       this.applyEventLanguage(lastSession, event);
       this.applyCommandTracking(lastSession, event, eventTime);
-
+      this.applyCommitTracking(lastSession, event, eventTime);
       if (lastSession.machineId === null && event.machineId) {
         lastSession.machineId = event.machineId;
       }
@@ -200,6 +200,8 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
         commandsRun: 0,
         failedCommands: 0,
         terminalCommands: [],
+        commitsCount: 0,
+        commits: [],
         machineId: event.machineId ?? null,
         status: WorkSessionStatus.ACTIVE,
       });
@@ -207,6 +209,8 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
 
       this.applyEventLanguage(newSession, event);
       this.applyCommandTracking(newSession, event, eventTime);
+      this.applyCommitTracking(newSession, event, eventTime);
+
       this.recomputeDerived(newSession, user);
 
       currentSession = await sessionRepo.save(newSession);
@@ -337,6 +341,33 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  private applyCommitTracking(
+    session: WorkSession,
+    event: TelemetryEventItemDto,
+    eventTime: Date,
+  ): void {
+    if (event.type !== 'git_commit') return;
+    if (!event.commitHash || !event.commitMessage) return;
+
+    const MAX_COMMITS = 100;
+    const commits = session.commits;
+
+    if (commits.some((c) => c.hash === event.commitHash)) return;
+
+    commits.push({
+      hash: event.commitHash,
+      message: event.commitMessage,
+      filesChanged: event.filesChanged ?? 0,
+      insertions: event.insertions ?? 0,
+      deletions: event.deletions ?? 0,
+      filesList: event.filesList ?? [],
+      timestamp: eventTime.toISOString(),
+    });
+
+    session.commits = commits.length > MAX_COMMITS ? commits.slice(-MAX_COMMITS) : commits;
+    session.commitsCount = session.commits.length;
+  }
+
   private topLanguage(buckets: Record<string, number> | null | undefined): string | null {
     if (!buckets) return null;
 
@@ -408,6 +439,10 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
       exitCode: event.exitCode ?? null,
       taskName: event.taskName ?? null,
       taskSource: event.taskSource ?? null,
+      commitHash: event.commitHash ?? null,
+      commitMessage: event.commitMessage ?? null,
+      insertions: event.insertions ?? null,
+      deletions: event.deletions ?? null,
     });
     rawEvent.id = typeIdGenerator('telemetryEvents');
     await repo.save(rawEvent);

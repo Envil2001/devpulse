@@ -39,6 +39,8 @@ const SYSTEM_PROMPT = [
   '8. If tests or builds failed and then later passed, treat it as a debugging win — describe the outcome, not every failed attempt.',
   '9. Do not list every command verbatim. Summarize patterns: "ran tests several times before they passed", not "pnpm test exit 1, pnpm test exit 1, pnpm test exit 0".',
   '10. If commands are minimal or absent, focus on the higher-level activity (files, languages, time).',
+  '11. Use the "Commits" data — commit messages are the developer\'s own summary of their work. Reference them naturally ("fixed authentication flow", "shipped dependency update").',
+  "12. If there are no commits, don't mention them. Absence of commits is not a failure — many sessions end without a commit.",
 ].join('\n');
 
 function buildUserPrompt(input: SummaryInputData): string {
@@ -51,6 +53,7 @@ function buildUserPrompt(input: SummaryInputData): string {
     `Languages: ${input.languages}`,
     `Focus Score: ${String(input.focusScore)}/100`,
     `Commands: ${input.commands}`,
+    `Commits: ${input.commits}`,
     '</telemetry>',
   ].join('\n');
 }
@@ -84,14 +87,45 @@ export class OpenAiSummaryService implements AiSummaryGenerator {
 
   public async generate(input: SummaryInputData): Promise<string> {
     const content = await this.requestCompletion(input);
-
     if (!content) {
       throw new BadGatewayException('AI returned an empty response. Please try again.');
     }
 
-    return content;
+    const cleaned = this.stripReasoning(content);
+    if (!cleaned) {
+      throw new BadGatewayException(
+        'AI returned an empty response after cleanup. Please try again.',
+      );
+    }
+
+    return cleaned;
   }
 
+  private stripReasoning(raw: string): string {
+    let text = raw.trim();
+    text = text.replace(/^<think>[\S\s]*?<\/think>\s*/i, '');
+    text = text.replace(/^Thinking:.*?\n\n/i, '');
+
+    const reasoningMarkers = [
+      /\bThe user wants\b/i,
+      /\bI need to (write|draft|create|analyze)\b/i,
+      /\bLet me (think|draft|write|analyze)\b/i,
+      /\bLet's (write|draft|start)\b/i,
+    ];
+
+    const startsWithReasoning = reasoningMarkers.some((re) => re.test(text.slice(0, 200)));
+
+    if (startsWithReasoning) {
+      const reportStart = text.search(
+        /\b(I (worked|spent|focused|implemented|ran|built|fixed|started|continued|completed|reviewed|tested|debugged))/i,
+      );
+      if (reportStart > 0) {
+        text = text.slice(reportStart).trim();
+      }
+    }
+
+    return text;
+  }
   private async requestCompletion(input: SummaryInputData): Promise<string | undefined> {
     const client = new OpenAI({
       apiKey: input.apiKey,

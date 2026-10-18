@@ -74,6 +74,20 @@ export class WorkSession extends AppBaseEntity<'workSessions'> {
     timestamp: string;
   }>;
 
+  @Column({ name: 'commits_count', type: 'int', default: 0 })
+  public commitsCount!: number;
+
+  @Column({ name: 'commits', type: 'jsonb', default: () => "'[]'::jsonb" })
+  public commits!: Array<{
+    hash: string;
+    message: string;
+    filesChanged: number;
+    insertions: number;
+    deletions: number;
+    filesList: Array<string>;
+    timestamp: string;
+  }>;
+
   @ManyToOne(() => User, (user) => user.workSessions, {
     nullable: false,
     onDelete: 'CASCADE',
