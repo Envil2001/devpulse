@@ -137,4 +137,8 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
-/data
+# macOS
+.DS_Store
+
+# Local DB data
+/data/
