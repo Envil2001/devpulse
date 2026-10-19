@@ -1,3 +1,15 @@
+/**
+ * Formats a duration in seconds into a human-readable string.
+ *
+ * @example
+ * formatDuration(45)    // "45s"
+ * formatDuration(90)    // "1m 30s"
+ * formatDuration(3600)  // "1h"
+ * formatDuration(3660)  // "1h 1m"
+ *
+ * @param seconds - The duration in seconds. Must be a non-negative number.
+ * @returns A formatted string with units (s, m, h).
+ */
 export function formatDuration(seconds: number): string {
   const s = Math.max(0, seconds);
 

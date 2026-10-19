@@ -1,4 +1,5 @@
-import { BadRequestException, Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { BadRequestException, Controller, Get, HttpStatus, Query, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
@@ -8,6 +9,8 @@ import { type AuthenticatedUser } from '../../auth/interfaces/jwt-payload.interf
 import { User } from '../../users/entities/user.entity';
 import { WorklogService } from '../services/worklog.service';
 
+@ApiTags('Worklog')
+@ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('worklog')
 export class WorklogController {
@@ -18,6 +21,10 @@ export class WorklogController {
   ) {}
 
   @Get('generate')
+  @ApiOperation({ summary: 'Generate AI worklog summary for a date range' })
+  @ApiQuery({ name: 'startDate', required: true, type: String, example: '2026-10-01' })
+  @ApiQuery({ name: 'endDate', required: true, type: String, example: '2026-10-07' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Worklog summary generated successfully' })
   public async generateSummary(
     @CurrentUser() reqUser: AuthenticatedUser,
     @Query('startDate') startDate: string,

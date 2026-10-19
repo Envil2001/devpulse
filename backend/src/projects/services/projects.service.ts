@@ -5,18 +5,9 @@ import { Repository } from 'typeorm';
 import { TypeId } from '@devpulse/lib';
 
 import { WorkSession } from '../../telemetry/entities/work-session.entity';
+import { ProjectSummaryDto } from '../dto/response/project-summary.dto';
 import { Project } from '../entities/project.entity';
 import { RawProjectQueryResult } from '../interfaces/projects-internal.interfaces';
-
-export interface ProjectSummaryDto {
-  id: string;
-  name: string;
-  remote: string | null;
-  activeTime: string;
-  focusScore: number;
-  sessions: number;
-  lastActive: string | null;
-}
 
 @Injectable()
 export class ProjectsService {

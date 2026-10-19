@@ -11,6 +11,14 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiQuery,
+  ApiResponse,
+  ApiSecurity,
+  ApiTags,
+} from '@nestjs/swagger';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
@@ -32,6 +40,7 @@ import { WorkSessionSummaryDto } from '../dto/response/work-session-summary.dto'
 import { WorkSession } from '../entities/work-session.entity';
 import { TelemetryQueue } from '../queue/telemetry.queue';
 
+@ApiTags('Telemetry')
 @Controller('telemetry')
 export class TelemetryController {
   private readonly logger = new Logger(TelemetryController.name);
@@ -48,6 +57,9 @@ export class TelemetryController {
   @RequireScopes(ApiKeyScope.TELEMETRY_WRITE)
   @TelemetryThrottle()
   @HttpCode(HttpStatus.OK)
+  @ApiSecurity('ApiKeyAuth', [ApiKeyScope.TELEMETRY_WRITE])
+  @ApiOperation({ summary: 'Ingest batch of telemetry events from VS Code extension' })
+  @ApiResponse({ status: HttpStatus.OK, type: IngestTelemetryBatchResponseDto })
   public async ingestBatch(
     @CurrentUser() user: User,
     @Body() dto: IngestTelemetryBatchRequestDto,
@@ -66,6 +78,11 @@ export class TelemetryController {
   @Get('sessions')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get user work sessions' })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'projectId', required: false, type: String })
+  @ApiResponse({ status: HttpStatus.OK, type: [WorkSessionSummaryDto] })
   public async getSessions(
     @CurrentUser() user: AuthenticatedUser,
     @Query('limit') limit?: string,
@@ -105,6 +122,10 @@ export class TelemetryController {
   @Get('sessions/:id')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get detailed information about a specific session' })
+  @ApiResponse({ status: HttpStatus.OK, type: WorkSessionDetailDto })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Session not found' })
   public async getSessionDetail(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id') id: string,
@@ -152,6 +173,9 @@ export class TelemetryController {
   @UseGuards(ApiKeyGuard, ScopesGuard)
   @RequireScopes(ApiKeyScope.TELEMETRY_WRITE)
   @HttpCode(HttpStatus.OK)
+  @ApiSecurity('ApiKeyAuth', [ApiKeyScope.TELEMETRY_WRITE])
+  @ApiOperation({ summary: 'Get today metrics for VS Code status bar' })
+  @ApiResponse({ status: HttpStatus.OK, type: GetIntegrationTodayResponseDto })
   public async getToday(@CurrentUser() user: User): Promise<GetIntegrationTodayResponseDto> {
     return this.integrationsService.getTodaySummary(user);
   }

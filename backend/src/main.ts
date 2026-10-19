@@ -33,9 +33,7 @@ async function bootstrap(): Promise<void> {
   });
 
   app.use(cookieParser());
-
   app.useGlobalFilters(new AllExceptionsFilter());
-
   app.useGlobalInterceptors(new LoggingInterceptor(), new TransformInterceptor());
 
   app.useGlobalPipes(
@@ -45,7 +43,6 @@ async function bootstrap(): Promise<void> {
       transform: true,
       exceptionFactory: (errors) => {
         console.error('Validation errors:', JSON.stringify(errors, null, 2));
-
         return new BadRequestException(errors);
       },
     }),
@@ -53,7 +50,7 @@ async function bootstrap(): Promise<void> {
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('DevPulse API')
-    .setDescription('DevPulse API documentation for integration endpoints')
+    .setDescription('DevPulse API documentation')
     .setVersion('1.0')
     .addApiKey(
       {
@@ -64,9 +61,10 @@ async function bootstrap(): Promise<void> {
       },
       'ApiKeyAuth',
     )
+    .addBearerAuth()
     .build();
 
-  const documentFactory = (): OpenAPIObject => {
+  const publicDocumentFactory = (): OpenAPIObject => {
     const document = SwaggerModule.createDocument(app, swaggerConfig);
 
     const filteredPaths: Record<string, unknown> = {};
@@ -80,14 +78,24 @@ async function bootstrap(): Promise<void> {
     return document;
   };
 
+  const fullDocumentFactory = (): OpenAPIObject => {
+    return SwaggerModule.createDocument(app, swaggerConfig);
+  };
+
   const httpAdapter = app.getHttpAdapter();
   const expressApp = httpAdapter.getInstance() as {
     get: (path: string, handler: (req: unknown, res: unknown) => void) => void;
   };
-  expressApp.get('/api/v1/docs-json', (req: unknown, res: unknown) => {
-    const document = documentFactory();
-    (res as { json: (data: unknown) => void }).json(document);
+
+  expressApp.get('/api/v1/docs-json', (req, res) => {
+    (res as { json: (data: unknown) => void }).json(publicDocumentFactory());
   });
+
+  expressApp.get('/api/v1/dev-docs-json', (req, res) => {
+    (res as { json: (data: unknown) => void }).json(fullDocumentFactory());
+  });
+
+  SwaggerModule.setup('api/v1/dev-docs', app, fullDocumentFactory);
 
   await app.listen(env.PORT);
 }
