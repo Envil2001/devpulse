@@ -2,10 +2,15 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
-import { TypeId } from '@devpulse/lib';
+import { formatDuration, TypeId } from '@devpulse/lib';
 
-import { WorkSession } from '../../telemetry/entities/work-session.entity';
-import { ProjectSummaryDto } from '../dto/response/project-summary.dto';
+import { WorkSession, WorkSessionStatus } from '../../telemetry/entities/work-session.entity';
+import {
+  ProjectBranchDto,
+  ProjectLanguageDto,
+  ProjectRecentSessionDto,
+  ProjectSummaryDto,
+} from '../dto/response/project-summary.dto';
 import { Project } from '../entities/project.entity';
 import { RawProjectQueryResult } from '../interfaces/projects-internal.interfaces';
 
@@ -47,10 +52,15 @@ export class ProjectsService {
         id: p.id ?? '',
         name: p.name ?? 'Untitled Project',
         remote: p.remote ?? null,
-        activeTime: this.formatDuration(activeSeconds),
+        activeTime: formatDuration(activeSeconds),
         focusScore: Math.round(Number(p.avgFocus ?? 0)),
         sessions: Number(p.sessionsCount ?? 0),
         lastActive: lastActiveIso,
+        totalCommits: 0,
+        totalCommands: 0,
+        languages: [],
+        branches: [],
+        recentSessions: [],
       };
     });
   }
@@ -82,24 +92,88 @@ export class ProjectsService {
       throw new NotFoundException('Project not found');
     }
 
+    const sessions = await this.sessionRepo.find({
+      where: {
+        projectId: rawProject.id as TypeId<'projects'>,
+        userId,
+        status: WorkSessionStatus.CLOSED,
+      },
+      order: { startedAt: 'DESC' },
+    });
+
     const activeSeconds = Number(rawProject.activeSeconds ?? 0);
+
+    const { totalCommits, totalCommands, languages, branches } =
+      this.aggregateSessionDetails(sessions);
+
+    const recentSessions = sessions.slice(0, 5).map((s): ProjectRecentSessionDto => ({
+      id: s.id,
+      startedAt: s.startedAt.toISOString(),
+      durationSeconds: s.activeSeconds,
+      gitBranch: s.gitBranch,
+      primaryLanguage: s.primaryLanguage,
+    }));
 
     return {
       id: rawProject.id,
       name: rawProject.name ?? 'Untitled Project',
       remote: rawProject.remote ?? null,
-      activeTime: this.formatDuration(activeSeconds),
+      activeTime: formatDuration(activeSeconds),
       focusScore: Math.round(Number(rawProject.avgFocus ?? 0)),
       sessions: Number(rawProject.sessionsCount ?? 0),
       lastActive: rawProject.lastActive ? new Date(rawProject.lastActive).toISOString() : null,
+      totalCommits,
+      totalCommands,
+      languages,
+      branches,
+      recentSessions,
     };
   }
 
-  private formatDuration(totalSeconds: number): string {
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const hoursStr = hours.toString();
-    const minutesStr = minutes.toString();
-    return hours > 0 ? `${hoursStr}h ${minutesStr}m` : `${minutesStr}m`;
+  private aggregateSessionDetails(sessions: Array<WorkSession>): {
+    totalCommits: number;
+    totalCommands: number;
+    languages: Array<ProjectLanguageDto>;
+    branches: Array<ProjectBranchDto>;
+  } {
+    let totalActiveSeconds = 0;
+    let totalCommits = 0;
+    let totalCommands = 0;
+
+    const langMap = new Map<string, number>();
+    const branchMap = new Map<string, number>();
+
+    for (const session of sessions) {
+      totalActiveSeconds += session.activeSeconds;
+      totalCommits += session.commitsCount;
+      totalCommands += session.commandsRun;
+
+      if (session.languageSeconds) {
+        for (const [lang, sec] of Object.entries(session.languageSeconds)) {
+          langMap.set(lang, (langMap.get(lang) ?? 0) + sec);
+        }
+      }
+
+      if (session.gitBranch) {
+        branchMap.set(
+          session.gitBranch,
+          (branchMap.get(session.gitBranch) ?? 0) + session.activeSeconds,
+        );
+      }
+    }
+
+    const languages: Array<ProjectLanguageDto> = [...langMap.entries()]
+      .map(([name, seconds]) => ({
+        name,
+        seconds,
+        percentage: totalActiveSeconds > 0 ? Math.round((seconds / totalActiveSeconds) * 100) : 0,
+      }))
+      .sort((a, b) => b.seconds - a.seconds);
+
+    const branches: Array<ProjectBranchDto> = [...branchMap.entries()]
+      .map(([name, seconds]) => ({ name, seconds }))
+      .sort((a, b) => b.seconds - a.seconds);
+
+    return { totalCommits, totalCommands, languages, branches };
   }
 }

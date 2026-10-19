@@ -8,6 +8,25 @@ export interface User {
   hasOpenaiKey: boolean;
 }
 
+export interface ProjectLanguage {
+  name: string;
+  seconds: number;
+  percentage: number;
+}
+
+export interface ProjectBranch {
+  name: string;
+  seconds: number;
+}
+
+export interface ProjectRecentSession {
+  id: string;
+  startedAt: string;
+  durationSeconds: number;
+  gitBranch: string | null;
+  primaryLanguage: string | null;
+}
+
 export interface ProjectSummary {
   id: string;
   name: string;
@@ -16,8 +35,12 @@ export interface ProjectSummary {
   focusScore: number;
   sessions: number;
   lastActive: string | null;
+  totalCommits: number;
+  totalCommands: number;
+  languages: Array<ProjectLanguage>;
+  branches: Array<ProjectBranch>;
+  recentSessions: Array<ProjectRecentSession>;
 }
-
 export interface WorkSessionSummary {
   id: string;
   startedAt: string;

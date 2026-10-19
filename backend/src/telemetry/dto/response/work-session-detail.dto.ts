@@ -74,8 +74,13 @@ export class WorkSessionDetailDto {
   @ApiProperty({ nullable: true })
   public primaryLanguage!: string | null;
 
-  @ApiProperty({ type: 'object', additionalProperties: { type: 'number' } })
-  public languageSeconds!: Record<string, number>;
+  @ApiProperty({
+    description: 'Language seconds histogram',
+    type: 'object',
+    additionalProperties: { type: 'number' },
+    nullable: true,
+  })
+  public languageSeconds!: Record<string, number> | null;
 
   @ApiProperty()
   public commandsRun!: number;
