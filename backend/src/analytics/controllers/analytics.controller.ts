@@ -8,6 +8,7 @@ import {
   StreamableFile,
   UseGuards,
 } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
 
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
@@ -24,6 +25,8 @@ import { AnalyticsService } from '../services/analytics.service';
 import { AnalyticsExportService } from '../services/analytics-export.service';
 import { IntegrationsAnalyticsService } from '../services/integrations-analytics.service';
 
+@ApiTags('Analytics')
+@ApiBearerAuth()
 @Controller('analytics')
 @UseGuards(JwtAuthGuard)
 export class AnalyticsController {
@@ -35,6 +38,8 @@ export class AnalyticsController {
 
   @Get('dashboard')
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get dashboard summary stats' })
+  @ApiResponse({ status: HttpStatus.OK, type: GetAnalyticsDashboardResponseDto })
   public async getDashboard(
     @CurrentUser() user: AuthenticatedUser,
     @Query() query: GetAnalyticsRangeRequestDto,
@@ -44,6 +49,8 @@ export class AnalyticsController {
 
   @Get('timeseries')
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get activity timeseries for chart' })
+  @ApiResponse({ status: HttpStatus.OK, type: GetAnalyticsTimeseriesResponseDto })
   public async getTimeseries(
     @CurrentUser() user: AuthenticatedUser,
     @Query() query: GetAnalyticsRangeRequestDto,
@@ -53,6 +60,8 @@ export class AnalyticsController {
 
   @Get('branches')
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get branches distribution' })
+  @ApiResponse({ status: HttpStatus.OK, type: GetAnalyticsBranchesResponseDto })
   public async getBranches(
     @CurrentUser() user: AuthenticatedUser,
     @Query() query: GetAnalyticsRangeRequestDto,
@@ -62,6 +71,8 @@ export class AnalyticsController {
 
   @Get('status')
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get live coding status' })
+  @ApiResponse({ status: HttpStatus.OK, type: GetIntegrationStatusResponseDto })
   public async getLiveStatus(
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<GetIntegrationStatusResponseDto> {
@@ -70,6 +81,9 @@ export class AnalyticsController {
 
   @Get('languages')
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get programming languages breakdown' })
+  @ApiQuery({ name: 'projectId', required: false, type: String })
+  @ApiResponse({ status: HttpStatus.OK, type: GetIntegrationLanguagesResponseDto })
   public async getLanguages(
     @CurrentUser() user: AuthenticatedUser,
     @Query('projectId') projectId?: string,
@@ -79,6 +93,8 @@ export class AnalyticsController {
 
   @Get('commands')
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get terminal commands breakdown' })
+  @ApiResponse({ status: HttpStatus.OK, type: GetAnalyticsCommandsResponseDto })
   public async getCommands(
     @CurrentUser() user: AuthenticatedUser,
     @Query() query: GetAnalyticsRangeRequestDto,
@@ -88,6 +104,7 @@ export class AnalyticsController {
 
   @Get('export')
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Export sessions to CSV' })
   public async exportSessions(
     @CurrentUser() user: AuthenticatedUser,
     @Query() query: GetAnalyticsRangeRequestDto,
