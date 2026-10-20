@@ -3,45 +3,43 @@ import { gzip } from 'node:zlib';
 
 import * as vscode from 'vscode';
 
-import {
-  type ApiErrorResponse,
-  type ApiResponse,
-  type ApiSuccessResponse,
-  type TelemetryEventDto,
-} from '@devpulse/lib';
+import type { TelemetryEventDto } from '@devpulse/lib';
 
 import { DEVPULSE_API_KEY_SECRET } from '../secret-keys.js';
 
+import { TelemetryRequestError } from './telemetry-request-error.js';
+
 const gzipAsync = promisify(gzip);
-const COMPRESSION_THRESHOLD_BYTES = 10_240; // 10 KB
-const EXTENSION_ID = 'devpulse.devpulse';
+
+const COMPRESSION_THRESHOLD_BYTES = 10_240;
+const BATCH_TIMEOUT_MS = 30_000;
+const STATS_TIMEOUT_MS = 10_000;
 const CONFIG_NAMESPACE = 'devpulse';
 const CONFIG_KEY = 'apiUrl';
 
-interface TodayStatsResponse {
-  totalActiveSeconds: number;
-  averageFocusScore: number;
+export interface TodayStats {
+  activeSeconds: number;
+  focusScore: number;
   sessionsCount: number;
 }
 
-interface PackageJsonManifest {
-  contributes?: {
-    configuration?: {
-      properties?: Record<string, { default?: unknown }>;
-    };
-  };
+interface TodayStatsResponse {
+  totalActiveSeconds: number;
+  averageFocusScore: number | null;
+  sessionsCount: number;
 }
 
-export class TelemetryApiClientError extends Error {
-  public readonly status: number;
-  public readonly details?: unknown;
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
 
-  constructor(message: string, status: number, details?: unknown) {
-    super(message);
-    this.name = 'TelemetryApiClientError';
-    this.status = status;
-    this.details = details;
-  }
+function isTodayStatsResponse(value: unknown): value is TodayStatsResponse {
+  return (
+    isRecord(value) &&
+    typeof value.totalActiveSeconds === 'number' &&
+    (typeof value.averageFocusScore === 'number' || value.averageFocusScore === null) &&
+    typeof value.sessionsCount === 'number'
+  );
 }
 
 function trimTrailingSlashes(value: string): string {
@@ -52,45 +50,36 @@ function trimTrailingSlashes(value: string): string {
   return result;
 }
 
-function readManifestDefaultApiUrl(): string | null {
-  const extension = vscode.extensions.getExtension(EXTENSION_ID);
-  const manifest = extension?.packageJSON as PackageJsonManifest | undefined;
-
-  const raw =
-    manifest?.contributes?.configuration?.properties?.[`${CONFIG_NAMESPACE}.${CONFIG_KEY}`]
-      ?.default;
-
-  return typeof raw === 'string' && raw.trim().length > 0 ? raw : null;
-}
-
 function resolveApiBaseUrl(): string {
-  const configured = vscode.workspace.getConfiguration(CONFIG_NAMESPACE).get<string>(CONFIG_KEY);
+  const config = vscode.workspace.getConfiguration(CONFIG_NAMESPACE);
+  const configured = config.get<string>(CONFIG_KEY)?.trim();
+  const url = configured ?? config.inspect<string>(CONFIG_KEY)?.defaultValue?.trim();
 
-  const url = configured?.trim() ? configured : readManifestDefaultApiUrl();
-
-  if (url === null) {
-    throw new Error(
-      `DevPulse: "${CONFIG_NAMESPACE}.${CONFIG_KEY}" is not configured and no default is present in package.json.`,
-    );
+  if (!url) {
+    throw new Error(`DevPulse: "${CONFIG_NAMESPACE}.${CONFIG_KEY}" is not configured.`);
   }
 
   return trimTrailingSlashes(url);
 }
 
-async function readJson<TResponse>(response: Response): Promise<TResponse> {
-  const body = (await response.json()) as ApiResponse<TResponse>;
+async function readData(response: Response): Promise<unknown> {
+  const body: unknown = await response.json().catch(() => null);
 
   if (!response.ok) {
-    const errorBody = body as ApiErrorResponse;
-    throw new TelemetryApiClientError(
-      errorBody.error.message,
+    const error = isRecord(body) ? body.error : undefined;
+    const message =
+      isRecord(error) && typeof error.message === 'string'
+        ? error.message
+        : `HTTP ${String(response.status)}`;
+
+    throw new TelemetryRequestError(
+      message,
       response.status,
-      errorBody.error.details,
+      isRecord(error) ? error.details : undefined,
     );
   }
 
-  const successBody = body as ApiSuccessResponse<TResponse>;
-  return successBody.data;
+  return isRecord(body) ? body.data : undefined;
 }
 
 export class TelemetryApiClient {
@@ -134,66 +123,47 @@ export class TelemetryApiClient {
       );
     }
 
-    let response: Response;
-    try {
-      this.log?.info(`POST ${url} size=${String(rawSize)}B`);
-      response = await fetch(url, {
-        method: 'POST',
-        headers,
-        body,
-        signal: signal ?? AbortSignal.timeout(30_000),
-      });
-    } catch (error) {
-      this.log?.error(`network error: ${String(error)}`);
-      throw new Error('TelemetryRequestNetworkError');
-    }
+    this.log?.info(`POST ${url} size=${String(rawSize)}B`);
 
-    try {
-      await readJson<null>(response);
-    } catch (error) {
-      if (error instanceof TelemetryApiClientError) {
-        this.log?.error(`request failed status=${String(error.status)} message=${error.message}`);
-        throw new Error(`TelemetryRequestFailed:${String(error.status)}`);
-      }
-      throw error;
-    }
+    const response = await this.request(url, {
+      method: 'POST',
+      headers,
+      body,
+      signal: signal ?? AbortSignal.timeout(BATCH_TIMEOUT_MS),
+    });
+
+    await readData(response);
   }
 
-  public async getTodayStats(): Promise<{
-    activeSeconds: number;
-    focusScore: number;
-    sessionsCount: number;
-  }> {
+  public async getTodayStats(): Promise<TodayStats> {
     const apiKey = await this.requireApiKey();
     const url = `${resolveApiBaseUrl()}/telemetry/today`;
 
-    let response: Response;
-    try {
-      response = await fetch(url, {
-        method: 'GET',
-        headers: { 'x-api-key': apiKey },
-        signal: AbortSignal.timeout(10_000),
-      });
-    } catch (error) {
-      this.log?.error(`stats network error: ${String(error)}`);
-      throw new Error('TelemetryRequestNetworkError');
+    const response = await this.request(url, {
+      method: 'GET',
+      headers: { 'x-api-key': apiKey },
+      signal: AbortSignal.timeout(STATS_TIMEOUT_MS),
+    });
+
+    const data = await readData(response);
+
+    if (!isTodayStatsResponse(data)) {
+      throw new TelemetryRequestError('Unexpected response shape', null);
     }
 
+    return {
+      activeSeconds: data.totalActiveSeconds,
+      focusScore: data.averageFocusScore ?? 0,
+      sessionsCount: data.sessionsCount,
+    };
+  }
+
+  private async request(url: string, init: RequestInit): Promise<Response> {
     try {
-      const data = await readJson<TodayStatsResponse>(response);
-      return {
-        activeSeconds: data.totalActiveSeconds,
-        focusScore: data.averageFocusScore,
-        sessionsCount: data.sessionsCount,
-      };
-    } catch (error) {
-      if (error instanceof TelemetryApiClientError) {
-        this.log?.error(
-          `stats request failed status=${String(error.status)} message=${error.message}`,
-        );
-        throw new Error(`TelemetryRequestFailed:${String(error.status)}`);
-      }
-      throw error;
+      return await fetch(url, init);
+    } catch (error: unknown) {
+      this.log?.error(`network error: ${String(error)}`);
+      throw new TelemetryRequestError('Network error', null);
     }
   }
 

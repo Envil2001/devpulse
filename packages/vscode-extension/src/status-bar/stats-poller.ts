@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 
 import type { TelemetryApiClient } from '../telemetry/api-client.js';
+import { TelemetryRequestError } from '../telemetry/telemetry-request-error.js';
 
 import type { StatusBarState } from './status-bar-state.js';
 
@@ -41,14 +42,13 @@ export class StatsPoller implements vscode.Disposable {
       const message = error instanceof Error ? error.message : String(error);
       this.log?.warn(`stats poll failed: ${message}`);
 
-      if (message.includes('TelemetryRequestFailed:401')) {
+      if (error instanceof TelemetryRequestError && error.isAuthError) {
         this.state.setHealth('invalid-key');
         this.notifyInvalidKey();
-      } else if (message.includes('TelemetryRequestFailed:403')) {
-        this.state.setHealth('ok');
-      } else {
-        this.state.setHealth('offline');
+        return;
       }
+
+      this.state.setHealth('offline');
     }
   }
 

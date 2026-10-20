@@ -132,7 +132,7 @@ export function RecentSessionsPanel({ projectId }: { projectId?: string }) {
 
             <div className="col-span-2 flex flex-col items-end justify-center text-right">
               <span className="font-mono text-xs text-foreground tabular-nums">
-                {formatDuration(session.durationMs / 1000)}
+                {formatDuration(session.durationMs)}
               </span>
               <span
                 className={cn(

@@ -46,12 +46,16 @@ export function createEvent(
   ctx: EventFactoryContext,
 ): TelemetryEventDto {
   const gitBranch = partial.gitBranch ?? ctx.currentBranch ?? ctx.fallbackBranch;
-  const gitRemoteUrl = partial.gitRemoteUrl ?? ctx.currentRemoteUrl ?? ctx.fallbackRemoteUrl;
+
+  const resolvedRemoteUrl =
+    partial.gitRemoteUrl === undefined
+      ? (ctx.currentRemoteUrl ?? ctx.fallbackRemoteUrl)
+      : partial.gitRemoteUrl;
 
   return {
     type,
     gitBranch,
-    gitRemoteUrl: gitRemoteUrl ?? undefined,
+    gitRemoteUrl: resolvedRemoteUrl ?? undefined,
     clientTimestamp: partial.clientTimestamp ?? new Date().toISOString(),
     durationMs: partial.durationMs,
     filePath: partial.filePath ?? undefined,

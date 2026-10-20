@@ -6,8 +6,7 @@ export interface TodayStats {
   sessionsCount: number;
 }
 
-export type HealthStatus = 'ok' | 'invalid-key' | 'offline';
-
+export type HealthStatus = 'ok' | 'invalid-key' | 'offline' | 'error';
 export class StatusBarState implements vscode.Disposable {
   private isPausedValue = false;
   private todayStatsValue: TodayStats | null = null;

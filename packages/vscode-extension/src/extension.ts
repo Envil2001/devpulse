@@ -60,6 +60,7 @@ export function activate(context: vscode.ExtensionContext): void {
       terminalMonitor,
       taskMonitor,
       gitCommitWatcher,
+      state,
       outputChannel,
     );
 
@@ -120,15 +121,13 @@ export function activate(context: vscode.ExtensionContext): void {
 export async function deactivate(): Promise<void> {
   if (!telemetryBridge) return;
 
-  telemetryBridge.stop();
-
   const controller = new AbortController();
   const timeoutId = setTimeout(() => {
     controller.abort();
   }, DEACTIVATE_FLUSH_TIMEOUT_MS);
 
   try {
-    await telemetryBridge.flush(controller.signal);
+    await telemetryBridge.shutdown(controller.signal);
   } catch {
     // shutting down, best effort
   } finally {

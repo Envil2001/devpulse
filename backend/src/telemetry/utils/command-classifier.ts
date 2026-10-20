@@ -1,69 +1,160 @@
 export type CommandKind = 'test' | 'build' | 'lint' | 'install' | 'git' | 'other';
 
-const PACKAGE_MANAGER = String.raw`(?:npm|pnpm|yarn|bun)`;
+const KIND_PRIORITY: ReadonlyArray<CommandKind> = ['test', 'build', 'lint', 'install', 'git'];
 
-function packageScript(name: string): RegExp {
-  return new RegExp(
-    String.raw`\b${PACKAGE_MANAGER}\s+(?:run\s+)?${name}(?:[:.-][\w.-]+)?(?=\s|$)`,
-    'i',
-  );
+const SEGMENT_SEPARATOR = /\s*(?:&&|\|\||;|\||\r?\n)\s*/;
+const ENV_ASSIGNMENT = /^[A-Za-z_][A-Za-z0-9_]*=/;
+const QUOTED_TOKEN = /^["'`]/;
+
+const WRAPPER_BINARIES: ReadonlySet<string> = new Set([
+  'sudo',
+  'time',
+  'env',
+  'nohup',
+  'command',
+  'exec',
+]);
+
+const RUNNER_BINARIES: ReadonlySet<string> = new Set([
+  'npm',
+  'pnpm',
+  'yarn',
+  'bun',
+  'npx',
+  'python',
+  'python3',
+]);
+
+const INSTALL_WORDS: ReadonlySet<string> = new Set([
+  'install',
+  'i',
+  'add',
+  'ci',
+  'remove',
+  'uninstall',
+  'update',
+  'upgrade',
+]);
+
+const SCRIPT_KINDS: ReadonlyMap<string, CommandKind> = new Map<string, CommandKind>([
+  ['test', 'test'],
+  ['tests', 'test'],
+  ['e2e', 'test'],
+  ['build', 'build'],
+  ['compile', 'build'],
+  ['bundle', 'build'],
+  ['lint', 'lint'],
+  ['format', 'lint'],
+  ['fmt', 'lint'],
+  ['typecheck', 'lint'],
+]);
+
+const TOOL_KINDS: ReadonlyMap<string, CommandKind> = new Map<string, CommandKind>([
+  ['vitest', 'test'],
+  ['jest', 'test'],
+  ['mocha', 'test'],
+  ['pytest', 'test'],
+  ['rspec', 'test'],
+  ['tsc', 'build'],
+  ['webpack', 'build'],
+  ['esbuild', 'build'],
+  ['make', 'build'],
+  ['cmake', 'build'],
+  ['eslint', 'lint'],
+  ['prettier', 'lint'],
+  ['biome', 'lint'],
+  ['ruff', 'lint'],
+  ['black', 'lint'],
+]);
+
+const SUBCOMMAND_KINDS: ReadonlyMap<string, ReadonlyMap<string, CommandKind>> = new Map([
+  [
+    'cargo',
+    new Map<string, CommandKind>([
+      ['test', 'test'],
+      ['build', 'build'],
+      ['check', 'build'],
+      ['clippy', 'lint'],
+      ['fmt', 'lint'],
+      ['install', 'install'],
+      ['add', 'install'],
+    ]),
+  ],
+  [
+    'go',
+    new Map<string, CommandKind>([
+      ['test', 'test'],
+      ['build', 'build'],
+      ['vet', 'lint'],
+      ['get', 'install'],
+      ['install', 'install'],
+    ]),
+  ],
+  [
+    'dotnet',
+    new Map<string, CommandKind>([
+      ['test', 'test'],
+      ['build', 'build'],
+      ['restore', 'install'],
+    ]),
+  ],
+  ['docker', new Map<string, CommandKind>([['build', 'build']])],
+  ['vite', new Map<string, CommandKind>([['build', 'build']])],
+  ['playwright', new Map<string, CommandKind>([['test', 'test']])],
+  ['pip', new Map<string, CommandKind>([['install', 'install']])],
+  ['pip3', new Map<string, CommandKind>([['install', 'install']])],
+  [
+    'make',
+    new Map<string, CommandKind>([
+      ['test', 'test'],
+      ['lint', 'lint'],
+    ]),
+  ],
+]);
+
+function baseName(token: string): string {
+  const name = token.split(/[\\/]/).pop() ?? token;
+  return name.replace(/\.(?:exe|cmd|bat)$/i, '').toLowerCase();
+}
+function resolveWord(word: string): CommandKind | null {
+  const key = word.split(':')[0] ?? word;
+
+  if (INSTALL_WORDS.has(key)) return 'install';
+  return SCRIPT_KINDS.get(key) ?? TOOL_KINDS.get(key) ?? null;
 }
 
-const GIT_PATTERNS = [/^\s*git(?:\.exe)?\b/i];
+function classifySegment(segment: string): CommandKind {
+  const tokens = segment.split(/\s+/).filter((token) => token !== '');
+  const start = tokens.findIndex(
+    (token) => !ENV_ASSIGNMENT.test(token) && !WRAPPER_BINARIES.has(baseName(token)),
+  );
 
-const INSTALL_PATTERNS = [
-  new RegExp(String.raw`\b${PACKAGE_MANAGER}\s+(?:install|i|add|ci)\b`, 'i'),
-  /\b(?:pip|pip3)\s+install\b/i,
-  /\bpython(?:3)?\s+-m\s+pip\s+install\b/i,
-  /\buv\s+(?:add|sync|pip\s+install)\b/i,
-  /\bpoetry\s+(?:add|install)\b/i,
-  /\bcargo\s+(?:install|add)\b/i,
-  /\bgo\s+get\b/i,
-  /\b(?:composer\s+(?:install|require)|bundle\s+install|gem\s+install)\b/i,
-  /\bdotnet\s+add\s+package\b/i,
-];
+  if (start === -1) return 'other';
 
-const TEST_PATTERNS = [
-  packageScript('test'),
-  /\b(?:vitest|jest|mocha|pytest|phpunit|rspec)\b/i,
-  /\bplaywright\s+test\b/i,
-  /\bcypress\s+run\b/i,
-  /\b(?:cargo|go|dotnet)\s+test\b/i,
-  /\b(?:mvnw?|gradlew?)\b.*\btest\b/i,
-];
+  const [rawBinary, ...args] = tokens.slice(start);
+  const binary = baseName(rawBinary);
+  const positionals = args.filter((arg) => !arg.startsWith('-') && !QUOTED_TOKEN.test(arg));
 
-const BUILD_PATTERNS = [
-  packageScript('build'),
-  /\b(?:tsc|webpack|esbuild|rollup)\b/i,
-  /\b(?:vite|next|ng)\s+build\b/i,
-  /\b(?:cargo|go|dotnet)\s+build\b/i,
-  /\bcmake\s+--build\b/i,
-  /\bdocker\s+build\b/i,
-  /\bmake\b/i,
-  /\b(?:mvnw?|gradlew?)\b.*\b(?:package|assemble|build)\b/i,
-];
+  if (binary === 'git') return 'git';
 
-const LINT_PATTERNS = [
-  packageScript('lint'),
-  /\b(?:eslint|prettier|ruff|black|flake8|pylint|mypy|golangci-lint|shellcheck)\b/i,
-  /\bcargo\s+clippy\b/i,
-  /\bgo\s+vet\b/i,
-];
+  if (RUNNER_BINARIES.has(binary)) {
+    for (const word of positionals) {
+      const kind = resolveWord(word);
+      if (kind !== null) return kind;
+    }
+    return binary === 'yarn' && positionals.length === 0 ? 'install' : 'other';
+  }
 
-function matchesAny(command: string, patterns: ReadonlyArray<RegExp>): boolean {
-  return patterns.some((pattern) => pattern.test(command));
+  const bySubcommand = SUBCOMMAND_KINDS.get(binary)?.get(positionals[0]);
+
+  return bySubcommand ?? TOOL_KINDS.get(binary) ?? 'other';
+
+  return bySubcommand ?? TOOL_KINDS.get(binary) ?? 'other';
 }
 
 export function classifyCommand(command: string): CommandKind {
-  const normalized = command.trim();
-
-  if (!normalized) return 'other';
-
-  if (matchesAny(normalized, GIT_PATTERNS)) return 'git';
-  if (matchesAny(normalized, INSTALL_PATTERNS)) return 'install';
-  if (matchesAny(normalized, TEST_PATTERNS)) return 'test';
-  if (matchesAny(normalized, LINT_PATTERNS)) return 'lint';
-  if (matchesAny(normalized, BUILD_PATTERNS)) return 'build';
-
-  return 'other';
+  const kinds = new Set(
+    command.split(SEGMENT_SEPARATOR).map((segment) => classifySegment(segment)),
+  );
+  return KIND_PRIORITY.find((kind) => kinds.has(kind)) ?? 'other';
 }

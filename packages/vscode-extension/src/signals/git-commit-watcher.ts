@@ -8,7 +8,6 @@ const execFileAsync = promisify(execFile);
 
 const GIT_TIMEOUT_MS = 3000;
 const DEBOUNCE_MS = 500;
-const RECENT_COMMIT_WINDOW_MS = 5 * 60 * 1000;
 
 export interface GitCommitEvent {
   hash: string;
@@ -27,6 +26,8 @@ export class GitCommitWatcher implements vscode.Disposable {
   private currentGitDir: string | null = null;
   private watcher: vscode.FileSystemWatcher | null = null;
   private debounceTimer: ReturnType<typeof setTimeout> | undefined;
+
+  private isProcessing = false;
   private lastHash: string | null = null;
 
   constructor(private readonly log?: vscode.LogOutputChannel) {}
@@ -59,6 +60,7 @@ export class GitCommitWatcher implements vscode.Disposable {
     this.watcher = null;
     this.currentGitDir = null;
     this.lastHash = null;
+    this.isProcessing = false;
   }
 
   private attach(gitDir: string): void {
@@ -90,41 +92,60 @@ export class GitCommitWatcher implements vscode.Disposable {
   }
 
   private async process(): Promise<void> {
-    if (this.currentGitDir === null) return;
+    if (this.currentGitDir === null || this.isProcessing) return;
 
-    const result = await this.readLastCommit(this.currentGitDir);
-    if (!result) return;
+    this.isProcessing = true;
+    try {
+      const result = await this.readLastCommit(this.currentGitDir);
+      if (!result) return;
 
-    if (result.hash === this.lastHash) return;
+      if (result.hash === this.lastHash) return;
 
-    const ageMs = Date.now() - result.commitTimestamp;
-    if (ageMs > RECENT_COMMIT_WINDOW_MS) {
+      const reflogSubject = await this.readReflogSubject(this.currentGitDir);
+
+      if (reflogSubject === null || !/^commit(?: \([^)]+\))?:/.test(reflogSubject)) {
+        this.log?.info(
+          `skipped ${result.hash.slice(0, 7)} (reason: ${reflogSubject ?? 'unknown'})`,
+        );
+        this.lastHash = result.hash;
+        return;
+      }
+
       this.lastHash = result.hash;
-      this.log?.info(`skipped ${result.hash.slice(0, 7)} (old timestamp)`);
-      return;
+      this.log?.info(`new commit ${result.hash.slice(0, 7)}: ${result.message.slice(0, 60)}`);
+      this.emitter.fire(result);
+    } finally {
+      this.isProcessing = false;
     }
-
-    this.lastHash = result.hash;
-    this.log?.info(`new commit ${result.hash.slice(0, 7)}: ${result.message.slice(0, 60)}`);
-    this.emitter.fire(result);
   }
 
-  private async readLastCommit(
-    gitDir: string,
-  ): Promise<(GitCommitEvent & { commitTimestamp: number }) | null> {
+  private async readReflogSubject(gitDir: string): Promise<string | null> {
+    try {
+      const { stdout } = await execFileAsync(
+        'git',
+        ['--git-dir', gitDir, 'reflog', '-1', '--format=%gs'],
+        { timeout: GIT_TIMEOUT_MS },
+      );
+      const subject = stdout.trim();
+      return subject.length > 0 ? subject : null;
+    } catch {
+      return null;
+    }
+  }
+
+  private async readLastCommit(gitDir: string): Promise<GitCommitEvent | null> {
     try {
       const { stdout: logOut } = await execFileAsync(
         'git',
-        ['--git-dir', gitDir, 'log', '-1', '--format=%H%n%ct%n%s', '--no-color'],
+        ['--git-dir', gitDir, 'log', '-1', '--format=%H%n%s', '--no-color'],
         { timeout: GIT_TIMEOUT_MS },
       );
 
       const lines = logOut.trimEnd().split('\n');
-      if (lines.length < 3) return null;
+      if (lines.length < 2) return null;
 
       const hash = lines[0].trim();
-      const commitTimestamp = Number.parseInt(lines[1].trim(), 10) * 1000;
-      const message = lines.slice(2).join('\n').trim();
+      const message = lines.slice(1).join('\n').trim();
 
       const { stdout: numstatOut } = await execFileAsync(
         'git',
@@ -152,7 +173,6 @@ export class GitCommitWatcher implements vscode.Disposable {
         insertions,
         deletions,
         filesList: filesList.slice(0, 10),
-        commitTimestamp,
       };
     } catch (error) {
       this.log?.info(`read failed: ${String(error)}`);

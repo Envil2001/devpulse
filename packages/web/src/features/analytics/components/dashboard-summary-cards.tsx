@@ -18,7 +18,7 @@ export function DashboardSummaryCards({
     {
       label: 'Active Time',
       icon: Clock,
-      value: isLoading || !stats ? '—' : formatDuration(stats.totalActiveSeconds / 1000),
+      value: isLoading || !stats ? '—' : formatDuration(stats.totalActiveSeconds),
       sub: 'this period',
     },
     {

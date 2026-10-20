@@ -10,6 +10,7 @@ import { sanitizeCommand } from '../signals/command-sanitizer.js';
 import { type GitCommitWatcher } from '../signals/git-commit-watcher.js';
 import type { TasksMonitor } from '../signals/tasks-monitor.js';
 import type { TerminalMonitor } from '../signals/terminal-monitor.js';
+import { type StatusBarState } from '../status-bar/status-bar-state.js';
 
 import { ContextTracker } from './bridge/context-tracker.js';
 import { createEvent, type EventPartial, type TelemetryEventType } from './bridge/event-factory.js';
@@ -17,6 +18,7 @@ import { FlushScheduler } from './bridge/flush-scheduler.js';
 import { PendingBuffer } from './bridge/pending-buffer.js';
 import { TelemetryApiClient } from './api-client.js';
 import { TelemetryBufferStore } from './buffer-store.js';
+import { TelemetryRequestError } from './telemetry-request-error.js';
 
 function isTrackedDocument(uri: vscode.Uri): boolean {
   return uri.scheme === 'file' || uri.scheme === 'untitled';
@@ -26,7 +28,8 @@ function isRelativeWorkspacePath(uri: vscode.Uri): boolean {
   const rel = vscode.workspace.asRelativePath(uri, false);
   return !path.isAbsolute(rel);
 }
-
+const RETRY_BASE_DELAY_MS = 30_000;
+const RETRY_MAX_DELAY_MS = 15 * 60 * 1000;
 export class TelemetryBridge implements vscode.Disposable {
   private readonly disposables: Array<vscode.Disposable> = [];
   private readonly client: TelemetryApiClient;
@@ -44,6 +47,9 @@ export class TelemetryBridge implements vscode.Disposable {
   private lastActivityState: ActivityState | null = null;
   private lastActivityChangeAtMs: number | null = null;
 
+  private consecutiveFailures = 0;
+  private nextAttemptAt = 0;
+
   constructor(
     private readonly context: vscode.ExtensionContext,
     private readonly activityMonitor: ActivityMonitor,
@@ -51,6 +57,7 @@ export class TelemetryBridge implements vscode.Disposable {
     private readonly terminalMonitor: TerminalMonitor,
     private readonly tasksMonitor: TasksMonitor,
     private readonly gitCommitWatcher: GitCommitWatcher,
+    private readonly statusBarState: StatusBarState,
     private readonly log?: vscode.LogOutputChannel,
   ) {
     this.client = new TelemetryApiClient(context, log);
@@ -93,6 +100,14 @@ export class TelemetryBridge implements vscode.Disposable {
       this.enqueue(this.create('heartbeat', { durationMs: null }));
       await this.flush();
     }
+  }
+
+  public async shutdown(signal: AbortSignal): Promise<void> {
+    this.stop();
+
+    await this.savePromise;
+
+    await this.flush(signal, true);
   }
 
   private registerListeners(): void {
@@ -254,24 +269,22 @@ export class TelemetryBridge implements vscode.Disposable {
   }
 
   private onGitContextTransition(nextContext: GitContext): void {
-    const providerPrevious = this.gitContextProvider.currentContext.gitBranch;
-    const nextBranch = nextContext.gitBranch;
-
-    if (providerPrevious !== nextBranch) {
-      this.log?.info(
-        `git context transition: branch="${providerPrevious ?? 'n/a'}" → "${nextBranch ?? 'n/a'}"`,
-      );
-    }
-
     const previousBranch = this.contextTracker.branch;
     const previousRemoteUrl = this.contextTracker.remoteUrl;
 
     const result = this.contextTracker.update(nextContext);
-    void this.gitCommitWatcher.setWorkspaceFolder(nextContext.workspaceFolderPath);
+
+    if (result === 'changed' || result === 'lost') {
+      this.log?.info(
+        `git context transition: branch="${previousBranch ?? 'n/a'}" → "${nextContext.gitBranch ?? 'n/a'}"`,
+      );
+    }
 
     if (result === 'lost' || result === 'noop') {
       return;
     }
+
+    void this.gitCommitWatcher.setWorkspaceFolder(nextContext.workspaceFolderPath);
 
     if (result === 'restored') {
       this.flushPendingBuffer();
@@ -293,7 +306,7 @@ export class TelemetryBridge implements vscode.Disposable {
     this.enqueue(
       this.create('heartbeat', {
         durationMs: null,
-        gitBranch: nextBranch ?? undefined,
+        gitBranch: nextContext.gitBranch ?? undefined,
         gitRemoteUrl: nextContext.gitRemoteUrl,
         clientTimestamp: boundaryTimestamp,
       }),
@@ -392,27 +405,51 @@ export class TelemetryBridge implements vscode.Disposable {
     this.pendingBuffer.clear();
   }
 
-  public async flush(signal?: AbortSignal): Promise<void> {
-    if (this.flushing) return;
-    if (this.queue.length === 0) return;
+  public async flush(signal?: AbortSignal, force = false): Promise<void> {
+    if (this.flushing || this.queue.length === 0) return;
+    if (!force && Date.now() < this.nextAttemptAt) return;
 
     this.flushing = true;
-
-    const beforeSize = this.queue.length;
     const batch = this.queue.splice(0, this.queue.length);
 
     try {
-      this.log?.info(
-        `flush: sending ${String(batch.length)} events (queue: ${String(beforeSize)} → 0)`,
-      );
-
       await this.client.postEventsBatch({ events: batch }, signal);
+
+      this.consecutiveFailures = 0;
+      this.nextAttemptAt = 0;
       this.persistQueue();
+
+      this.statusBarState.setHealth('ok');
 
       this.log?.info(`flushed ${String(batch.length)} events`);
-    } catch (error) {
-      this.queue.unshift(...batch);
+    } catch (error: unknown) {
+      if (error instanceof TelemetryRequestError) {
+        if (error.isAuthError) {
+          this.statusBarState.setHealth('invalid-key'); // 401, 403
+        } else if (error.retryable) {
+          this.statusBarState.setHealth('offline');
+        } else {
+          this.statusBarState.setHealth('error');
+        }
+      } else {
+        this.statusBarState.setHealth('offline');
+      }
+
+      if (error instanceof TelemetryRequestError && !error.retryable && !error.isAuthError) {
+        this.persistQueue();
+        this.log?.error(
+          `dropped ${String(batch.length)} events: rejected by server (${String(error.status)})`,
+        );
+        return;
+      }
+
+      this.queue = [...batch, ...this.queue];
       this.persistQueue();
+
+      this.consecutiveFailures += 1;
+      this.nextAttemptAt =
+        Date.now() +
+        Math.min(RETRY_BASE_DELAY_MS * 2 ** (this.consecutiveFailures - 1), RETRY_MAX_DELAY_MS);
 
       const message = error instanceof Error ? error.message : String(error);
       this.log?.error(`flush failed (${message}); buffered=${String(this.queue.length)}`);

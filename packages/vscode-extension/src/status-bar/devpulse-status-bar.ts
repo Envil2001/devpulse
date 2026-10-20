@@ -7,14 +7,20 @@ import type { GitContextProvider } from '../git-context.js';
 import type { StatusBarState, TodayStats } from './status-bar-state.js';
 
 function statusIcon(state: StatusBarState): string {
-  if (state.isPaused) return '⏸';
-  if (state.health === 'invalid-key' || state.health === 'offline') return '⚠';
-  return '🟢';
+  if (state.isPaused) return '$(debug-pause)';
+  if (state.health === 'invalid-key' || state.health === 'offline' || state.health === 'error') {
+    return '$(warning)';
+  }
+  return '$(circle-filled)';
 }
 
 export class DevPulseStatusBar implements vscode.Disposable {
   private readonly item: vscode.StatusBarItem;
   private readonly disposables: Array<vscode.Disposable> = [];
+
+  private lastWorkspaceName: string | null = null;
+  private lastGitBranch: string | null = null;
+  private lastPaused: boolean | null = null;
 
   constructor(
     private readonly gitContextProvider: GitContextProvider,
@@ -46,18 +52,33 @@ export class DevPulseStatusBar implements vscode.Disposable {
     const stats = this.statusBarState.todayStats;
 
     const timeLabel = stats ? formatDuration(stats.activeSeconds) : 'No Time';
-    const branchLabel = gitBranch ? `$(git-branch) ${gitBranch}` : 'No Git';
+    const branchLabel = gitBranch ?? 'No Git';
 
-    this.item.text = `⏱ ${timeLabel}  🌿 ${branchLabel}  ${statusIcon(this.statusBarState)}`;
+    this.item.text = `$(clock) ${timeLabel}  $(git-branch) ${branchLabel}  ${statusIcon(this.statusBarState)}`;
     this.item.tooltip = this.buildTooltip(workspaceName, gitBranch, stats);
 
-    void vscode.commands.executeCommand('setContext', 'devpulse.workspaceName', workspaceName);
-    void vscode.commands.executeCommand('setContext', 'devpulse.gitBranch', gitBranch);
-    void vscode.commands.executeCommand(
-      'setContext',
-      'devpulse.trackingPaused',
-      this.statusBarState.isPaused,
-    );
+    this.updateContextKeys(workspaceName, gitBranch, this.statusBarState.isPaused);
+  }
+
+  private updateContextKeys(
+    workspaceName: string | null,
+    gitBranch: string | null,
+    isPaused: boolean,
+  ): void {
+    if (this.lastWorkspaceName !== workspaceName) {
+      this.lastWorkspaceName = workspaceName;
+      void vscode.commands.executeCommand('setContext', 'devpulse.workspaceName', workspaceName);
+    }
+
+    if (this.lastGitBranch !== gitBranch) {
+      this.lastGitBranch = gitBranch;
+      void vscode.commands.executeCommand('setContext', 'devpulse.gitBranch', gitBranch);
+    }
+
+    if (this.lastPaused !== isPaused) {
+      this.lastPaused = isPaused;
+      void vscode.commands.executeCommand('setContext', 'devpulse.trackingPaused', isPaused);
+    }
   }
 
   private buildTooltip(
@@ -90,6 +111,7 @@ export class DevPulseStatusBar implements vscode.Disposable {
     if (this.statusBarState.isPaused) return 'Paused';
     if (this.statusBarState.health === 'invalid-key') return 'Invalid API key';
     if (this.statusBarState.health === 'offline') return 'Offline';
+    if (this.statusBarState.health === 'error') return 'Sync Error';
     return 'Active';
   }
 

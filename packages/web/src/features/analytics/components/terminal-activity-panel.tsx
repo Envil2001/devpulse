@@ -146,7 +146,7 @@ export function TerminalActivityPanel({
             </div>
 
             <div className="col-span-2 text-right font-mono text-xs tabular-nums text-subtle">
-              {formatDuration(cmd.avgDurationMs / 1000)}
+              {formatDuration(cmd.avgDurationMs)}
             </div>
 
             <div

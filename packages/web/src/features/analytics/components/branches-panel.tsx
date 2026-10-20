@@ -59,7 +59,7 @@ export function BranchesPanel({ range, projectId }: { range: DateRange; projectI
               </span>
             </div>
             <div className="col-span-4 text-right font-mono text-xs font-medium tabular-nums text-foreground">
-              {formatDuration(branch.activeSeconds / 1000)}
+              {formatDuration(branch.activeSeconds)}
             </div>
           </div>
         ))}
