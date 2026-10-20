@@ -18,6 +18,7 @@ erDiagram
     PROJECTS ||--o{ WORK_SESSIONS : "grupuje"
     WORK_SESSIONS ||--o{ TELEMETRY_EVENTS : "zawiera"
     API_KEYS ||--o{ TELEMETRY_EVENTS : "autoryzuje"
+    PROJECTS ||--o{ TELEMETRY_EVENTS : "grupuje"
 
     USERS {
         varchar id PK
@@ -29,16 +30,25 @@ erDiagram
         varchar openai_key
         boolean is_active
         timestamptz created_at
+        timestamptz updated_at
     }
 
     USER_ENCRYPTION {
         varchar id PK
         varchar userId FK
         text clientPublicKey
+        text serverPrivateKey
         text publicKey
         text encryptedPrivateKey
         text salt
         text verifier
+        text iv
+        text tag
+        text protectedKey
+        text protectedKeyIV
+        text protectedKeyTag
+        timestamptz created_at
+        timestamptz updated_at
     }
 
     API_KEYS {
@@ -50,6 +60,8 @@ erDiagram
         varchar device_label
         text_array scopes
         timestamptz last_used_at
+        timestamptz created_at
+        timestamptz updated_at
     }
 
     PROJECTS {
@@ -57,6 +69,8 @@ erDiagram
         varchar user_id FK
         varchar name
         text git_remote_url
+        timestamptz created_at
+        timestamptz updated_at
     }
 
     WORK_SESSIONS {
@@ -69,10 +83,19 @@ erDiagram
         int active_seconds
         int idle_seconds
         decimal focus_score
+        decimal earned_money
+        varchar primary_language
         jsonb language_seconds
+        varchar current_language
+        varchar machine_id
+        int commands_run
+        int failed_commands
         jsonb terminal_commands
+        int commits_count
         jsonb commits
         varchar status
+        timestamptz created_at
+        timestamptz updated_at
     }
 
     TELEMETRY_EVENTS {
@@ -80,12 +103,26 @@ erDiagram
         varchar user_id FK
         varchar session_id FK
         varchar api_key_id FK
+        varchar project_id FK
         varchar git_branch
         timestamptz event_timestamp
+        int active_seconds
+        int idle_seconds
         jsonb files_changed
+        jsonb file_extensions
+        varchar machine_id
+        varchar vscode_session_id
         varchar command
+        varchar command_cwd
         int exit_code
+        varchar task_name
+        varchar task_source
         varchar commit_hash
+        varchar commit_message
+        int insertions
+        int deletions
+        timestamptz created_at
+        timestamptz updated_at
     }
 ```
 
@@ -97,7 +134,7 @@ Przechowuje podstawowe informacje o koncie, w tym strefę czasową (kluczową dl
 
 ### `user_encryption` (Szyfrowanie użytkownika)
 
-Wydzielona tabela 1:1 przechowująca klucze kryptograficzne (m.in. `clientPublicKey`, `encryptedPrivateKey`, `salt`). Zapobiega to niepotrzebnemu ładowaniu wrażliwych danych przy każdym zapytaniu o profil użytkownika.
+Wydzielona tabela 1:1 przechowująca klucze kryptograficzne oraz wektory/parametry szyfrowania (m.in. `clientPublicKey`, `encryptedPrivateKey`, `salt`, `iv`, `tag`, `protectedKey`). Zapobiega to niepotrzebnemu ładowaniu wrażliwych danych przy każdym zapytaniu o profil użytkownika.
 
 ### `api_keys` (Klucze API)
 
@@ -111,13 +148,33 @@ Reprezentuje repozytoria Git powiązane z użytkownikiem. Projekty są identyfik
 
 Główna tabela analityczna. Agreguje surowe zdarzenia w logiczne bloki pracy.
 
-- Zawiera metryki: `active_seconds`, `idle_seconds`, `focus_score`, `earned_money`.
-- Wykorzystuje pola JSONB (`language_seconds`, `terminal_commands`, `commits`) do elastycznego przechowywania danych bez konieczności tworzenia dziesiątek dodatkowych tabel. To optymalizacja pod kątem wydajności odczytu na dashboardzie.
-- Status sesji (`active`/`closed`) jest kontrolowany przez enum.
+- Zawiera metryki: `active_seconds`, `idle_seconds`, `focus_score,` `earned_money` (obliczane na podstawie stawki użytkownika).
+
+- Zawiera metryki językowe: `primary_language`, `language_seconds` (JSONB), current_language.
+
+- Zawiera metryki terminala: `commands_run`, `failed_commands`, `terminal_commands` (JSONB).
+
+- Zawiera metryki Gita: `commits_count`, `commits` (JSONB).
+
+- Zawiera pola techniczne: `machine_id`.
+
+- Status sesji (active/closed) jest kontrolowany przez enum.
 
 ### `telemetry_events` (Zdarzenia telemetryczne)
 
-Surowe dane wysyłane z rozszerzenia VS Code. Służą do audytu oraz ewentualnego przeliczania sesji (np. przy zmianie algorytmu). Zawierają szczegóły takie jak zmienione pliki (`files_changed`), uruchomione komendy (`command`, `exit_code`), czy hashe commitów (`commit_hash`).
+Surowe dane wysyłane z rozszerzenia VS Code. Służą do audytu oraz ewentualnego przeliczania sesji (np. przy zmianie algorytmu). Zawierają szczegóły takie jak:
+
+Aktywność: `active_seconds`, `idle_seconds`.
+
+Pliki: `files_changed` (JSONB), `file_extensions` (JSONB).
+
+Terminal: `command`, `command_cwd`, `exit_code`.
+
+Zadania: `task_name`, `task_source`.
+
+Git: `commit_hash`, `commit_message`, `insertions`, `deletions`.
+
+Kontekst urządzenia: `machine_id`, `vscode_session_id`.
 
 ## 4. Powiązania pomiędzy modelami
 
@@ -128,6 +185,7 @@ Surowe dane wysyłane z rozszerzenia VS Code. Służą do audytu oraz ewentualne
 - **Project -> WorkSession** (1:N): Jedna sesja pracy jest przypisana do jednego projektu.
 - **WorkSession -> TelemetryEvent** (1:N): Jedna sesja zawiera wiele zdarzeń telemetrycznych.
 - **ApiKey -> TelemetryEvent** (1:N): Zdarzenia mogą być powiązane z kluczem API, który je autoryzował.
+- **Project -> TelemetryEvent** (1:N): Zdarzenia telemetryczne mogą być opcjonalnie powiązane z projektem (FK SET NULL).
 
 ## 5. Indeksy (Wydajność)
 
