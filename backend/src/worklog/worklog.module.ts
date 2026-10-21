@@ -6,7 +6,7 @@ import { User } from '../users/entities/user.entity';
 
 import { WorklogController } from './controllers/worklog.controller';
 import { AI_SUMMARY_GENERATOR } from './interfaces/ai-summary-generator.interface';
-import { OpenAiSummaryService } from './services/openai-summary.service';
+import { OpenRouterSummaryService } from './services/openai-summary.service';
 import { WorklogService } from './services/worklog.service';
 
 @Module({
@@ -16,7 +16,7 @@ import { WorklogService } from './services/worklog.service';
     WorklogService,
     {
       provide: AI_SUMMARY_GENERATOR,
-      useClass: OpenAiSummaryService,
+      useClass: OpenRouterSummaryService,
     },
   ],
 })
