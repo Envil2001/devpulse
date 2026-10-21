@@ -129,10 +129,8 @@ export class AnalyticsController {
   @ApiQuery({ name: 'projectId', required: false, type: String })
   public async getAiRoi(
     @CurrentUser() user: AuthenticatedUser,
-    @Query('startDate') startDate?: string,
-    @Query('endDate') endDate?: string,
-    @Query('projectId') projectId?: string,
+    @Query() query: GetAnalyticsRangeRequestDto,
   ): Promise<GetIntegrationAiRoiResponseDto> {
-    return this.integrationsService.getAiRoiMetrics(user.id, projectId);
+    return this.integrationsService.getAiRoiMetrics(user.id, query);
   }
 }

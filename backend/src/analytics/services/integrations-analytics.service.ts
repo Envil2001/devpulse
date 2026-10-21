@@ -8,6 +8,7 @@ import { formatDuration, type TypeId } from '@devpulse/lib';
 
 import { WorkSession, WorkSessionStatus } from '../../telemetry/entities/work-session.entity';
 import { User } from '../../users/entities/user.entity';
+import { GetAnalyticsRangeRequestDto } from '../dto/request/get-analytics-range-request.dto';
 import { GetIntegrationAiRoiResponseDto } from '../dto/response/get-integration-ai-roi-response.dto';
 import { GetIntegrationLanguagesResponseDto } from '../dto/response/get-integration-languages-response.dto';
 import { GetIntegrationSessionItemDto } from '../dto/response/get-integration-sessions-response.dto';
@@ -192,17 +193,24 @@ export class IntegrationsAnalyticsService {
 
   public async getAiRoiMetrics(
     userId: TypeId<'users'>,
-    projectId?: string,
+    query: GetAnalyticsRangeRequestDto = {},
   ): Promise<GetIntegrationAiRoiResponseDto> {
-    const where: Record<string, unknown> = { userId };
-    if (projectId) {
-      where.projectId = projectId;
+    const qb = this.sessionRepo
+      .createQueryBuilder('session')
+      .where('session.user_id = :userId', { userId })
+      .orderBy('session.started_at', 'DESC');
+
+    if (query.projectId) {
+      qb.andWhere('session.project_id = :projectId', { projectId: query.projectId });
+    }
+    if (query.startDate) {
+      qb.andWhere('session.started_at >= :startDate', { startDate: query.startDate });
+    }
+    if (query.endDate) {
+      qb.andWhere('session.started_at <= :endDate', { endDate: query.endDate });
     }
 
-    const sessions = await this.sessionRepo.find({
-      where,
-      order: { startedAt: 'DESC' },
-    });
+    const sessions = await qb.getMany();
 
     let aiSeconds = 0;
     let aiLines = 0;

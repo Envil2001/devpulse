@@ -23,6 +23,7 @@ _Zaznaczamy ✅ jeśli działa, ❌ jeśli jest błąd (z opisem), lub „Akcept
 | **Funkcjonalne**    | Śledzenie aktywności (idle po 2 min. bezczynności) | [ ]    |       |
 | **Funkcjonalne**    | Śledzenie komend terminala i commitów Git          | [ ]    |       |
 | **Funkcjonalne**    | Panel Web z dashboardem (heatmapa, statystyki)     | [ ]    |       |
+| **Funkcjonalne**    | Panel AI Assistance & ROI (prędkość i oszczędność czasu) | [ ]    | Dane na podstawie sesji AI i ręcznych oraz wybranego okresu/projektu |
 | **Funkcjonalne**    | Eksport danych do pliku CSV                        | [ ]    |       |
 | **Niefunkcjonalne** | Wydajność (odpowiedź API < 200ms)                  | [ ]    |       |
 | **Niefunkcjonalne** | Bezpieczeństwo (hasła i klucze szyfrowane)         | [ ]    |       |
