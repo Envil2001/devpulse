@@ -1,9 +1,9 @@
 import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { Job, Worker } from 'bullmq';
 import Redis from 'ioredis/built/Redis';
-import { DataSource, EntityManager, Repository } from 'typeorm';
+import { DataSource, EntityManager, IsNull, LessThan, Repository } from 'typeorm';
 
-import { typeIdGenerator } from '@devpulse/lib';
+import { stripUrlCredentials, typeIdGenerator } from '@devpulse/lib';
 
 import { Project } from '../projects/entities/project.entity';
 import { BULL_REDIS_CLIENT } from '../redis/redis.module';
@@ -16,35 +16,73 @@ import { WorkSession, WorkSessionStatus } from './entities/work-session.entity';
 import { TelemetryJobData } from './queue/telemetry.queue';
 import { classifyCommand } from './utils/command-classifier';
 
+const QUEUE_NAME = 'telemetry-ingestion';
 const SESSION_GAP_MS = 15 * 60 * 1000;
 const MAX_IDLE_CREDIT_MS = 30 * 60 * 1000;
-const FOCUS_FAILURE_MAX_PENALTY = 20;
-
+const MAX_FUTURE_SKEW_MS = 5 * 60 * 1000;
+const MAX_EVENT_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 const MAX_LANGUAGE_DELTA_SEC = 300;
+const MAX_COMMANDS = 500;
+const MAX_COMMITS = 100;
+const FOCUS_FAILURE_MAX_PENALTY = 20;
+const UNKNOWN_PROJECT_NAME = 'Unknown';
 
-const NOISY_LANGUAGES = new Set(['plaintext', 'log', 'jsonc']);
-const FOCUS_RELEVANT_KINDS = new Set(['test', 'build', 'lint', 'task']);
+const NOISY_LANGUAGES: ReadonlySet<string> = new Set(['plaintext', 'log', 'jsonc']);
+const FOCUS_RELEVANT_KINDS: ReadonlySet<string> = new Set(['test', 'build', 'lint', 'task']);
+
+type TerminalCommandRecord = WorkSession['terminalCommands'][number];
+
+interface TimedEvent {
+  event: TelemetryEventItemDto;
+  branch: string;
+  time: Date;
+}
 
 function computeFocusScore(
   activeSeconds: number,
   idleSeconds: number,
-  commands: Array<{ kind: string; exitCode: number | null }>,
+  commands: ReadonlyArray<{ kind: string; exitCode: number | null }>,
 ): number {
   const total = activeSeconds + idleSeconds;
   const baseFocus = total > 0 ? (activeSeconds / total) * 100 : 0;
 
-  const meaningful = commands.filter((c) => FOCUS_RELEVANT_KINDS.has(c.kind));
+  const meaningful = commands.filter((command) => FOCUS_RELEVANT_KINDS.has(command.kind));
 
   if (meaningful.length === 0) {
     return baseFocus;
   }
 
-  const failed = meaningful.filter((c) => c.exitCode !== null && c.exitCode !== 0).length;
+  const failed = meaningful.filter(
+    (command) => command.exitCode !== null && command.exitCode !== 0,
+  ).length;
 
-  const failureRate = failed / meaningful.length;
-  const penalty = failureRate * FOCUS_FAILURE_MAX_PENALTY;
+  const penalty = (failed / meaningful.length) * FOCUS_FAILURE_MAX_PENALTY;
 
   return Math.max(0, Math.min(100, baseFocus - penalty));
+}
+
+function resolveEventTime(raw: string | undefined, nowMs: number): Date | null {
+  if (!raw) {
+    return new Date(nowMs);
+  }
+
+  const time = new Date(raw);
+  const ms = time.getTime();
+
+  if (Number.isNaN(ms) || ms > nowMs + MAX_FUTURE_SKEW_MS || ms < nowMs - MAX_EVENT_AGE_MS) {
+    return null;
+  }
+
+  return time;
+}
+
+function deriveProjectName(gitRemoteUrl: string): string {
+  const name = gitRemoteUrl
+    .split(/[/:]/)
+    .pop()
+    ?.replace(/\.git$/i, '');
+
+  return name ?? UNKNOWN_PROJECT_NAME;
 }
 
 @Injectable()
@@ -61,7 +99,7 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
 
   public onModuleInit(): void {
     this.worker = new Worker<TelemetryJobData>(
-      'telemetry-ingestion',
+      QUEUE_NAME,
       async (job: Job<TelemetryJobData>) => {
         await this.processTelemetryBatch(job.data);
       },
@@ -96,193 +134,262 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
   }
 
   private async processTelemetryBatch(data: TelemetryJobData): Promise<void> {
-    const { userId, events } = data;
-    const user = await this.userRepository.findById(userId);
+    const user = await this.userRepository.findById(data.userId);
 
     if (!user) {
-      this.logger.error(`User ${userId} not found.`);
+      this.logger.warn(`User ${data.userId} not found, dropping batch.`);
       return;
     }
 
-    for (const event of events) {
-      await this.dataSource.transaction(async (manager: EntityManager) => {
-        await this.processEvent(manager, user, event);
-      });
+    const events = this.prepareEvents(data.events);
+
+    if (events.length === 0) {
+      return;
     }
+
+    await this.dataSource.transaction(async (manager: EntityManager) => {
+      const projectCache = new Map<string, Project>();
+
+      for (const item of events) {
+        await this.processEvent(manager, user, item, projectCache);
+      }
+    });
+  }
+
+  private prepareEvents(events: ReadonlyArray<TelemetryEventItemDto>): Array<TimedEvent> {
+    const nowMs = Date.now();
+    const prepared: Array<TimedEvent> = [];
+    let dropped = 0;
+
+    for (const event of events) {
+      const time = resolveEventTime(event.clientTimestamp, nowMs);
+      const branch = event.gitBranch;
+
+      if (time === null || !branch) {
+        dropped += 1;
+        continue;
+      }
+
+      prepared.push({ event, branch, time });
+    }
+
+    if (dropped > 0) {
+      this.logger.warn(
+        `Dropped ${String(dropped)} events with invalid timestamp or missing git branch.`,
+      );
+    }
+
+    return prepared.sort((first, second) => first.time.getTime() - second.time.getTime());
   }
 
   private async processEvent(
     manager: EntityManager,
     user: User,
-    event: TelemetryEventItemDto,
+    item: TimedEvent,
+    projectCache: Map<string, Project>,
   ): Promise<void> {
+    const { event, branch, time } = item;
     const sessionRepo = manager.getRepository(WorkSession);
-    const project = await this.resolveProject(manager, user, event.gitRemoteUrl);
-    const eventTime = new Date(event.clientTimestamp ?? new Date().toISOString());
 
-    if (event.gitBranch === null) {
-      this.logger.warn(`Skipping event with null gitBranch: type=${event.type}`);
-      return;
-    }
+    const project = await this.resolveProject(manager, user, event.gitRemoteUrl, projectCache);
+    const active = await this.findActiveSession(sessionRepo, user, branch, project);
 
     if (event.type === 'session_end') {
-      const active = await sessionRepo.findOne({
-        where: {
-          userId: user.id,
-          gitBranch: event.gitBranch,
-          status: WorkSessionStatus.ACTIVE,
-        },
-        order: { endedAt: 'DESC' },
-      });
-
       if (active) {
-        this.accumulateLanguage(active, eventTime);
-        active.endedAt = eventTime;
+        this.accumulateLanguage(active, time);
+        this.extendSession(active, time);
         active.status = WorkSessionStatus.CLOSED;
         this.recomputeDerived(active, user);
         await sessionRepo.save(active);
       }
 
-      await this.persistRawEvent(manager, user, project, active ?? null, event, eventTime, 0);
+      await this.persistRawEvent(manager, user, project, active, item, 0);
       return;
     }
 
-    const lastSession = await sessionRepo.findOne({
+    const gapMs = active?.endedAt
+      ? time.getTime() - active.endedAt.getTime()
+      : Number.POSITIVE_INFINITY;
+    const idleCreditSec = this.getIdleCreditSeconds(event);
+
+    let session: WorkSession;
+
+    if (active !== null && gapMs <= SESSION_GAP_MS) {
+      if (event.type !== 'idle_end') {
+        this.accumulateLanguage(active, time);
+      }
+
+      this.applyEventToSession(active, event, time);
+      this.extendSession(active, time);
+      active.idleSeconds += idleCreditSec;
+      this.recomputeDerived(active, user);
+
+      session = await sessionRepo.save(active);
+    } else {
+      await this.closeStaleSessions(sessionRepo, user, time);
+
+      const created = this.createSession(sessionRepo, user, project, branch, time);
+      this.applyEventToSession(created, event, time);
+      this.recomputeDerived(created, user);
+
+      session = await sessionRepo.save(created);
+    }
+
+    await this.persistRawEvent(manager, user, project, session, item, idleCreditSec);
+  }
+
+  private findActiveSession(
+    sessionRepo: Repository<WorkSession>,
+    user: User,
+    branch: string,
+    project: Project | null,
+  ): Promise<WorkSession | null> {
+    return sessionRepo.findOne({
       where: {
         userId: user.id,
-        gitBranch: event.gitBranch,
+        gitBranch: branch,
+        projectId: project?.id ?? IsNull(),
         status: WorkSessionStatus.ACTIVE,
       },
       order: { endedAt: 'DESC' },
     });
+  }
 
-    const gapMs = lastSession?.endedAt
-      ? eventTime.getTime() - lastSession.endedAt.getTime()
-      : Number.POSITIVE_INFINITY;
+  private createSession(
+    sessionRepo: Repository<WorkSession>,
+    user: User,
+    project: Project | null,
+    branch: string,
+    startedAt: Date,
+  ): WorkSession {
+    const session = sessionRepo.create({
+      user,
+      userId: user.id,
+      project,
+      projectId: project?.id ?? null,
+      gitBranch: branch,
+      startedAt,
+      endedAt: startedAt,
+      activeSeconds: 0,
+      idleSeconds: 0,
+      focusScore: 0,
+      earnedMoney: 0,
+      primaryLanguage: null,
+      currentLanguage: null,
+      languageSeconds: {},
+      commandsRun: 0,
+      failedCommands: 0,
+      terminalCommands: [],
+      commitsCount: 0,
+      commits: [],
+      machineId: null,
+      aiAssisted: false,
+      aiInteractionsCount: 0,
+      status: WorkSessionStatus.ACTIVE,
+    });
+    session.id = typeIdGenerator('workSessions');
 
-    const idleCreditSec = this.getIdleCreditSeconds(event);
+    return session;
+  }
 
-    let currentSession: WorkSession;
+  private async closeStaleSessions(
+    sessionRepo: Repository<WorkSession>,
+    user: User,
+    now: Date,
+  ): Promise<void> {
+    const threshold = new Date(now.getTime() - SESSION_GAP_MS);
 
-    if (lastSession !== null && gapMs >= 0 && gapMs <= SESSION_GAP_MS) {
-      this.accumulateLanguage(lastSession, eventTime);
-      this.applyEventLanguage(lastSession, event);
-      this.applyCommandTracking(lastSession, event, eventTime);
-      this.applyAiInteractionTracking(lastSession, event);
-
-      this.applyCommitTracking(lastSession, event, eventTime);
-      if (lastSession.machineId === null && event.machineId) {
-        lastSession.machineId = event.machineId;
-      }
-
-      lastSession.endedAt = eventTime;
-      lastSession.idleSeconds += idleCreditSec;
-
-      this.recomputeDerived(lastSession, user);
-
-      currentSession = await sessionRepo.save(lastSession);
-    } else {
-      await this.closeAllActiveSessions(sessionRepo, user);
-
-      const newSession = sessionRepo.create({
-        user: user,
+    const stale = await sessionRepo.find({
+      where: {
         userId: user.id,
-        project: project ?? null,
-        projectId: project?.id ?? null,
-        gitBranch: event.gitBranch,
-        startedAt: eventTime,
-        endedAt: eventTime,
-        activeSeconds: 0,
-        idleSeconds: 0,
-        focusScore: 0,
-        earnedMoney: 0,
-        primaryLanguage: null,
-        currentLanguage: null,
-        languageSeconds: {},
-        commandsRun: 0,
-        failedCommands: 0,
-        terminalCommands: [],
-        commitsCount: 0,
-        commits: [],
-        machineId: event.machineId ?? null,
-        aiAssisted: false,
-        aiInteractionsCount: 0,
         status: WorkSessionStatus.ACTIVE,
-      });
-      newSession.id = typeIdGenerator('workSessions');
+        endedAt: LessThan(threshold),
+      },
+    });
 
-      this.applyEventLanguage(newSession, event);
-      this.applyCommandTracking(newSession, event, eventTime);
-      this.applyCommitTracking(newSession, event, eventTime);
-
-      this.recomputeDerived(newSession, user);
-
-      currentSession = await sessionRepo.save(newSession);
+    if (stale.length === 0) {
+      return;
     }
 
-    await this.persistRawEvent(
-      manager,
-      user,
-      project,
-      currentSession,
-      event,
-      eventTime,
-      idleCreditSec,
-    );
+    for (const session of stale) {
+      session.status = WorkSessionStatus.CLOSED;
+      this.recomputeDerived(session, user);
+    }
+
+    await sessionRepo.save(stale);
   }
 
   private async resolveProject(
     manager: EntityManager,
     user: User,
-    gitRemoteUrl: string | undefined,
+    rawRemoteUrl: string | undefined,
+    cache: Map<string, Project>,
   ): Promise<Project | null> {
-    if (!gitRemoteUrl) return null;
+    if (!rawRemoteUrl) {
+      return null;
+    }
+
+    const gitRemoteUrl = stripUrlCredentials(rawRemoteUrl);
+
+    if (gitRemoteUrl === '') {
+      return null;
+    }
+
+    const cached = cache.get(gitRemoteUrl);
+
+    if (cached) {
+      return cached;
+    }
 
     const projectRepo = manager.getRepository(Project);
+    const existing = await projectRepo.findOneBy({ gitRemoteUrl, userId: user.id });
 
-    let project = await projectRepo.findOneBy({
-      gitRemoteUrl,
-      userId: user.id,
-    });
+    let project: Project;
 
-    if (!project) {
-      project = projectRepo.create({
+    if (existing) {
+      project = existing;
+    } else {
+      const created = projectRepo.create({
         gitRemoteUrl,
-        name: gitRemoteUrl.split('/').pop()?.replace('.git', '') ?? 'Unknown',
+        name: deriveProjectName(gitRemoteUrl),
         user,
         userId: user.id,
       });
-      project.id = typeIdGenerator('projects');
-      project = await projectRepo.save(project);
+      created.id = typeIdGenerator('projects');
+      project = await projectRepo.save(created);
     }
+
+    cache.set(gitRemoteUrl, project);
 
     return project;
   }
 
-  private async closeAllActiveSessions(
-    sessionRepo: Repository<WorkSession>,
-    user: User,
-  ): Promise<void> {
-    const actives = await sessionRepo.find({
-      where: {
-        userId: user.id,
-        status: WorkSessionStatus.ACTIVE,
-      },
-    });
+  private applyEventToSession(
+    session: WorkSession,
+    event: TelemetryEventItemDto,
+    time: Date,
+  ): void {
+    this.applyEventLanguage(session, event);
+    this.applyCommandTracking(session, event, time);
+    this.applyAiInteractionTracking(session, event);
+    this.applyCommitTracking(session, event, time);
 
-    for (const active of actives) {
-      active.status = WorkSessionStatus.CLOSED;
-      this.recomputeDerived(active, user);
-      await sessionRepo.save(active);
+    session.machineId ??= event.machineId ?? null;
+  }
+
+  private extendSession(session: WorkSession, time: Date): void {
+    if (session.endedAt === null || time.getTime() > session.endedAt.getTime()) {
+      session.endedAt = time;
     }
   }
 
-  private accumulateLanguage(session: WorkSession, eventTime: Date): void {
+  private accumulateLanguage(session: WorkSession, time: Date): void {
     const lastAt = session.endedAt?.getTime() ?? session.startedAt.getTime();
-    const deltaSec = Math.round((eventTime.getTime() - lastAt) / 1000);
+    const deltaSec = Math.round((time.getTime() - lastAt) / 1000);
 
-    if (deltaSec <= 0) return;
-    if (!session.currentLanguage) return;
+    if (deltaSec <= 0 || !session.currentLanguage) {
+      return;
+    }
 
     const capped = Math.min(deltaSec, MAX_LANGUAGE_DELTA_SEC);
     const buckets: Record<string, number> = { ...session.languageSeconds };
@@ -291,67 +398,71 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
   }
 
   private applyEventLanguage(session: WorkSession, event: TelemetryEventItemDto): void {
-    if (!event.language) return;
+    if (!event.language) {
+      return;
+    }
 
-    const lang = event.language.toLowerCase();
-    if (NOISY_LANGUAGES.has(lang)) return;
+    const language = event.language.toLowerCase();
 
-    session.currentLanguage = lang;
+    if (!NOISY_LANGUAGES.has(language)) {
+      session.currentLanguage = language;
+    }
   }
 
   private applyCommandTracking(
     session: WorkSession,
     event: TelemetryEventItemDto,
-    eventTime: Date,
+    time: Date,
   ): void {
-    if (event.type !== 'terminal_command' && event.type !== 'task_run') return;
+    const record = this.toCommandRecord(event, time);
 
-    const MAX_COMMANDS = 500;
-    const commands = session.terminalCommands;
+    if (record === null) {
+      return;
+    }
 
-    if (event.type === 'terminal_command') {
-      if (!event.command) return;
-      const kind = classifyCommand(event.command);
-      commands.push({
+    session.terminalCommands = [...session.terminalCommands, record].slice(-MAX_COMMANDS);
+    session.commandsRun += 1;
+
+    if (record.exitCode !== null && record.exitCode !== 0) {
+      session.failedCommands += 1;
+    }
+
+    if (record.kind === 'ai') {
+      session.aiInteractionsCount += 1;
+      session.aiAssisted = true;
+    }
+  }
+
+  private toCommandRecord(event: TelemetryEventItemDto, time: Date): TerminalCommandRecord | null {
+    if (event.type === 'terminal_command' && event.command) {
+      return {
         command: event.command,
         cwd: event.commandCwd ?? null,
         exitCode: event.exitCode ?? null,
         durationMs: event.durationMs ?? 0,
         kind: classifyCommand(event.command),
-        timestamp: eventTime.toISOString(),
-      });
-
-      if (kind === 'ai') {
-        session.aiInteractionsCount += 1;
-        session.aiAssisted = true;
-      }
+        timestamp: time.toISOString(),
+      };
     }
 
-    if (event.type === 'task_run') {
-      if (!event.taskName) return;
-
-      commands.push({
+    if (event.type === 'task_run' && event.taskName) {
+      return {
         command: event.taskName,
         cwd: null,
         exitCode: event.exitCode ?? null,
         durationMs: event.durationMs ?? 0,
         kind: 'task',
-        timestamp: eventTime.toISOString(),
-      });
+        timestamp: time.toISOString(),
+      };
     }
 
-    session.terminalCommands =
-      commands.length > MAX_COMMANDS ? commands.slice(-MAX_COMMANDS) : commands;
-
-    session.commandsRun += 1;
-
-    if (event.exitCode !== null && event.exitCode !== undefined && event.exitCode !== 0) {
-      session.failedCommands += 1;
-    }
+    return null;
   }
 
   private applyAiInteractionTracking(session: WorkSession, event: TelemetryEventItemDto): void {
-    if (event.type !== 'ai_interaction') return;
+    if (event.type !== 'ai_interaction') {
+      return;
+    }
 
     session.aiInteractionsCount += 1;
     session.aiAssisted = true;
@@ -360,40 +471,44 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
   private applyCommitTracking(
     session: WorkSession,
     event: TelemetryEventItemDto,
-    eventTime: Date,
+    time: Date,
   ): void {
-    if (event.type !== 'git_commit') return;
-    if (!event.commitHash || !event.commitMessage) return;
+    if (event.type !== 'git_commit' || !event.commitHash || !event.commitMessage) {
+      return;
+    }
 
-    const MAX_COMMITS = 100;
-    const commits = session.commits;
+    if (session.commits.some((commit) => commit.hash === event.commitHash)) {
+      return;
+    }
 
-    if (commits.some((c) => c.hash === event.commitHash)) return;
+    session.commits = [
+      ...session.commits,
+      {
+        hash: event.commitHash,
+        message: event.commitMessage,
+        filesChanged: event.filesChanged ?? 0,
+        insertions: event.insertions ?? 0,
+        deletions: event.deletions ?? 0,
+        filesList: event.filesList ?? [],
+        timestamp: time.toISOString(),
+      },
+    ].slice(-MAX_COMMITS);
 
-    commits.push({
-      hash: event.commitHash,
-      message: event.commitMessage,
-      filesChanged: event.filesChanged ?? 0,
-      insertions: event.insertions ?? 0,
-      deletions: event.deletions ?? 0,
-      filesList: event.filesList ?? [],
-      timestamp: eventTime.toISOString(),
-    });
-
-    session.commits = commits.length > MAX_COMMITS ? commits.slice(-MAX_COMMITS) : commits;
     session.commitsCount = session.commits.length;
   }
 
   private topLanguage(buckets: Record<string, number> | null | undefined): string | null {
-    if (!buckets) return null;
+    if (!buckets) {
+      return null;
+    }
 
     let best: string | null = null;
     let bestSec = 0;
 
-    for (const [lang, sec] of Object.entries(buckets)) {
-      if (sec > bestSec) {
-        best = lang;
-        bestSec = sec;
+    for (const [language, seconds] of Object.entries(buckets)) {
+      if (seconds > bestSec) {
+        best = language;
+        bestSec = seconds;
       }
     }
 
@@ -401,10 +516,13 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
   }
 
   private getIdleCreditSeconds(event: TelemetryEventItemDto): number {
-    if (event.type !== 'idle_end' || !event.durationMs) return 0;
+    if (event.type !== 'idle_end' || !event.durationMs) {
+      return 0;
+    }
 
     const rawSec = Math.round(event.durationMs / 1000);
     const capSec = Math.round(MAX_IDLE_CREDIT_MS / 1000);
+
     return Math.min(rawSec, capSec);
   }
 
@@ -432,18 +550,18 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
     user: User,
     project: Project | null,
     session: WorkSession | null,
-    event: TelemetryEventItemDto,
-    eventTime: Date,
+    item: TimedEvent,
     idleCreditSec: number,
   ): Promise<void> {
+    const { event, branch, time } = item;
     const repo = manager.getRepository(TelemetryEvent);
 
     const rawEvent = repo.create({
       user,
       project,
       session,
-      gitBranch: event.gitBranch,
-      eventTimestamp: eventTime,
+      gitBranch: branch,
+      eventTimestamp: time,
       activeSeconds: 0,
       idleSeconds: idleCreditSec,
       filesChanged: event.filePath ? [event.filePath] : [],
@@ -461,6 +579,7 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
       deletions: event.deletions ?? null,
     });
     rawEvent.id = typeIdGenerator('telemetryEvents');
+
     await repo.save(rawEvent);
   }
 }
