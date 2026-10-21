@@ -25,6 +25,8 @@ export class TelemetryEventItemDto implements TelemetryEventDto {
       'session_end',
       'terminal_command',
       'task_run',
+      'git_commit',
+      'ai_interaction',
     ],
   })
   @IsIn([
@@ -37,6 +39,7 @@ export class TelemetryEventItemDto implements TelemetryEventDto {
     'terminal_command',
     'task_run',
     'git_commit',
+    'ai_interaction',
   ])
   public type!:
     | 'heartbeat'
@@ -47,7 +50,8 @@ export class TelemetryEventItemDto implements TelemetryEventDto {
     | 'session_end'
     | 'terminal_command'
     | 'task_run'
-    | 'git_commit';
+    | 'git_commit'
+    | 'ai_interaction';
 
   @ApiProperty({ description: 'Git branch name (e.g., main, develop)' })
   @IsString()
@@ -145,6 +149,11 @@ export class TelemetryEventItemDto implements TelemetryEventDto {
   @IsString({ each: true })
   @IsOptional()
   public filesList?: Array<string>;
+
+  @ApiProperty({ description: 'Specific AI tool used (copilot, claude, etc.)', required: false })
+  @IsString()
+  @IsOptional()
+  public aiTool?: string;
 }
 
 export class IngestTelemetryBatchRequestDto {

@@ -1,4 +1,4 @@
-export type CommandKind = 'test' | 'build' | 'lint' | 'install' | 'git' | 'other';
+export type CommandKind = 'test' | 'build' | 'lint' | 'install' | 'git' | 'ai' | 'other';
 
 const KIND_PRIORITY: ReadonlyArray<CommandKind> = ['test', 'build', 'lint', 'install', 'git'];
 
@@ -65,6 +65,11 @@ const TOOL_KINDS: ReadonlyMap<string, CommandKind> = new Map<string, CommandKind
   ['biome', 'lint'],
   ['ruff', 'lint'],
   ['black', 'lint'],
+  ['claude', 'ai'],
+  ['aider', 'ai'],
+  ['ollama', 'ai'],
+  ['sgpt', 'ai'],
+  ['cody', 'ai'],
 ]);
 
 const SUBCOMMAND_KINDS: ReadonlyMap<string, ReadonlyMap<string, CommandKind>> = new Map([
@@ -110,6 +115,7 @@ const SUBCOMMAND_KINDS: ReadonlyMap<string, ReadonlyMap<string, CommandKind>> = 
       ['lint', 'lint'],
     ]),
   ],
+  ['gh', new Map<string, CommandKind>([['copilot', 'ai']])],
 ]);
 
 function baseName(token: string): string {

@@ -11,6 +11,7 @@ import { type Request, type Response } from 'express';
 import { type ApiErrorResponse } from '@devpulse/lib';
 
 @Catch()
+// Единый обработчик исключений форматирует ошибки API и записывает серверные ошибки в лог.
 export class AllExceptionsFilter implements ExceptionFilter {
   private readonly logger = new Logger(AllExceptionsFilter.name);
 

@@ -38,10 +38,32 @@ export const TOURS: readonly TourDefinition[] = [
         placement: 'bottom',
       },
       {
+        id: 'ai-roi',
+        target: target('ai-roi'),
+        title: 'AI Assistance & ROI',
+        content:
+          'Track how AI tools (Copilot, Claude, Aider) boost your coding speed and how many hours you save.',
+        placement: 'bottom',
+      },
+      {
+        id: 'comparison',
+        target: target('comparison'),
+        title: 'Period comparison',
+        content: 'Compare your current productivity with the previous period to see your progress.',
+        placement: 'top',
+      },
+      {
         id: 'activity-chart',
         target: target('activity-chart'),
         title: 'Activity chart',
         content: 'How your coding time is distributed across the selected period.',
+        placement: 'top',
+      },
+      {
+        id: 'heatmap',
+        target: target('heatmap'),
+        title: 'Activity heatmap',
+        content: 'A year-long visual heatmap of your coding consistency, streaks and active days.',
         placement: 'top',
       },
       {

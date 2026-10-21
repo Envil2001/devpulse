@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 
 import { registerCommands } from './commands/index.js';
+import { AiMonitor } from './signals/ai-monitor.js';
 import { GitCommitWatcher } from './signals/git-commit-watcher.js';
 import { TasksMonitor } from './signals/tasks-monitor.js';
 import { TerminalMonitor } from './signals/terminal-monitor.js';
@@ -52,10 +53,12 @@ export function activate(context: vscode.ExtensionContext): void {
     const taskMonitor = new TasksMonitor(outputChannel);
     const terminalMonitor = new TerminalMonitor(outputChannel);
     const gitCommitWatcher = new GitCommitWatcher(outputChannel);
+    const aiMonitor = new AiMonitor(outputChannel);
 
     telemetryBridge = new TelemetryBridge(
       context,
       activityMonitor,
+      aiMonitor,
       gitContextProvider,
       terminalMonitor,
       taskMonitor,

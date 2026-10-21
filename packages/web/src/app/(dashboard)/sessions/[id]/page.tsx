@@ -1,7 +1,7 @@
 import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
 import { getQueryClient } from '@/shared/api/get-query-client';
 import { sessionsKeys } from '@/features/sessions/hooks';
-import { sessionsService } from '@/shared/api/services';
+import { getSessionByIdServer } from '@/features/sessions/server';
 import { SessionDetailView } from '@/features/sessions/components/session-detail-view';
 
 interface PageProps {
@@ -14,7 +14,7 @@ export default async function SessionDetailPage({ params }: PageProps) {
 
   await queryClient.prefetchQuery({
     queryKey: sessionsKeys.detail(id),
-    queryFn: () => sessionsService.getById(id),
+    queryFn: () => getSessionByIdServer(id),
   });
 
   return (

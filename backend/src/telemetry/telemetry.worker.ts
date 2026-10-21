@@ -168,6 +168,8 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
       this.accumulateLanguage(lastSession, eventTime);
       this.applyEventLanguage(lastSession, event);
       this.applyCommandTracking(lastSession, event, eventTime);
+      this.applyAiInteractionTracking(lastSession, event);
+
       this.applyCommitTracking(lastSession, event, eventTime);
       if (lastSession.machineId === null && event.machineId) {
         lastSession.machineId = event.machineId;
@@ -203,6 +205,8 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
         commitsCount: 0,
         commits: [],
         machineId: event.machineId ?? null,
+        aiAssisted: false,
+        aiInteractionsCount: 0,
         status: WorkSessionStatus.ACTIVE,
       });
       newSession.id = typeIdGenerator('workSessions');
@@ -307,7 +311,7 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
 
     if (event.type === 'terminal_command') {
       if (!event.command) return;
-
+      const kind = classifyCommand(event.command);
       commands.push({
         command: event.command,
         cwd: event.commandCwd ?? null,
@@ -316,6 +320,11 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
         kind: classifyCommand(event.command),
         timestamp: eventTime.toISOString(),
       });
+
+      if (kind === 'ai') {
+        session.aiInteractionsCount += 1;
+        session.aiAssisted = true;
+      }
     }
 
     if (event.type === 'task_run') {
@@ -339,6 +348,13 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
     if (event.exitCode !== null && event.exitCode !== undefined && event.exitCode !== 0) {
       session.failedCommands += 1;
     }
+  }
+
+  private applyAiInteractionTracking(session: WorkSession, event: TelemetryEventItemDto): void {
+    if (event.type !== 'ai_interaction') return;
+
+    session.aiInteractionsCount += 1;
+    session.aiAssisted = true;
   }
 
   private applyCommitTracking(

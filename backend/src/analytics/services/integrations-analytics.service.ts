@@ -8,6 +8,7 @@ import { formatDuration, type TypeId } from '@devpulse/lib';
 
 import { WorkSession, WorkSessionStatus } from '../../telemetry/entities/work-session.entity';
 import { User } from '../../users/entities/user.entity';
+import { GetIntegrationAiRoiResponseDto } from '../dto/response/get-integration-ai-roi-response.dto';
 import { GetIntegrationLanguagesResponseDto } from '../dto/response/get-integration-languages-response.dto';
 import { GetIntegrationSessionItemDto } from '../dto/response/get-integration-sessions-response.dto';
 import { GetIntegrationStatusResponseDto } from '../dto/response/get-integration-status-response.dto';
@@ -186,6 +187,74 @@ export class IntegrationsAnalyticsService {
     return {
       totalActiveSeconds,
       languages,
+    };
+  }
+
+  public async getAiRoiMetrics(
+    userId: TypeId<'users'>,
+    projectId?: string,
+  ): Promise<GetIntegrationAiRoiResponseDto> {
+    const where: Record<string, unknown> = { userId };
+    if (projectId) {
+      where.projectId = projectId;
+    }
+
+    const sessions = await this.sessionRepo.find({
+      where,
+      order: { startedAt: 'DESC' },
+    });
+
+    let aiSeconds = 0;
+    let aiLines = 0;
+    let aiSessions = 0;
+    let totalAiInteractions = 0;
+
+    let manualSeconds = 0;
+    let manualLines = 0;
+    let manualSessions = 0;
+
+    for (const session of sessions) {
+      const totalLines = session.commits.reduce(
+        (sum, commit) => sum + ((commit.insertions || 0) + (commit.deletions || 0)),
+        0,
+      );
+
+      if (session.aiAssisted || session.aiInteractionsCount > 0) {
+        aiSessions += 1;
+        aiSeconds += session.activeSeconds;
+        aiLines += totalLines;
+        totalAiInteractions += session.aiInteractionsCount;
+      } else {
+        manualSessions += 1;
+        manualSeconds += session.activeSeconds;
+        manualLines += totalLines;
+      }
+    }
+
+    const aiHours = aiSeconds / 3600;
+    const manualHours = manualSeconds / 3600;
+
+    const aiVelocity = aiHours > 0 ? Math.round(aiLines / aiHours) : 0;
+    const manualVelocity = manualHours > 0 ? Math.round(manualLines / manualHours) : 0;
+
+    let speedupPercentage = 0;
+    if (manualVelocity > 0 && aiVelocity > manualVelocity) {
+      speedupPercentage = Number(
+        (((aiVelocity - manualVelocity) / manualVelocity) * 100).toFixed(1),
+      );
+    }
+
+    const expectedHoursWithoutAi = manualVelocity > 0 ? aiLines / manualVelocity : 0;
+    const hoursSaved = Math.max(0, Number((expectedHoursWithoutAi - aiHours).toFixed(1)));
+
+    return {
+      aiSessionsCount: aiSessions,
+      manualSessionsCount: manualSessions,
+      totalAiInteractions,
+      aiVelocityLinesPerHour: aiVelocity,
+      manualVelocityLinesPerHour: manualVelocity,
+      speedupPercentage,
+      estimatedHoursSaved: hoursSaved,
     };
   }
 }
