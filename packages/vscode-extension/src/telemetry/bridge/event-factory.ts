@@ -11,7 +11,8 @@ export type TelemetryEventType =
   | 'session_end'
   | 'terminal_command'
   | 'task_run'
-  | 'git_commit';
+  | 'git_commit'
+  | 'ai_interaction';
 
 export interface EventPartial {
   durationMs?: number | null;

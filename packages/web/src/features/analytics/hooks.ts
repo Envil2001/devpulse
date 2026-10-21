@@ -12,7 +12,7 @@ import {
   CommandsBreakdown,
 } from '@/shared/types';
 import { DashboardStats } from '@devpulse/lib';
-import { AnalyticsRangeParams } from './api';
+import { AiRoiMetrics, AnalyticsRangeParams } from './api';
 
 export type AnalyticsPeriod = 'today' | '7d' | '30d' | 'custom';
 
@@ -33,6 +33,8 @@ export const analyticsKeys = {
     [...analyticsKeys.all, 'timeseries', range.startDate, range.endDate, projectId] as const,
   branches: (range: DateRange, projectId?: string) =>
     [...analyticsKeys.all, 'branches', range.startDate, range.endDate, projectId] as const,
+  aiRoi: (range: DateRange, projectId?: string) =>
+    [...analyticsKeys.all, 'ai-roi', range.startDate, range.endDate, projectId] as const,
 };
 
 function endOfDay(d: Date): Date {
@@ -149,4 +151,11 @@ export function useDashboardComparison(range: DateRange, projectId?: string) {
     previous: previous.data,
     isLoading: current.isLoading || previous.isLoading,
   };
+}
+
+export function useAiRoiMetrics(range: DateRange, projectId?: string) {
+  return useQuery<AiRoiMetrics>({
+    queryKey: analyticsKeys.aiRoi(range, projectId),
+    queryFn: () => analyticsService.getAiRoi({ ...range, projectId }),
+  });
 }

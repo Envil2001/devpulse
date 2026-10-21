@@ -110,4 +110,10 @@ export class WorkSession extends AppBaseEntity<'workSessions'> {
 
   @OneToMany(() => TelemetryEvent, (event) => event.session)
   public events!: Array<TelemetryEvent>;
+
+  @Column({ name: 'ai_assisted', type: 'boolean', default: false })
+  public aiAssisted!: boolean;
+
+  @Column({ name: 'ai_interactions_count', type: 'int', default: 0 })
+  public aiInteractionsCount!: number;
 }

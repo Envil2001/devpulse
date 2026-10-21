@@ -25,6 +25,7 @@ import { RecentSessionsPanel } from '@/features/sessions/components/recent-sessi
 import { TerminalActivityPanel } from './terminal-activity-panel';
 import { ComparisonPanel } from './comparison-panel';
 import { HeatmapPanel } from './heatmap-panel';
+import { AiRoiPanel } from './ai-roi-panel';
 
 function getInitialCustomDates() {
   const to = new Date();
@@ -67,7 +68,7 @@ export function DashboardView() {
 
         <PageActions>
           <div className="flex flex-wrap items-center gap-3">
-            <ProjectSelector value={projectId} onChange={setProjectId} /> {/* <-- NEW */}
+            <ProjectSelector value={projectId} onChange={setProjectId} />
             <div data-tour="period-switcher">
               <TimeSwitcher
                 value={period}
@@ -82,6 +83,10 @@ export function DashboardView() {
 
       <div data-tour="stats-overview">
         <DashboardSummaryCards range={range} projectId={projectId} />
+      </div>
+
+      <div data-tour="ai-roi">
+        <AiRoiPanel range={range} projectId={projectId} />
       </div>
 
       <div data-tour="comparison">

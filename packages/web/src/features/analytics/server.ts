@@ -1,7 +1,7 @@
 import { serverGet } from '@/shared/api/server-client';
 import { TimeseriesPoint, BranchDataPoint, LanguagesBreakdown, LiveStatus } from '@/shared/types';
 import { DashboardStats } from '@devpulse/lib';
-import { AnalyticsRangeParams } from './api';
+import { AiRoiMetrics, AnalyticsRangeParams } from './api';
 
 export const getDashboardStatsServer = (params: AnalyticsRangeParams = {}) =>
   serverGet<DashboardStats>('/analytics/dashboard', { params });
@@ -24,3 +24,6 @@ export const getBranchesServer = async (params: AnalyticsRangeParams = {}) => {
 export const getLanguagesServer = () => serverGet<LanguagesBreakdown>('/analytics/languages');
 
 export const getLiveStatusServer = () => serverGet<LiveStatus>('/analytics/status');
+
+export const getAiRoiServer = (params: AnalyticsRangeParams = {}) =>
+  serverGet<AiRoiMetrics>('/analytics/ai-roi', { params });

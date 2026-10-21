@@ -15,6 +15,16 @@ export interface AnalyticsRangeParams extends QueryParams {
   projectId?: string;
 }
 
+export interface AiRoiMetrics {
+  aiSessionsCount: number;
+  manualSessionsCount: number;
+  totalAiInteractions: number;
+  aiVelocityLinesPerHour: number;
+  manualVelocityLinesPerHour: number;
+  speedupPercentage: number;
+  estimatedHoursSaved: number;
+}
+
 export class AnalyticsService extends BaseService {
   async getDashboard(params: AnalyticsRangeParams = {}): Promise<DashboardStats> {
     return this.get<DashboardStats>('/analytics/dashboard', { params });
@@ -49,5 +59,9 @@ export class AnalyticsService extends BaseService {
 
   async getCommands(params: AnalyticsRangeParams = {}): Promise<CommandsBreakdown> {
     return this.get<CommandsBreakdown>('/analytics/commands', { params });
+  }
+
+  async getAiRoi(params: AnalyticsRangeParams = {}): Promise<AiRoiMetrics> {
+    return this.get<AiRoiMetrics>('/analytics/ai-roi', { params });
   }
 }

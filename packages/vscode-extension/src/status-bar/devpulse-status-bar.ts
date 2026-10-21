@@ -50,7 +50,14 @@ export class DevPulseStatusBar implements vscode.Disposable {
   private render(): void {
     const { workspaceName, gitBranch } = this.gitContextProvider.currentContext;
     const stats = this.statusBarState.todayStats;
-
+    console.log(
+      'Rendering status bar with stats:',
+      stats,
+      'workspaceName:',
+      workspaceName,
+      'gitBranch:',
+      gitBranch,
+    );
     const timeLabel = stats ? formatDuration(stats.activeSeconds) : 'No Time';
     const branchLabel = gitBranch ?? 'No Git';
 

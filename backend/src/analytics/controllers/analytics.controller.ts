@@ -19,6 +19,7 @@ import { GetAnalyticsBranchesResponseDto } from '../dto/response/get-analytics-b
 import { GetAnalyticsCommandsResponseDto } from '../dto/response/get-analytics-commands-response.dto';
 import { GetAnalyticsDashboardResponseDto } from '../dto/response/get-analytics-dashboard-response.dto';
 import { GetAnalyticsTimeseriesResponseDto } from '../dto/response/get-analytics-timeseries-response.dto';
+import { GetIntegrationAiRoiResponseDto } from '../dto/response/get-integration-ai-roi-response.dto';
 import { GetIntegrationLanguagesResponseDto } from '../dto/response/get-integration-languages-response.dto';
 import { GetIntegrationStatusResponseDto } from '../dto/response/get-integration-status-response.dto';
 import { AnalyticsService } from '../services/analytics.service';
@@ -118,5 +119,20 @@ export class AnalyticsController {
     });
 
     return new StreamableFile(Buffer.from(file.content, 'utf8'));
+  }
+
+  @Get('ai-roi')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get AI productivity speedup and ROI metrics' })
+  @ApiQuery({ name: 'startDate', required: false, type: String })
+  @ApiQuery({ name: 'endDate', required: false, type: String })
+  @ApiQuery({ name: 'projectId', required: false, type: String })
+  public async getAiRoi(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+    @Query('projectId') projectId?: string,
+  ): Promise<GetIntegrationAiRoiResponseDto> {
+    return this.integrationsService.getAiRoiMetrics(user.id, projectId);
   }
 }

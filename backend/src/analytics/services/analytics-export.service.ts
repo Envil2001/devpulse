@@ -53,15 +53,7 @@ export class AnalyticsExportService {
       .where('session.user_id = :userId', { userId })
       .orderBy('session.started_at', 'ASC');
 
-    if (query.projectId) {
-      qb.andWhere('session.project_id = :projectId', { projectId: query.projectId });
-    }
-    if (query.startDate) {
-      qb.andWhere('session.started_at >= :startDate', { startDate: query.startDate });
-    }
-    if (query.endDate) {
-      qb.andWhere('session.started_at <= :endDate', { endDate: query.endDate });
-    }
+    this.applyFilters(qb, query);
 
     const rawRows = await qb.getRawMany<SessionExportRaw>();
 
@@ -78,7 +70,26 @@ export class AnalyticsExportService {
 
   private formatDate(value: Date | string): string {
     const date = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return '';
+    }
+
     return date.toISOString().split('T')[0] ?? '';
+  }
+
+  private applyFilters(
+    qb: ReturnType<Repository<WorkSession>['createQueryBuilder']>,
+    query: GetAnalyticsRangeRequestDto,
+  ): void {
+    if (query.projectId) {
+      qb.andWhere('session.project_id = :projectId', { projectId: query.projectId });
+    }
+    if (query.startDate) {
+      qb.andWhere('session.started_at >= :startDate', { startDate: query.startDate });
+    }
+    if (query.endDate) {
+      qb.andWhere('session.started_at <= :endDate', { endDate: query.endDate });
+    }
   }
 
   private buildFilename(query: GetAnalyticsRangeRequestDto): string {

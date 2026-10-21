@@ -8,7 +8,8 @@ export interface TelemetryEventDto {
     | 'session_end'
     | 'terminal_command'
     | 'task_run'
-    | 'git_commit';
+    | 'git_commit'
+    | 'ai_interaction';
 
   gitBranch: string | null;
   gitRemoteUrl?: string;
@@ -32,4 +33,6 @@ export interface TelemetryEventDto {
   insertions?: number;
   deletions?: number;
   filesList?: Array<string>;
+
+  aiTool?: string;
 }

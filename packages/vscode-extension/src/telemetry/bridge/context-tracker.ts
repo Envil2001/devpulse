@@ -24,9 +24,9 @@ export class ContextTracker implements vscode.Disposable {
     return this.remoteUrlValue;
   }
 
-  update(nextContext: GitContext): ContextUpdateResult {
-    const nextBranch = nextContext.gitBranch;
-    const nextRemoteUrl = nextContext.gitRemoteUrl;
+  update(nextContext?: GitContext | null): ContextUpdateResult {
+    const nextBranch = nextContext?.gitBranch ?? null;
+    const nextRemoteUrl = nextContext?.gitRemoteUrl ?? null;
 
     if (nextBranch === null) {
       this.scheduleGraceTimeout();

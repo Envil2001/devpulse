@@ -6,6 +6,7 @@ import type { TelemetryEventDto } from '@devpulse/lib';
 
 import type { ActivityMonitor, ActivityState } from '../activity-monitor.js';
 import type { GitContext, GitContextProvider } from '../git-context.js';
+import { type AiMonitor } from '../signals/ai-monitor.js';
 import { sanitizeCommand } from '../signals/command-sanitizer.js';
 import { type GitCommitWatcher } from '../signals/git-commit-watcher.js';
 import type { TasksMonitor } from '../signals/tasks-monitor.js';
@@ -53,6 +54,7 @@ export class TelemetryBridge implements vscode.Disposable {
   constructor(
     private readonly context: vscode.ExtensionContext,
     private readonly activityMonitor: ActivityMonitor,
+    private readonly aiMonitor: AiMonitor,
     private readonly gitContextProvider: GitContextProvider,
     private readonly terminalMonitor: TerminalMonitor,
     private readonly tasksMonitor: TasksMonitor,
@@ -91,15 +93,20 @@ export class TelemetryBridge implements vscode.Disposable {
     const initialContext = this.gitContextProvider.currentContext;
     this.lastActivityState = this.activityMonitor.currentState;
     this.lastActivityChangeAtMs = Date.now();
+
     this.contextTracker.update(initialContext);
 
-    this.registerListeners();
-    this.flushScheduler.start();
-    void this.gitCommitWatcher.setWorkspaceFolder(initialContext.workspaceFolderPath);
+    if (initialContext.workspaceFolderPath) {
+      void this.gitCommitWatcher.setWorkspaceFolder(initialContext.workspaceFolderPath);
+    }
+
     if (initialContext.gitBranch) {
       this.enqueue(this.create('heartbeat', { durationMs: null }));
       await this.flush();
     }
+
+    this.registerListeners();
+    this.flushScheduler.start();
   }
 
   public async shutdown(signal: AbortSignal): Promise<void> {
@@ -118,6 +125,15 @@ export class TelemetryBridge implements vscode.Disposable {
 
       this.gitContextProvider.onDidChangeContext((nextContext) => {
         this.onGitContextTransition(nextContext);
+      }),
+
+      this.aiMonitor.onDidDetectAi((event) => {
+        this.enqueue(
+          this.create('ai_interaction', {
+            command: event.tool,
+            filesChanged: event.linesCount,
+          }),
+        );
       }),
 
       this.contextTracker.onGracePeriodExpired(() => {
