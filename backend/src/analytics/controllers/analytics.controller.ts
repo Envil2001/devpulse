@@ -83,13 +83,12 @@ export class AnalyticsController {
   @Get('languages')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get programming languages breakdown' })
-  @ApiQuery({ name: 'projectId', required: false, type: String })
   @ApiResponse({ status: HttpStatus.OK, type: GetIntegrationLanguagesResponseDto })
   public async getLanguages(
     @CurrentUser() user: AuthenticatedUser,
-    @Query('projectId') projectId?: string,
+    @Query() query: GetAnalyticsRangeRequestDto,
   ): Promise<GetIntegrationLanguagesResponseDto> {
-    return this.integrationsService.getLanguagesBreakdown(user.id, projectId);
+    return this.integrationsService.getLanguagesBreakdown(user.id, query);
   }
 
   @Get('commands')
@@ -111,7 +110,7 @@ export class AnalyticsController {
     @Query() query: GetAnalyticsRangeRequestDto,
     @Res({ passthrough: true }) res: Response,
   ): Promise<StreamableFile> {
-    const file = await this.analyticsExportService.exportSessions(user.id, query);
+    const file = await this.analyticsExportService.exportSessions(user.id, user.timezone, query);
 
     res.set({
       'Content-Type': file.contentType,

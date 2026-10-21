@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { formatInTimeZone } from 'date-fns-tz';
 import { Repository } from 'typeorm';
 
 import { TypeId } from '@devpulse/lib';
@@ -22,11 +23,12 @@ export class AnalyticsExportService {
 
   public async exportSessions(
     userId: TypeId<'users'>,
+    timezone: string,
     query: GetAnalyticsRangeRequestDto,
   ): Promise<ExportedFile> {
     this.logger.log(`Exporting sessions for user: ${userId}`);
 
-    const rows = await this.fetchRows(userId, query);
+    const rows = await this.fetchRows(userId, timezone, query);
     const content = this.csvFormatter.serialize(rows);
 
     return {
@@ -38,6 +40,7 @@ export class AnalyticsExportService {
 
   private async fetchRows(
     userId: TypeId<'users'>,
+    timezone: string,
     query: GetAnalyticsRangeRequestDto,
   ): Promise<Array<ExportRow>> {
     const qb = this.sessionRepo
@@ -58,7 +61,7 @@ export class AnalyticsExportService {
     const rawRows = await qb.getRawMany<SessionExportRaw>();
 
     return rawRows.map((row) => ({
-      date: this.formatDate(row.date),
+      date: this.formatDate(row.date, timezone),
       projectName: row.projectName ?? 'Unknown',
       gitBranch: row.gitBranch ?? 'unknown',
       activeSeconds: Number(row.activeSeconds ?? 0),
@@ -68,13 +71,14 @@ export class AnalyticsExportService {
     }));
   }
 
-  private formatDate(value: Date | string): string {
+  private formatDate(value: Date | string, timezone: string): string {
     const date = value instanceof Date ? value : new Date(value);
+
     if (Number.isNaN(date.getTime())) {
       return '';
     }
 
-    return date.toISOString().split('T')[0] ?? '';
+    return formatInTimeZone(date, timezone, 'yyyy-MM-dd');
   }
 
   private applyFilters(

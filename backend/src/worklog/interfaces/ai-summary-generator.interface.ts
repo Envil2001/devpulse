@@ -8,6 +8,7 @@ export interface SummaryInputData {
   focusScore: number;
   commands: string;
   commits: string;
+  aiUsage?: string | null;
 }
 
 export interface AiSummaryGenerator {

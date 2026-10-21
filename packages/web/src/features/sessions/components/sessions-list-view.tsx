@@ -211,7 +211,7 @@ export function SessionsListView() {
                 </div>
 
                 <div className="col-span-2 font-mono text-xs text-foreground tabular-nums sm:col-span-2">
-                  {formatDuration(session.durationMs)}
+                  {formatDuration(session.durationMs / 1000)}
                 </div>
 
                 <div className="col-span-2 text-right font-mono text-xs text-brand tabular-nums sm:col-span-1">
