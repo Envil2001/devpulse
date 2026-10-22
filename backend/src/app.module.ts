@@ -21,7 +21,6 @@ import { TelemetryModule } from './telemetry/telemetry.module';
 import { User } from './users/entities/user.entity';
 import { UserEncryption } from './users/entities/user-encryption.entity';
 import { WorklogModule } from './worklog/worklog.module';
-import { AppService } from './app.service';
 
 const throttlerProvider: Provider = {
   provide: APP_GUARD,
@@ -68,6 +67,6 @@ const throttlerProvider: Provider = {
     EmailModule,
     WorklogModule,
   ],
-  providers: [AppService, throttlerProvider],
+  providers: [throttlerProvider],
 })
 export class AppModule {}
