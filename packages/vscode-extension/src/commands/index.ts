@@ -4,7 +4,6 @@ import type { StatusBarState } from '../status-bar/status-bar-state.js';
 import type { TelemetryBridge } from '../telemetry/telemetry-bridge.js';
 
 import { registerClearApiKeyCommand } from './clear-api-key.command.js';
-import { registerHelloWorldCommand } from './hello-world.command.js';
 import { registerOpenDashboardCommands } from './open-dashboard.command.js';
 import { registerPauseTrackingCommand } from './pause-tracking.command.js';
 import { registerResumeTrackingCommand } from './resume-tracking.command.js';
@@ -24,7 +23,6 @@ export function registerCommands(
   deps: CommandDependencies,
 ): Array<vscode.Disposable> {
   return [
-    registerHelloWorldCommand(),
     registerSetApiKeyCommand(context),
     registerClearApiKeyCommand(context),
 
