@@ -75,7 +75,7 @@ function buildUserPrompt(input: SummaryInputData): string {
   ];
 
   if (input.aiUsage !== null && input.aiUsage !== undefined) {
-    lines.push(`AI usage: ${String(input.aiUsage)}`);
+    lines.push(`AI usage: ${input.aiUsage}`);
   }
 
   return ['<telemetry>', ...lines.map((line) => sanitizeField(line)), '</telemetry>'].join('\n');
