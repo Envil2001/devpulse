@@ -1,17 +1,26 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect } from 'react';
+import { useForm } from 'react-hook-form';
 import { Key, Terminal, Blocks } from 'lucide-react';
+
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
-import { Label } from '@/shared/components/ui/label';
 import {
   Dialog,
   DialogContent,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from '@/shared/components/ui/dialog';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/shared/components/ui/form';
 import { RadioCards, RadioCardsItem } from '@/shared/components/ui/radio-cards';
 import { useCreateApiKey } from '../hooks';
 
@@ -21,36 +30,46 @@ interface CreateApiKeyDialogProps {
   onKeyCreated: (rawKey: string) => void;
 }
 
+interface CreateKeyFormValues {
+  name: string;
+  type: 'extension' | 'integration';
+  deviceLabel: string;
+}
+
 export function CreateApiKeyDialog({ open, onOpenChange, onKeyCreated }: CreateApiKeyDialogProps) {
   const createKey = useCreateApiKey();
-  const [name, setName] = useState('');
-  const [type, setType] = useState<'extension' | 'integration'>('extension');
-  const [deviceLabel, setDeviceLabel] = useState('');
 
-  const resetForm = () => {
-    setName('');
-    setDeviceLabel('');
-    setType('extension');
-  };
+  const form = useForm<CreateKeyFormValues>({
+    defaultValues: {
+      name: '',
+      type: 'extension',
+      deviceLabel: '',
+    },
+    mode: 'onChange',
+  });
+
+  const watchType = form.watch('type');
+
+  useEffect(() => {
+    if (!open) {
+      form.reset();
+    }
+  }, [open, form]);
 
   const handleClose = () => {
-    resetForm();
     onOpenChange(false);
   };
 
-  const handleCreate = async () => {
-    const trimmedName = name.trim();
-    if (!trimmedName) return;
-
-    const result = await createKey.mutateAsync({
-      name: trimmedName,
-      type,
-      deviceLabel: deviceLabel.trim() || undefined,
-    });
-
-    onKeyCreated(result.rawKey);
-    resetForm();
-    onOpenChange(false);
+  const onSubmit = async (values: CreateKeyFormValues) => {
+    try {
+      const result = await createKey.mutateAsync({
+        name: values.name.trim(),
+        type: values.type,
+        deviceLabel: values.deviceLabel.trim() || undefined,
+      });
+      onKeyCreated(result.rawKey);
+      handleClose();
+    } catch {}
   };
 
   return (
@@ -65,66 +84,82 @@ export function CreateApiKeyDialog({ open, onOpenChange, onKeyCreated }: CreateA
           </DialogTitle>
         </DialogHeader>
 
-        <div className="mt-4 space-y-5">
-          <div className="space-y-2">
-            <Label>Key type</Label>
-            <RadioCards
-              value={type}
-              onValueChange={(v) => setType(v as 'extension' | 'integration')}
-            >
-              <RadioCardsItem
-                value="extension"
-                icon={Terminal}
-                title="Extension"
-                description="For tracking VS Code"
-              />
-              <RadioCardsItem
-                value="integration"
-                icon={Blocks}
-                title="Integration"
-                description="For reading analytics"
-              />
-            </RadioCards>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="key-name">Name</Label>
-            <Input
-              id="key-name"
-              autoFocus
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder={type === 'extension' ? 'e.g. MacBook Pro VS Code' : 'e.g. Zapier'}
-              onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="mt-4 space-y-5">
+            <FormField
+              control={form.control}
+              name="type"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Key type</FormLabel>
+                  <FormControl>
+                    <RadioCards value={field.value} onValueChange={field.onChange}>
+                      <RadioCardsItem
+                        value="extension"
+                        icon={Terminal}
+                        title="Extension"
+                        description="For tracking VS Code"
+                      />
+                      <RadioCardsItem
+                        value="integration"
+                        icon={Blocks}
+                        title="Integration"
+                        description="For reading analytics"
+                      />
+                    </RadioCards>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
 
-          {type === 'extension' && (
-            <div className="space-y-2">
-              <Label htmlFor="device-label">Device label (optional)</Label>
-              <Input
-                id="device-label"
-                value={deviceLabel}
-                onChange={(e) => setDeviceLabel(e.target.value)}
-                placeholder="e.g. Work Laptop"
-                onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
+            <FormField
+              control={form.control}
+              name="name"
+              rules={{ required: 'Name is required' }}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Name</FormLabel>
+                  <FormControl>
+                    <Input
+                      autoFocus
+                      placeholder={
+                        watchType === 'extension' ? 'e.g. MacBook Pro VS Code' : 'e.g. Zapier'
+                      }
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {watchType === 'extension' && (
+              <FormField
+                control={form.control}
+                name="deviceLabel"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Device label (optional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g. Work Laptop" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-          )}
-        </div>
+            )}
 
-        <DialogFooter className="mt-6 gap-2">
-          <Button variant="outline" onClick={handleClose}>
-            Cancel
-          </Button>
-          <Button
-            onClick={handleCreate}
-            disabled={name.trim().length === 0}
-            loading={createKey.isPending}
-          >
-            Create key
-          </Button>
-        </DialogFooter>
+            <DialogFooter className="mt-6 gap-2">
+              <Button type="button" variant="outline" onClick={handleClose}>
+                Cancel
+              </Button>
+              <Button type="submit" loading={createKey.isPending}>
+                Create key
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { addDays, differenceInCalendarDays } from 'date-fns';
 import { CalendarDays } from 'lucide-react';
 import { type DateRange as DayPickerRange } from 'react-day-picker';
 
@@ -16,6 +17,7 @@ interface DateRangePickerProps {
   endDate: string;
   onChange: (range: { startDate: string; endDate: string }) => void;
   active?: boolean;
+  maxDays?: number;
 }
 
 export function DateRangePicker({
@@ -23,6 +25,7 @@ export function DateRangePicker({
   endDate,
   onChange,
   active = false,
+  maxDays,
 }: DateRangePickerProps) {
   const [open, setOpen] = useState(false);
 
@@ -35,7 +38,17 @@ export function DateRangePicker({
     if (!range?.from || !range.to) {
       return;
     }
-    onChange({ startDate: toDateInput(range.from), endDate: toDateInput(range.to) });
+
+    let { to } = range;
+
+    if (maxDays !== undefined && differenceInCalendarDays(to, range.from) + 1 > maxDays) {
+      const limit = addDays(range.from, maxDays - 1);
+      const today = new Date();
+
+      to = limit > today ? today : limit;
+    }
+
+    onChange({ startDate: toDateInput(range.from), endDate: toDateInput(to) });
     setOpen(false);
   };
 

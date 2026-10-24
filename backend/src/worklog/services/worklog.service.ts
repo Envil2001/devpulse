@@ -1,275 +1,206 @@
+import { createHash } from 'node:crypto';
+
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { addDays, differenceInCalendarDays, format, isValid, parseISO } from 'date-fns';
-import { fromZonedTime } from 'date-fns-tz';
+import { formatInTimeZone } from 'date-fns-tz';
 import { Repository } from 'typeorm';
 
-import { formatDuration } from '@devpulse/lib';
+import { typeIdGenerator } from '@devpulse/lib';
 
-import { WorkSession } from '../../telemetry/entities/work-session.entity';
 import { User } from '../../users/entities/user.entity';
+import type { WorklogFormat, WorklogLanguage } from '../constants/worklog.constants';
+import {
+  DATE_FORMAT,
+  MAX_ACTIVE_DAYS,
+  MAX_RANGE_DAYS,
+  PROMPT_VERSION,
+  WORKLOG_FORMATS,
+  WORKLOG_LANGUAGES,
+} from '../constants/worklog.constants';
+import { WorklogEntry } from '../entities/worklog-entry.entity';
 import {
   AI_SUMMARY_GENERATOR,
   type AiSummaryGenerator,
 } from '../interfaces/ai-summary-generator.interface';
-import {
-  CommandAggregate,
-  CommandKindStats,
-  SessionAggregate,
-  UtcRange,
-} from '../interfaces/worklog-internal.interfaces';
+import type { DayFacts } from '../interfaces/day-facts.interface';
+import type { LlmConfig } from '../interfaces/llm-config.interface';
+import { WorklogDayResult, WorklogPlan } from '../interfaces/worklog-results.interface';
+import { resolveLlm } from '../llm/llm-provider.presets';
+import { assertDateKey, resolveRange } from '../utils/date-range';
 
-const DATE_FORMAT = 'yyyy-MM-dd';
-const MAX_RANGE_DAYS = 31;
+import { DayFactsService } from './day-facts.service';
+
+interface WorklogUser {
+  id: User['id'];
+  timezone: User['timezone'];
+  openaiKey: User['openaiKey'];
+  llmProvider: User['llmProvider'];
+  llmModel: User['llmModel'];
+  llmBaseUrl: User['llmBaseUrl'];
+}
+
+export interface GenerateDayInput {
+  date: string;
+  format: WorklogFormat;
+  language: WorklogLanguage;
+  force?: boolean;
+}
 
 @Injectable()
 export class WorklogService {
   constructor(
     @Inject(AI_SUMMARY_GENERATOR)
-    private readonly aiSummaryGenerator: AiSummaryGenerator,
-    @InjectRepository(WorkSession)
-    private readonly workSessionRepo: Repository<WorkSession>,
+    private readonly generator: AiSummaryGenerator,
+    @InjectRepository(User)
+    private readonly userRepo: Repository<User>,
+    @InjectRepository(WorklogEntry)
+    private readonly entryRepo: Repository<WorklogEntry>,
+    private readonly dayFacts: DayFactsService,
   ) {}
 
-  public async generatePeriodWorklog(
-    user: User,
-    startDateStr: string,
-    endDateStr: string,
-  ): Promise<{ date: string; summary: string }> {
-    const apiKey = user.openaiKey;
+  public async getPlan(
+    userId: User['id'],
+    startDate: string,
+    endDate: string,
+  ): Promise<WorklogPlan> {
+    const user = await this.loadUser(userId);
+    const llm = await resolveLlm(this.toLlmConfig(user));
+    const range = resolveRange(startDate, endDate, user.timezone);
+    const days = await this.dayFacts.collect(user.id, user.timezone, range);
 
-    if (!apiKey) {
-      throw new BadRequestException(
-        'OpenAI API key is not configured. Please add it in your profile settings.',
-      );
-    }
-
-    const range = this.resolveRange(startDateStr, endDateStr, user.timezone);
-
-    const sessions = await this.workSessionRepo
-      .createQueryBuilder('session')
-      .leftJoinAndSelect('session.project', 'project')
-      .where('session.user_id = :userId', { userId: user.id })
-      .andWhere('session.started_at >= :start', { start: range.start })
-      .andWhere('session.started_at < :endExclusive', { endExclusive: range.endExclusive })
-      .getMany();
-
-    const aggregate = this.aggregate(sessions);
-
-    if (aggregate.totalActiveSeconds === 0) {
+    if (days.length === 0) {
       throw new NotFoundException(
         'No coding activity found for the selected period. Please select a date range with recorded work sessions.',
       );
     }
 
-    const period = `${range.startKey} to ${range.endKey}`;
-
-    const summary = await this.aiSummaryGenerator.generate({
-      apiKey,
-      date: period,
-      totalTime: formatDuration(aggregate.totalActiveSeconds),
-      projects: this.formatProjects(aggregate.projects),
-      branches: [...aggregate.branches].join(', ') || 'Unknown branch',
-      languages: this.formatLanguages(aggregate.languages),
-      focusScore: Math.round(aggregate.weightedFocus / aggregate.totalActiveSeconds),
-      commands: this.formatCommands(aggregate.commands),
-      commits: this.formatCommits(aggregate.commits),
-    });
-
-    return { date: period, summary };
-  }
-
-  private resolveRange(startDateStr: string, endDateStr: string, timezone: string): UtcRange {
-    const startDay = parseISO(startDateStr);
-    const endDay = parseISO(endDateStr);
-
-    if (!isValid(startDay) || !isValid(endDay)) {
-      throw new BadRequestException('Dates must be in YYYY-MM-DD format.');
-    }
-
-    const daysBetween = differenceInCalendarDays(endDay, startDay);
-
-    if (daysBetween < 0) {
-      throw new BadRequestException('Start date must not be after end date.');
-    }
-
-    if (daysBetween + 1 > MAX_RANGE_DAYS) {
-      throw new BadRequestException(`Period must not exceed ${MAX_RANGE_DAYS.toString()} days.`);
-    }
-
-    const startKey = format(startDay, DATE_FORMAT);
-    const endKey = format(endDay, DATE_FORMAT);
-    const dayAfterEndKey = format(addDays(endDay, 1), DATE_FORMAT);
+    const maxActiveDays = MAX_ACTIVE_DAYS[llm.tier];
+    const activeMinutes = days.reduce((sum, day) => sum + day.activeMinutes, 0);
+    const weightedFocus = days.reduce((sum, day) => sum + day.focusScore * day.activeMinutes, 0);
 
     return {
-      startKey,
-      endKey,
-      start: fromZonedTime(`${startKey}T00:00:00`, timezone),
-      endExclusive: fromZonedTime(`${dayAfterEndKey}T00:00:00`, timezone),
-    };
-  }
-
-  private aggregate(sessions: Array<WorkSession>): SessionAggregate {
-    const aggregate: SessionAggregate = {
-      totalActiveSeconds: 0,
-      weightedFocus: 0,
-      branches: new Set<string>(),
-      projects: new Map<string, number>(),
-      languages: new Map<string, number>(),
-      commands: {
-        totalRuns: 0,
-        totalFailed: 0,
-        byKind: new Map<string, CommandKindStats>(),
+      startDate: range.startKey,
+      endDate: range.endKey,
+      limits: { maxRangeDays: MAX_RANGE_DAYS, maxActiveDays, tier: llm.tier },
+      exceedsLimit: days.length > maxActiveDays,
+      totals: {
+        activeDays: days.length,
+        activeMinutes,
+        averageFocusScore: Math.round(weightedFocus / activeMinutes),
       },
-      commits: [],
+      days: days.map((day) => ({
+        date: day.date,
+        activeMinutes: day.activeMinutes,
+        focusScore: day.focusScore,
+        projects: day.projects.map((project) => project.name),
+      })),
     };
+  }
 
-    for (const session of sessions) {
-      const active = session.activeSeconds;
+  public async generateDay(userId: User['id'], input: GenerateDayInput): Promise<WorklogDayResult> {
+    const { date, format, language, force = false } = input;
 
-      aggregate.totalActiveSeconds += active;
-      aggregate.weightedFocus += session.focusScore * active;
+    this.assertInput(date, format, language);
 
-      if (session.gitBranch) {
-        aggregate.branches.add(session.gitBranch);
-      }
+    const user = await this.loadUser(userId);
+    const config = this.toLlmConfig(user);
 
-      if (session.project?.name) {
-        this.addSeconds(aggregate.projects, session.project.name, active);
-      }
-
-      if (session.primaryLanguage) {
-        this.addSeconds(aggregate.languages, session.primaryLanguage, active);
-      }
-
-      for (const commit of session.commits) {
-        aggregate.commits.push({
-          message: commit.message,
-          insertions: commit.insertions,
-          deletions: commit.deletions,
-        });
-      }
-
-      this.aggregateCommands(aggregate.commands, session.terminalCommands);
+    if (date > formatInTimeZone(new Date(), user.timezone, DATE_FORMAT)) {
+      throw new BadRequestException('Cannot generate a worklog for a future date.');
     }
 
-    return aggregate;
-  }
+    const range = resolveRange(date, date, user.timezone);
+    const days = await this.dayFacts.collect(user.id, user.timezone, range);
 
-  private addSeconds(target: Map<string, number>, key: string, seconds: number): void {
-    target.set(key, (target.get(key) ?? 0) + seconds);
-  }
-
-  private sortByDuration(source: Map<string, number>): Array<[string, number]> {
-    return [...source.entries()].sort(([, first], [, second]) => second - first);
-  }
-
-  private formatProjects(projects: Map<string, number>): string {
-    return (
-      this.sortByDuration(projects)
-        .map(([name, seconds]) => `${name} (${formatDuration(seconds)})`)
-        .join(', ') || 'No project'
-    );
-  }
-
-  private formatLanguages(languages: Map<string, number>): string {
-    const total = [...languages.values()].reduce((sum, seconds) => sum + seconds, 0);
-
-    if (total === 0) {
-      return 'Not defined';
+    if (days.length === 0) {
+      throw new NotFoundException('No coding activity found for this day.');
     }
 
-    return this.sortByDuration(languages)
-      .map(
-        ([language, seconds]) => `${language} ${Math.round((seconds / total) * 100).toString()}%`,
-      )
-      .join(', ');
+    const facts = days[0];
+
+    const factsHash = this.hashFacts(facts, format, language);
+    const existing = await this.entryRepo.findOneBy({ userId: user.id, date, format, language });
+
+    if (existing && !force && existing.factsHash === factsHash) {
+      return { date, text: existing.text, model: existing.model, cached: true };
+    }
+
+    const { text, model } = await this.generator.generate({ facts, format, language }, config);
+
+    const entry =
+      existing ??
+      this.entryRepo.create({
+        id: typeIdGenerator('worklogEntries'),
+        userId: user.id,
+        date,
+        format,
+        language,
+      });
+
+    entry.factsHash = factsHash;
+    entry.text = text;
+    entry.model = model;
+    await this.entryRepo.save(entry);
+
+    entry.factsHash = factsHash;
+    entry.text = text;
+    entry.model = model;
+    await this.entryRepo.save(entry);
+
+    return { date, text, model, cached: false };
   }
 
-  private aggregateCommands(
-    target: CommandAggregate,
-    commands:
-      | Array<{
-          command: string;
-          kind: string;
-          exitCode: number | null;
-          durationMs: number;
-        }>
-      | undefined
-      | null,
-  ): void {
-    if (!commands || commands.length === 0) return;
+  private assertInput(date: string, format: string, language: string): void {
+    assertDateKey(date);
 
-    for (const cmd of commands) {
-      const kind = cmd.kind || 'other';
-      const stats = target.byKind.get(kind) ?? {
-        runs: 0,
-        failed: 0,
-        totalDurationMs: 0,
-      };
+    if (!(WORKLOG_FORMATS as ReadonlyArray<string>).includes(format)) {
+      throw new BadRequestException('Unknown worklog format.');
+    }
 
-      stats.runs += 1;
-      stats.totalDurationMs += cmd.durationMs;
-
-      const failed = cmd.exitCode !== null && cmd.exitCode !== 0;
-      if (failed) {
-        stats.failed += 1;
-        target.totalFailed += 1;
-      }
-
-      target.byKind.set(kind, stats);
-      target.totalRuns += 1;
+    if (!(WORKLOG_LANGUAGES as ReadonlyArray<string>).includes(language)) {
+      throw new BadRequestException('Unknown worklog language.');
     }
   }
 
-  private formatCommands(agg: CommandAggregate): string {
-    if (agg.totalRuns === 0) {
-      return 'No terminal commands recorded.';
+  private async loadUser(userId: User['id']): Promise<WorklogUser> {
+    const user = await this.userRepo
+      .createQueryBuilder('user')
+      .select([
+        'user.id',
+        'user.timezone',
+        'user.openaiKey',
+        'user.llmProvider',
+        'user.llmModel',
+        'user.llmBaseUrl',
+      ])
+      .where('user.id = :userId', { userId })
+      .getOne();
+
+    if (!user) {
+      throw new BadRequestException('User not found');
     }
 
-    const labels: Record<string, string> = {
-      test: 'Test runs',
-      build: 'Build runs',
-      lint: 'Lint runs',
-      task: 'Tasks',
-      install: 'Installs',
-      git: 'Git commands',
-      other: 'Other commands',
+    return user;
+  }
+
+  private toLlmConfig(user: WorklogUser): LlmConfig {
+    if (!user.openaiKey) {
+      throw new BadRequestException(
+        'AI provider key is not configured. Please add it in Settings.',
+      );
+    }
+
+    return {
+      provider: user.llmProvider ?? 'openrouter',
+      apiKey: user.openaiKey,
+      model: user.llmModel,
+      baseUrl: user.llmBaseUrl,
     };
-
-    const orderedKinds = ['test', 'build', 'lint', 'task', 'install', 'git', 'other'];
-
-    const parts: Array<string> = [];
-
-    for (const kind of orderedKinds) {
-      const stats = agg.byKind.get(kind);
-      if (!stats) continue;
-
-      const label = labels[kind] ?? kind;
-      const passed = stats.runs - stats.failed;
-      const avgMs = stats.runs > 0 ? Math.round(stats.totalDurationMs / stats.runs) : 0;
-
-      if (kind === 'test' || kind === 'build' || kind === 'lint' || kind === 'task') {
-        parts.push(
-          `${label}: ${String(stats.runs)} (${String(passed)} passed, ${String(stats.failed)} failed) — avg ${formatDuration(avgMs)}`,
-        );
-      } else {
-        parts.push(`${label}: ${String(stats.runs)}`);
-      }
-    }
-
-    return `${parts.join('. ')}.`;
   }
 
-  private formatCommits(
-    commits: Array<{ message: string; insertions: number; deletions: number }>,
-  ): string {
-    if (commits.length === 0) return 'No commits.';
-
-    const recent = commits.slice(-10);
-
-    return recent
-      .map((c) => `"${c.message.slice(0, 80)}" (+${String(c.insertions)}/−${String(c.deletions)})`)
-      .join(', ');
+  private hashFacts(facts: DayFacts, format: WorklogFormat, language: WorklogLanguage): string {
+    return createHash('sha256')
+      .update(JSON.stringify({ facts, format, language, promptVersion: PROMPT_VERSION }))
+      .digest('hex');
   }
 }

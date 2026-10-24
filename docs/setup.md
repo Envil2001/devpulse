@@ -25,7 +25,7 @@ Poniższa tabela przedstawia minimalne i rekomendowane wymagania niezbędne do u
 
 Aby w pełni korzystać z funkcji AI oraz wysyłki e-maili, wymagane są klucze API:
 
-- **OpenRouter API** (lub OpenAI API) – do generowania podsumowań AI.
+- **OpenRouter API** (lub OpenAI API) – do generowania podsumowań AI (Worklog). Użytkownik musi skonfigurować klucz w profilu (pole `openaiKey`), aby móc generować podsumowania pracy.
 - **Resend** – do wysyłki e-maili (np. weryfikacja konta).
 
 ---

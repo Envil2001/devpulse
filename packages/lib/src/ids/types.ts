@@ -5,6 +5,7 @@ export const idTypes = {
   projects: 'p',
   telemetryEvents: 'te',
   workSessions: 'ws',
+  worklogEntries: 'we',
 } as const;
 
 export type IdTypePrefixes = keyof typeof idTypes;

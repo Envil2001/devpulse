@@ -93,6 +93,8 @@ erDiagram
         jsonb terminal_commands
         int commits_count
         jsonb commits
+        boolean ai_assisted
+        int ai_interactions_count
         varchar status
         timestamptz created_at
         timestamptz updated_at
@@ -157,6 +159,8 @@ Główna tabela analityczna. Agreguje surowe zdarzenia w logiczne bloki pracy.
 - Zawiera metryki Gita: `commits_count`, `commits` (JSONB).
 
 - Zawiera pola techniczne: `machine_id`.
+
+- Zawiera metryki AI: `ai_assisted` (boolean), `ai_interactions_count` (int) – służą do śledzenia użycia asystentów AI (np. Copilot, Claude, Cody) i obliczania ROI. Rozszerzenie VS Code automatycznie wykrywa zainstalowane narzędzia AI i monitoruje wielolinijkowe wstawienia tekstu (> 40 znaków, tylko wstawienie, nie whitespace). Interakcje są rejestrowane co najmniej co 10 sekund.
 
 - Status sesji (active/closed) jest kontrolowany przez enum.
 
