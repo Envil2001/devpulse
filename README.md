@@ -40,3 +40,24 @@ Optional query parameters:
 The endpoint returns `aiSessionsCount`, `manualSessionsCount`,
 `totalAiInteractions`, `aiVelocityLinesPerHour`, `manualVelocityLinesPerHour`,
 `speedupPercentage`, and `estimatedHoursSaved`.
+
+## AI Worklog Summaries
+
+The system includes an **AI-powered worklog generator** that creates concise daily
+or weekly summaries based on telemetry data. Users can generate summaries for any
+date range (up to 31 days) to use for standups, client reports, or personal
+documentation.
+
+To use this feature, users must configure their own OpenAI API key in their profile
+settings. The system uses OpenRouter with free AI models to generate summaries.
+
+The worklog generator includes:
+
+- automatic aggregation of work sessions, projects, branches, and languages;
+- focus score and terminal command analysis;
+- commit message integration;
+- AI usage detection and contextual mention in summaries;
+- natural, non-robotic tone suitable for professional reports.
+
+See `docs/setup.md` for configuration details and `docs/database.md` for the
+`ai_assisted` and `ai_interactions_count` fields in the `work_sessions` table.

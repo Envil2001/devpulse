@@ -13,7 +13,7 @@ Wykonawca udostępnia klientowi środowisko testowe (staging/pre-produkcyjne):
 ## 2. Przebieg testów i Protokół zgodności
 
 Klient wspólnie z wykonawcą weryfikuje działanie systemu. Wyniki trafiają do tabeli:
-_Zaznaczamy ✅ jeśli działa, ❌ jeśli jest błąd (z opisem), lub „Akceptacja” jeśli zmiana po drodze została uznana za lepszą._
+_Zaznaczamy ✅ jeśli działa, ❌ jeśli jest błąd (z opisem), lub „Akceptacja" jeśli zmiana po drodze została uznana za lepszą._
 
 | Kategoria           | Wymóg (z umowy/specyfikacji)                       | Status | Uwagi |
 | :------------------ | :------------------------------------------------- | :----- | :---- |
@@ -22,8 +22,10 @@ _Zaznaczamy ✅ jeśli działa, ❌ jeśli jest błąd (z opisem), lub „Akcept
 | **Funkcjonalne**    | Instalacja rozszerzenia i autoryzacja kluczem      | [ ]    |       |
 | **Funkcjonalne**    | Śledzenie aktywności (idle po 2 min. bezczynności) | [ ]    |       |
 | **Funkcjonalne**    | Śledzenie komend terminala i commitów Git          | [ ]    |       |
+| **Funkcjonalne**    | Śledzenie użycia asystentów AI (Copilot, Claude, Cody) | [ ]    | Automatyczne wykrywanie i liczenie interakcji |
 | **Funkcjonalne**    | Panel Web z dashboardem (heatmapa, statystyki)     | [ ]    |       |
 | **Funkcjonalne**    | Panel AI Assistance & ROI (prędkość i oszczędność czasu) | [ ]    | Dane na podstawie sesji AI i ręcznych oraz wybranego okresu/projektu |
+| **Funkcjonalne**    | Generowanie podsumowań pracy przez AI (Worklog)    | [ ]    | Wymaga klucza OpenAI API w profilu użytkownika |
 | **Funkcjonalne**    | Eksport danych do pliku CSV                        | [ ]    |       |
 | **Niefunkcjonalne** | Wydajność (odpowiedź API < 200ms)                  | [ ]    |       |
 | **Niefunkcjonalne** | Bezpieczeństwo (hasła i klucze szyfrowane)         | [ ]    |       |

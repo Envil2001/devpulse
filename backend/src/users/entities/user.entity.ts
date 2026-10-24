@@ -49,6 +49,30 @@ export class User extends AppBaseEntity<'users'> {
   })
   public openaiKey!: string | null;
 
+  @Column({
+    name: 'llm_provider',
+    type: 'varchar',
+    length: 20,
+    nullable: true,
+  })
+  public llmProvider!: 'openrouter' | 'openai' | 'custom' | null;
+
+  @Column({
+    name: 'llm_model',
+    type: 'varchar',
+    length: 100,
+    nullable: true,
+  })
+  public llmModel!: string | null;
+
+  @Column({
+    name: 'llm_base_url',
+    type: 'varchar',
+    length: 500,
+    nullable: true,
+  })
+  public llmBaseUrl!: string | null;
+
   @Column({ name: 'hourly_rate', type: 'real', default: 0 })
   public hourlyRate = 0;
 

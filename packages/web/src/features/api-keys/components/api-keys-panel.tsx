@@ -1,11 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { formatDistanceToNow } from 'date-fns';
 import { Key, Plus, Blocks, Terminal } from 'lucide-react';
-
 import { Button } from '@/shared/components/ui/button';
-import { cn } from '@/shared/lib/cn';
 import {
   Panel,
   PanelHeader,
@@ -13,13 +10,12 @@ import {
   PanelDescription,
   PanelContent,
 } from '@/shared/components/layout/panel';
-
 import { useApiKeys, useRevokeApiKey } from '../hooks';
 
 import { CreateApiKeyDialog } from './create-api-key-dialog';
 import { RevealedKeyDialog } from './revealed-key-dialog';
 import { RevokeKeyDialog } from './revoke-key-dialog';
-import { ApiKeySummary } from '@/shared/types';
+import { ApiKeysTable } from './api-keys-table';
 
 export function ApiKeysPanel() {
   const { data: keys = [], isLoading, isError } = useApiKeys();
@@ -31,74 +27,6 @@ export function ApiKeysPanel() {
 
   const extensionKeys = keys.filter((k) => k.type === 'extension');
   const integrationKeys = keys.filter((k) => k.type === 'integration');
-
-  const renderKeysList = (list: Array<ApiKeySummary>, emptyMessage: string) => {
-    if (list.length === 0) {
-      return (
-        <div className="rounded-xl border border-border bg-surface p-6 text-center">
-          <p className="text-sm text-secondary">{emptyMessage}</p>
-        </div>
-      );
-    }
-
-    return (
-      <div className="flex flex-col">
-        <div className="mb-2 grid grid-cols-12 gap-4 border-b border-border pb-3 text-xs font-medium uppercase tracking-wider text-subtle">
-          <div className="col-span-4">Name</div>
-          <div className="col-span-3">Device</div>
-          <div className="col-span-3">Created</div>
-          <div className="col-span-2 text-right">Actions</div>
-        </div>
-
-        {list.map((key, i) => (
-          <div
-            key={key.id}
-            className={cn(
-              'relative grid grid-cols-12 items-center gap-4 py-3.5 text-sm transition-colors',
-              'hover:bg-gray-alpha-50 -mx-2 rounded-lg px-2',
-              i !== list.length - 1 &&
-                'after:pointer-events-none after:absolute after:inset-x-2 after:bottom-0 after:h-px after:bg-border',
-            )}
-          >
-            <div className="col-span-4 flex flex-col gap-0.5">
-              <span className="text-sm font-medium text-foreground">{key.name}</span>
-              <span className="font-mono text-xs text-subtle">{key.keyPrefix}••••••••</span>
-            </div>
-
-            <div className="col-span-3 flex flex-col gap-0.5">
-              {key.type === 'extension' && key.deviceLabel ? (
-                <span className="font-mono text-xs text-secondary">{key.deviceLabel}</span>
-              ) : (
-                <span className="text-sm text-subtle">—</span>
-              )}
-            </div>
-
-            <div className="col-span-3 flex flex-col gap-0.5" suppressHydrationWarning>
-              <span className="text-sm text-secondary">
-                {formatDistanceToNow(new Date(key.createdAt), { addSuffix: true })}
-              </span>
-              <span className="text-xs text-subtle">
-                {key.lastUsedAt !== null
-                  ? `Used ${formatDistanceToNow(new Date(key.lastUsedAt), { addSuffix: true })}`
-                  : 'Never used'}
-              </span>
-            </div>
-
-            <div className="col-span-2 flex items-center justify-end">
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => setPendingRevokeId(key.id)}
-                disabled={revokeKey.isPending}
-              >
-                Revoke
-              </Button>
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  };
 
   return (
     <Panel>
@@ -148,7 +76,12 @@ export function ApiKeysPanel() {
                 <Terminal className="h-4 w-4 text-subtle" strokeWidth={1.5} aria-hidden="true" />
                 <h3 className="text-base font-medium text-foreground">Extension Keys</h3>
               </div>
-              {renderKeysList(extensionKeys, 'No extension keys found.')}
+              <ApiKeysTable
+                list={extensionKeys}
+                emptyMessage="No extension keys found."
+                onRevoke={setPendingRevokeId}
+                isRevoking={revokeKey.isPending}
+              />
             </section>
 
             <section>
@@ -156,7 +89,12 @@ export function ApiKeysPanel() {
                 <Blocks className="h-4 w-4 text-subtle" strokeWidth={1.5} aria-hidden="true" />
                 <h3 className="text-base font-medium text-foreground">Integration Keys</h3>
               </div>
-              {renderKeysList(integrationKeys, 'No integration keys found.')}
+              <ApiKeysTable
+                list={integrationKeys}
+                emptyMessage="No integration keys found."
+                onRevoke={setPendingRevokeId}
+                isRevoking={revokeKey.isPending}
+              />
             </section>
           </div>
         )}

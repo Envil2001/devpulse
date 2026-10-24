@@ -112,6 +112,9 @@ export class AuthController {
         hourlyRate: user.hourlyRate,
         currency: user.currency,
         hasOpenaiKey: false,
+        llmProvider: null,
+        llmModel: null,
+        llmBaseUrl: null,
       };
     }
 
@@ -123,6 +126,9 @@ export class AuthController {
       hourlyRate: fullUser.hourlyRate,
       currency: fullUser.currency,
       hasOpenaiKey: Boolean(fullUser.openaiKey),
+      llmProvider: fullUser.llmProvider,
+      llmModel: fullUser.llmModel,
+      llmBaseUrl: fullUser.llmBaseUrl,
     };
   }
 

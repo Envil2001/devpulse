@@ -34,6 +34,9 @@ export class UsersController {
       hourlyRate: user.hourlyRate,
       currency: user.currency,
       hasOpenaiKey: Boolean(user.openaiKey),
+      llmProvider: user.llmProvider,
+      llmModel: user.llmModel,
+      llmBaseUrl: user.llmBaseUrl,
     };
   }
 }

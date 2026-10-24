@@ -2,6 +2,7 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 
 import { type TypeId } from '@devpulse/lib/ids';
 
+import { assertSafeBaseUrl } from '../../worklog/llm/validate-base-url';
 import { User } from '../entities/user.entity';
 import { UserRepository } from '../repositories/users.repository';
 
@@ -36,7 +37,17 @@ export class UsersService {
   public async update(
     userId: TypeId<'users'>,
     updates: Partial<
-      Pick<User, 'displayName' | 'timezone' | 'hourlyRate' | 'currency' | 'openaiKey'>
+      Pick<
+        User,
+        | 'displayName'
+        | 'timezone'
+        | 'hourlyRate'
+        | 'currency'
+        | 'openaiKey'
+        | 'llmProvider'
+        | 'llmModel'
+        | 'llmBaseUrl'
+      >
     >,
   ): Promise<User> {
     if (updates.displayName) {
@@ -44,6 +55,13 @@ export class UsersService {
       if (existing && existing.id !== userId) {
         throw new Error('Display name is already taken');
       }
+    }
+
+    if (updates.llmBaseUrl !== undefined && updates.llmBaseUrl !== null) {
+      await assertSafeBaseUrl(
+        updates.llmBaseUrl,
+        process.env.LLM_ALLOW_PRIVATE_BASE_URL === 'true',
+      );
     }
 
     await this.userRepository.update(userId, updates);

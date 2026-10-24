@@ -20,6 +20,7 @@ import { WorkSession } from './telemetry/entities/work-session.entity';
 import { TelemetryModule } from './telemetry/telemetry.module';
 import { User } from './users/entities/user.entity';
 import { UserEncryption } from './users/entities/user-encryption.entity';
+import { WorklogEntry } from './worklog/entities/worklog-entry.entity';
 import { WorklogModule } from './worklog/worklog.module';
 
 const throttlerProvider: Provider = {
@@ -51,7 +52,15 @@ const throttlerProvider: Provider = {
       useFactory: () => ({
         type: 'postgres',
         url: env.DATABASE_URL,
-        entities: [User, UserEncryption, ApiKey, Project, TelemetryEvent, WorkSession],
+        entities: [
+          User,
+          UserEncryption,
+          ApiKey,
+          Project,
+          TelemetryEvent,
+          WorkSession,
+          WorklogEntry,
+        ],
         synchronize: env.NODE_ENV !== 'production',
         migrations: [__dirname + '/db/migrations/*{.ts,.js}'],
         migrationsRun: env.NODE_ENV === 'production',

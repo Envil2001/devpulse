@@ -23,6 +23,7 @@ System DevPulse wymaga serwera do obsługi Backendu (NestJS), Frontendu (Next.js
 
 - **Brak przerwy technicznej:** Wdrożenie **nie wymaga** zamykania oddziałów firmy, zawieszania sprzedaży ani organizowania tzw. "okien serwisowych".
 - **Czas inicjalizacji:** Przy pierwszym uruchomieniu Backend automatycznie nakłada migracje TypeORM. Proces ten trwa zazwyczaj kilka sekund. Przetwarzanie danych w tle (Redis) nie blokuje pracy użytkowników.
+- **Klucze API:** Funkcjonalność AI (Worklog) wymaga, aby użytkownicy skonfigurowali własne klucze OpenAI API w profilu. System nie dostarcza centralnego klucza dla wszystkich użytkowników ze względów bezpieczeństwa i kosztowych.
 
 ## 5. Wymagania co do uruchomienia dla użytkowników końcowych (Rollout)
 

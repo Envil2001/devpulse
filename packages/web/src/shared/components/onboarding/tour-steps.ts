@@ -84,9 +84,9 @@ export const TOURS: readonly TourDefinition[] = [
       {
         id: 'ai-worklog',
         target: target('ai-worklog'),
-        title: 'AI standup draft',
+        title: 'AI worklog',
         content:
-          'Pick a date range and generate a ready-to-paste summary of your work. It needs an OpenAI key, which you can add in Settings.',
+          'Pick a date range and a format — daily log, standup or client report — then generate a day-by-day summary of your work. It needs an AI provider key, which you can add in Settings.',
         placement: 'top',
       },
       {
