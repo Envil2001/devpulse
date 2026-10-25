@@ -1,89 +1,23 @@
-import { argon2id } from '@noble/hashes/argon2.js';
-import { hmac } from '@noble/hashes/hmac.js';
-import { sha256 } from '@noble/hashes/sha2.js';
+import { argon2idAsync } from '@noble/hashes/argon2.js';
 import { hkdf } from '@noble/hashes/hkdf.js';
-import { utf8ToBytes, bytesToHex as toHex } from '@noble/hashes/utils.js';
+import { sha256 } from '@noble/hashes/sha2.js';
+import { utf8ToBytes } from '@noble/hashes/utils.js';
 import nacl from 'tweetnacl';
 
-type WebCryptoBufferSource = Uint8Array & { buffer: ArrayBuffer };
+import { computeLoginProof, fromBase64, toBase64 } from '@devpulse/lib';
 
-function asBufferSource(arr: Uint8Array): WebCryptoBufferSource {
-  return arr as unknown as WebCryptoBufferSource;
-}
-
-function b64ToUint8Array(str: string): Uint8Array {
-  const binary = atob(str);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) {
-    bytes[i] = binary.charCodeAt(i);
-  }
-  return bytes;
-}
-
-function uint8ArrayToB64(arr: Uint8Array): string {
-  let binary = '';
-  for (let i = 0; i < arr.length; i++) {
-    binary += String.fromCharCode(arr[i]);
-  }
-  return btoa(binary);
-}
-
-export const generateKeyPair = () => {
-  const pair = nacl.box.keyPair();
-  return {
-    publicKey: uint8ArrayToB64(pair.publicKey),
-    privateKey: uint8ArrayToB64(pair.secretKey),
-  };
-};
-
-export const deriveArgonKey = async ({
-  password,
-  salt,
-  mem = 65536,
-  time = 3,
-  parallelism = 1,
-  hashLen = 32,
-}: {
-  password: string;
-  salt: string;
-  mem?: number;
-  time?: number;
-  parallelism?: number;
-  hashLen?: number;
-}) => {
-  const passwordBytes = utf8ToBytes(password);
-  const saltBytes = b64ToUint8Array(salt);
-
-  const hashBytes = argon2id(passwordBytes, saltBytes, {
-    t: time,
-    m: mem,
-    p: parallelism,
-    dkLen: hashLen,
-  });
-
-  return {
-    hashBytes,
-    hashBase64: uint8ArrayToB64(hashBytes),
-    hashHex: toHex(hashBytes),
-  };
-};
+const ARGON_PARAMS = { m: 65_536, t: 3, p: 1, dkLen: 32 };
 
 const INFO_AUTH = utf8ToBytes('Playmanity-v1-auth');
 const INFO_WRAP = utf8ToBytes('Playmanity-v1-wrap');
-
-function splitKeyMaterial(argonHashBytes: Uint8Array): {
-  authKey: Uint8Array;
-  wrapKey: Uint8Array;
-} {
-  const authKey = hkdf(sha256, argonHashBytes, new Uint8Array(0), INFO_AUTH, 32);
-  const wrapKey = hkdf(sha256, argonHashBytes, new Uint8Array(0), INFO_WRAP, 32);
-  return { authKey, wrapKey };
-}
+const EMPTY_SALT = new Uint8Array(0);
+const DERIVED_KEY_LENGTH_BYTES = 32;
 
 const ALGORITHM = 'AES-GCM';
 const KEY_LENGTH_BYTES = 32;
 const IV_LENGTH_BYTES = 12;
 const TAG_LENGTH_BYTES = 16;
+const SIGNUP_SALT_LENGTH_BYTES = 16;
 
 export interface EncryptedData {
   iv: string;
@@ -91,62 +25,88 @@ export interface EncryptedData {
   tag: string;
 }
 
+interface KeyMaterial {
+  authKey: Uint8Array;
+  wrapKey: Uint8Array;
+}
+
+export const generateKeyPair = () => {
+  const pair = nacl.box.keyPair();
+  return {
+    publicKey: toBase64(pair.publicKey),
+    privateKey: toBase64(pair.secretKey),
+  };
+};
+
+const deriveKeyMaterial = async (password: string, saltBase64: string): Promise<KeyMaterial> => {
+  const argonHash = await argon2idAsync(
+    utf8ToBytes(password),
+    fromBase64(saltBase64),
+    ARGON_PARAMS,
+  );
+
+  return {
+    authKey: hkdf(sha256, argonHash, EMPTY_SALT, INFO_AUTH, DERIVED_KEY_LENGTH_BYTES),
+    wrapKey: hkdf(sha256, argonHash, EMPTY_SALT, INFO_WRAP, DERIVED_KEY_LENGTH_BYTES),
+  };
+};
+
 export class SymmetricCrypto {
-  private readonly key: Uint8Array;
+  private readonly key: Uint8Array<ArrayBuffer>;
+  private cryptoKey: Promise<CryptoKey> | undefined;
 
   constructor(key?: Uint8Array) {
-    if (key) {
-      if (key.length !== KEY_LENGTH_BYTES) {
-        throw new Error(`The key must be ${KEY_LENGTH_BYTES} bytes!`);
-      }
-      this.key = key;
-    } else {
-      this.key = window.crypto.getRandomValues(new Uint8Array(KEY_LENGTH_BYTES));
+    if (key && key.length !== KEY_LENGTH_BYTES) {
+      throw new Error(`The key must be ${String(KEY_LENGTH_BYTES)} bytes!`);
     }
+
+    // Copying also gives us an ArrayBuffer-backed array, which WebCrypto accepts without casts.
+    this.key = key
+      ? new Uint8Array(key)
+      : globalThis.crypto.getRandomValues(new Uint8Array(KEY_LENGTH_BYTES));
   }
 
   public getKeyAsBase64(): string {
-    return uint8ArrayToB64(this.key);
-  }
-
-  private async importKey(usage: 'encrypt' | 'decrypt'): Promise<CryptoKey> {
-    return window.crypto.subtle.importKey('raw', asBufferSource(this.key), ALGORITHM, false, [
-      usage,
-    ]);
+    return toBase64(this.key);
   }
 
   public async encrypt(plaintext: string): Promise<EncryptedData> {
-    const iv = window.crypto.getRandomValues(new Uint8Array(IV_LENGTH_BYTES));
-    const encodedText = new TextEncoder().encode(plaintext);
-    const cryptoKey = await this.importKey('encrypt');
+    const iv = globalThis.crypto.getRandomValues(new Uint8Array(IV_LENGTH_BYTES));
+    const cryptoKey = await this.getCryptoKey();
 
-    const encryptedBuffer = await window.crypto.subtle.encrypt(
-      { name: ALGORITHM, iv: asBufferSource(iv) },
-      cryptoKey,
-      asBufferSource(encodedText),
+    const encrypted = new Uint8Array(
+      await globalThis.crypto.subtle.encrypt(
+        { name: ALGORITHM, iv, tagLength: TAG_LENGTH_BYTES * 8 },
+        cryptoKey,
+        new TextEncoder().encode(plaintext),
+      ),
     );
 
-    const encryptedBytes = new Uint8Array(encryptedBuffer);
-    const tag = encryptedBytes.slice(-TAG_LENGTH_BYTES);
-    const ciphertext = encryptedBytes.slice(0, -TAG_LENGTH_BYTES);
+    // WebCrypto appends the GCM tag to the ciphertext.
+    const tagOffset = encrypted.length - TAG_LENGTH_BYTES;
 
     return {
-      iv: uint8ArrayToB64(iv),
-      ciphertext: uint8ArrayToB64(ciphertext),
-      tag: uint8ArrayToB64(tag),
+      iv: toBase64(iv),
+      ciphertext: toBase64(encrypted.subarray(0, tagOffset)),
+      tag: toBase64(encrypted.subarray(tagOffset)),
     };
+  }
+
+  private getCryptoKey(): Promise<CryptoKey> {
+    this.cryptoKey ??= globalThis.crypto.subtle.importKey('raw', this.key, ALGORITHM, false, [
+      'encrypt',
+      'decrypt',
+    ]);
+    return this.cryptoKey;
   }
 }
 
 export const buildSignupCryptoPayload = async (password: string) => {
-  const saltBytes = window.crypto.getRandomValues(new Uint8Array(16));
-  const salt = uint8ArrayToB64(saltBytes);
+  const salt = toBase64(
+    globalThis.crypto.getRandomValues(new Uint8Array(SIGNUP_SALT_LENGTH_BYTES)),
+  );
 
-  const derivedKey = await deriveArgonKey({ password, salt });
-
-  const { authKey, wrapKey } = splitKeyMaterial(derivedKey.hashBytes);
-
-  const verifier = uint8ArrayToB64(authKey);
+  const { authKey, wrapKey } = await deriveKeyMaterial(password, salt);
 
   const { publicKey, privateKey } = generateKeyPair();
 
@@ -158,7 +118,7 @@ export const buildSignupCryptoPayload = async (password: string) => {
 
   return {
     salt,
-    verifier,
+    verifier: toBase64(authKey),
     publicKey,
     encryptedPrivateKey: encryptedPrivateKeyData.ciphertext,
     iv: encryptedPrivateKeyData.iv,
@@ -175,18 +135,11 @@ export const buildLoginCryptoPayload = async (
   serverPublicKey: string,
   clientPublicKey: string,
 ) => {
-  const derivedKey = await deriveArgonKey({
-    password,
-    salt: saltBase64,
-  });
+  const { authKey } = await deriveKeyMaterial(password, saltBase64);
 
-  const { authKey } = splitKeyMaterial(derivedKey.hashBytes);
-
-  const message = utf8ToBytes(`${clientPublicKey}${serverPublicKey}`);
-  const proofBytes = hmac(sha256, authKey, message);
-  const clientProof = uint8ArrayToB64(proofBytes);
+  const proof = computeLoginProof({ authKey, clientPublicKey, serverPublicKey });
 
   return {
-    clientProof,
+    clientProof: toBase64(proof),
   };
 };

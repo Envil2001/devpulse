@@ -154,8 +154,6 @@ function classifySegment(segment: string): CommandKind {
   const bySubcommand = SUBCOMMAND_KINDS.get(binary)?.get(positionals[0]);
 
   return bySubcommand ?? TOOL_KINDS.get(binary) ?? 'other';
-
-  return bySubcommand ?? TOOL_KINDS.get(binary) ?? 'other';
 }
 
 export function classifyCommand(command: string): CommandKind {
