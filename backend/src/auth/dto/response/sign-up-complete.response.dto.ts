@@ -7,6 +7,7 @@ export class SignUpCompleteUserDto {
   public timezone!: string;
   public hourlyRate!: number;
   public currency!: string;
+  public hasOpenaiKey!: boolean;
 }
 
 export class SignUpCompleteResponseDto {

@@ -24,7 +24,6 @@ import { CompleteSignupRequestDto } from '../dto/requests/complete-signup-reques
 import { LoginBeginRequestDto } from '../dto/requests/login-begin-request.dto';
 import { LoginVerifyRequestDto } from '../dto/requests/login-verify-request.dto';
 import { VerifySignUpRequestDto } from '../dto/requests/verify-signup-request.dto';
-import { DemoTokenResponseDto } from '../dto/response/demo-token-response.dto';
 import { LoginVerifyResponseDto } from '../dto/response/login-verify-response.dto';
 import { SignUpCompleteResponseDto } from '../dto/response/sign-up-complete.response.dto';
 import { UserResponseDto } from '../dto/response/user-response.dto';
@@ -143,12 +142,5 @@ export class AuthController {
       path: '/',
     });
     return { message: 'Logged out successfully' };
-  }
-
-  @Get('demo-token')
-  @ApiOperation({ summary: 'Get a demo token for quick access' })
-  @ApiResponse({ status: HttpStatus.OK, type: DemoTokenResponseDto })
-  public async getDemoToken(): Promise<DemoTokenResponseDto> {
-    return { token: await this.authService.getDemoToken() };
   }
 }

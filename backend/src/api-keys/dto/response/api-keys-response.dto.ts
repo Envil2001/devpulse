@@ -32,8 +32,3 @@ export class CreateApiKeyResponseDto {
   @ApiProperty({ description: 'Metadata of the created key', type: ApiKeyResponseDto })
   public key!: ApiKeyResponseDto;
 }
-
-export class DemoKeyResponseDto {
-  @ApiProperty({ description: 'Temporary raw key for demo mode' })
-  public rawKey!: string;
-}

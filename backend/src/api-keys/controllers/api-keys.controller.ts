@@ -18,11 +18,7 @@ import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { MessageResponseDto } from '../../common/dto/message-response.dto';
 import { User } from '../../users/entities/user.entity';
 import { CreateApiKeyRequestDto } from '../dto/request/create-api-key-request.dto';
-import {
-  ApiKeyResponseDto,
-  CreateApiKeyResponseDto,
-  DemoKeyResponseDto,
-} from '../dto/response/api-keys-response.dto';
+import { ApiKeyResponseDto, CreateApiKeyResponseDto } from '../dto/response/api-keys-response.dto';
 import { ApiKey } from '../entities/api-key.entity';
 import { ApiKeyScope, ApiKeyType } from '../enums/api-key.enums';
 import { ApiKeysService } from '../services/api-keys.service';
@@ -72,14 +68,6 @@ export class ApiKeysController {
   ): Promise<MessageResponseDto> {
     await this.apiKeysService.revokeKey(id, user.id);
     return { message: 'Key revoked successfully' };
-  }
-
-  @Get('demo-key')
-  @ApiOperation({ summary: 'Get a temporary key for demo mode' })
-  @ApiResponse({ status: HttpStatus.OK, type: DemoKeyResponseDto })
-  public async getDemoKey(@CurrentUser() user: User): Promise<DemoKeyResponseDto> {
-    const { rawKey } = await this.apiKeysService.createKey(user, 'Demo Key', ApiKeyType.EXTENSION);
-    return { rawKey };
   }
 
   private mapToDto(entity: ApiKey): ApiKeyResponseDto {

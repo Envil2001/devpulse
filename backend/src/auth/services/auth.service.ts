@@ -1,4 +1,4 @@
-import * as crypto from 'node:crypto';
+import { randomInt, timingSafeEqual } from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
@@ -8,23 +8,18 @@ import {
   Injectable,
   InternalServerErrorException,
   Logger,
-  NotFoundException,
   OnModuleInit,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { Response } from 'express';
+import { CookieOptions, Response } from 'express';
 import { DataSource } from 'typeorm';
 
 import { env } from '@devpulse/env/api';
-import {
-  generateServerEphemeralKeyPair,
-  TypeId,
-  typeIdGenerator,
-  verifyClientLoginProof,
-} from '@devpulse/lib';
+import { generateLoginChallenge, typeIdGenerator, verifyClientLoginProof } from '@devpulse/lib';
 
 import { MessageResponseDto } from '../../common/dto/message-response.dto';
+import { normalizeEmail } from '../../common/utils/normalize-email';
 import {
   VERIFICATION_MAILER,
   type VerificationMailer,
@@ -40,9 +35,52 @@ import { LoginBeginRequestDto } from '../dto/requests/login-begin-request.dto';
 import { VerifySignUpRequestDto } from '../dto/requests/verify-signup-request.dto';
 import { SignUpCompleteResponseDto } from '../dto/response/sign-up-complete.response.dto';
 import { VerifySignUpResponseDto } from '../dto/response/verify-signup-response.dto';
+import {
+  LoginBeginResult,
+  LoginSession,
+  SignupCodeRecord,
+  SignupTokenPayload,
+} from '../interfaces/auth-internal.interface';
 
 const CODE_EXPIRY_MINUTES = 10;
 const CODE_EXPIRY_SECONDS = CODE_EXPIRY_MINUTES * 60;
+const MAX_CODE_ATTEMPTS = 5;
+const SIGNUP_TOKEN_TTL = '15m';
+const SIGNUP_TOKEN_AUDIENCE = 'signup';
+const LOGIN_SESSION_TTL_SECONDS = 300;
+
+const ACCESS_COOKIE_NAME = 'access_token';
+const ACCESS_COOKIE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+const AUTH_COOKIE_OPTIONS: CookieOptions = {
+  httpOnly: true,
+  secure: env.NODE_ENV === 'production',
+  sameSite: 'lax',
+  path: '/',
+};
+
+const SIGNUP_SUCCESS_MESSAGE = 'A verification code has been sent to your email.';
+const INVALID_CODE_MESSAGE = 'Invalid or expired verification code';
+const INVALID_SIGNUP_TOKEN_MESSAGE = 'Invalid or expired signup token';
+const INVALID_CREDENTIALS_MESSAGE = 'Invalid credentials';
+
+const signupCodeKey = (email: string): string => `signup_code:${email}`;
+const loginSessionKey = (email: string): string => `login_session:${email}`;
+
+const generateVerificationCode = (): string => randomInt(0, 1_000_000).toString().padStart(6, '0');
+
+const safeEqual = (left: string, right: string): boolean => {
+  const leftBytes = Buffer.from(left);
+  const rightBytes = Buffer.from(right);
+  return leftBytes.length === rightBytes.length && timingSafeEqual(leftBytes, rightBytes);
+};
+
+const isSignupTokenPayload = (value: unknown): value is SignupTokenPayload =>
+  typeof value === 'object' &&
+  value !== null &&
+  'email' in value &&
+  'displayName' in value &&
+  typeof value.email === 'string' &&
+  typeof value.displayName === 'string';
 
 @Injectable()
 export class AuthService implements OnModuleInit {
@@ -63,84 +101,82 @@ export class AuthService implements OnModuleInit {
   }
 
   public async signupBegin(dto: BeginSignupRequestDto): Promise<MessageResponseDto> {
-    const { email, displayName } = dto;
-    const successMessage = 'A verification code has been sent to your email.';
+    const { displayName } = dto;
+    const email = normalizeEmail(dto.email);
 
     this.logger.log(`Starting signup process for email: ${email}`);
 
-    const isDisposableEmail = this.isDisposableEmail(email);
-
-    if (isDisposableEmail) {
+    if (this.isDisposableEmail(email)) {
       this.logger.warn(`Signup attempt with disposable email: ${email}`);
-
-      return { message: successMessage };
+      return { message: SIGNUP_SUCCESS_MESSAGE };
     }
 
-    const isBannedName =
-      blockedUsernames.includes(displayName.toLowerCase()) ||
-      reservedUsernames.includes(displayName.toLowerCase()) ||
-      bannedWords.some((word) => displayName.toLowerCase().includes(word));
-
-    if (isBannedName) {
+    if (!this.isDisplayNameAllowed(displayName)) {
       this.logger.warn(`Signup attempt with banned display name: ${displayName}`);
-      return { message: successMessage };
+      return { message: SIGNUP_SUCCESS_MESSAGE };
     }
 
-    const [userEmail, userByUsername] = await Promise.all([
+    const [userByEmail, userByDisplayName] = await Promise.all([
       this.usersService.findByEmail(email),
       this.usersService.findByDisplayName(displayName),
     ]);
 
-    if (userEmail || userByUsername) {
-      this.logger.warn(`Signup attempt for existing email: ${email}`);
-      return { message: successMessage };
+    if (userByEmail || userByDisplayName) {
+      this.logger.warn(`Signup attempt for existing email or display name: ${email}`);
+      return { message: SIGNUP_SUCCESS_MESSAGE };
     }
 
-    const verificationCode = crypto.randomInt(100_000, 999_999).toString();
-    const redisKey = `signup_code:${email}`;
-    const payload = { code: verificationCode, displayName };
+    const code = generateVerificationCode();
+    const record: SignupCodeRecord = {
+      code,
+      displayName,
+      attempts: 0,
+      expiresAt: Date.now() + CODE_EXPIRY_SECONDS * 1000,
+    };
 
     try {
-      await this.redisService.set(redisKey, payload, CODE_EXPIRY_SECONDS);
-      this.logger.debug(`Generated verification code for ${email}: ${verificationCode}`);
+      await this.redisService.set(signupCodeKey(email), record, CODE_EXPIRY_SECONDS);
 
       await this.verificationMailer.sendVerificationCode(email, {
-        code: verificationCode,
+        code,
         displayName,
         expiresInMinutes: CODE_EXPIRY_MINUTES,
       });
     } catch (error) {
-      this.logger.error(`Error saving verification code for ${email}: ${String(error)}`);
+      this.logger.error(`Failed to issue verification code for ${email}: ${String(error)}`);
       throw new InternalServerErrorException(
         'Could not generate verification code. Please try again.',
       );
     }
 
-    return { message: successMessage };
+    return { message: SIGNUP_SUCCESS_MESSAGE };
   }
 
   public async signUpVerify(dto: VerifySignUpRequestDto): Promise<VerifySignUpResponseDto> {
-    const { email, code } = dto;
+    const { code } = dto;
+    const email = normalizeEmail(dto.email);
 
     this.logger.log(`Verifying signup for email: ${email}`);
 
-    const redisKey = `signup_code:${email}`;
-    const storedData = await this.redisService.get<{ code: string; displayName: string }>(redisKey);
+    const key = signupCodeKey(email);
+    const record = await this.redisService.get<SignupCodeRecord>(key);
 
-    if (storedData?.code !== code) {
-      this.logger.warn(`Invalid or expired verification code for email: ${email}`);
-      throw new BadRequestException('Invalid or expired verification code');
+    if (!record || record.expiresAt <= Date.now()) {
+      this.logger.warn(`Missing or expired verification code for email: ${email}`);
+      throw new BadRequestException(INVALID_CODE_MESSAGE);
     }
 
-    await this.redisService.del(redisKey);
+    if (!safeEqual(record.code, code)) {
+      this.logger.warn(`Invalid verification code for email: ${email}`);
+      await this.registerFailedCodeAttempt(key, record);
+      throw new BadRequestException(INVALID_CODE_MESSAGE);
+    }
+
+    await this.redisService.del(key);
 
     const signupToken = this.jwtService.sign(
-      {
-        email,
-        displayName: storedData.displayName,
-        purpose: 'signup',
-      },
-      { expiresIn: '15m' },
+      { email, displayName: record.displayName },
+      { expiresIn: SIGNUP_TOKEN_TTL, audience: SIGNUP_TOKEN_AUDIENCE },
     );
 
     return {
@@ -166,113 +202,89 @@ export class AuthService implements OnModuleInit {
       protectedKeyTag,
       timezone,
     } = dto;
-    let decodedToken: { email: string; displayName: string; purpose: string };
 
-    try {
-      decodedToken = this.jwtService.verify(signUpToken);
+    const { email, displayName } = this.verifySignupToken(signUpToken);
 
-      if (decodedToken.purpose !== 'signup') {
-        this.logger.warn(`Invalid signup token purpose for email: ${decodedToken.email}`);
-        throw new UnauthorizedException('Invalid signup token');
-      }
-    } catch (error) {
-      this.logger.warn(`Invalid or expired signup token: ${String(error)}`);
-      throw new UnauthorizedException('Invalid or expired signup token');
-    }
-
-    const { email, displayName } = decodedToken;
-
-    return await this.dataSource.transaction(async (manager) => {
-      const existingByEmail = await manager.findOne(User, { where: { email } });
-      const existingByName = await manager.findOne(User, { where: { displayName } });
-      if (existingByEmail || existingByName) {
-        throw new BadRequestException('User with this email or display name already exists');
-      }
-
+    const savedUser = await this.dataSource.transaction(async (manager) => {
       const userRepo = manager.getRepository(User);
       const encryptionRepo = manager.getRepository(UserEncryption);
 
-      const newUser = userRepo.create({
-        id: typeIdGenerator('users'),
-        email,
-        displayName,
-        timezone: timezone,
+      const duplicate = await userRepo.findOne({
+        where: [{ email }, { displayName }],
+        select: { id: true },
       });
+      if (duplicate) {
+        throw new BadRequestException('User with this email or display name already exists');
+      }
 
-      const savedUser = await userRepo.save(newUser);
+      const user = await userRepo.save(
+        userRepo.create({
+          id: typeIdGenerator('users'),
+          email,
+          displayName,
+          timezone,
+        }),
+      );
 
-      const newEncryption = encryptionRepo.create({
-        id: typeIdGenerator('encryption'),
-        user: savedUser,
-        iv,
-        salt,
-        verifier,
-        publicKey,
-        encryptedPrivateKey,
-        tag,
-        protectedKey,
-        protectedKeyIV,
-        protectedKeyTag,
-      });
-      await encryptionRepo.save(newEncryption);
+      await encryptionRepo.save(
+        encryptionRepo.create({
+          id: typeIdGenerator('encryption'),
+          user,
+          iv,
+          salt,
+          verifier,
+          publicKey,
+          encryptedPrivateKey,
+          tag,
+          protectedKey,
+          protectedKeyIV,
+          protectedKeyTag,
+        }),
+      );
 
-      this.logger.log(`User created successfully: ${email}`);
+      return user;
+    });
 
-      const accessToken = this.jwtService.sign({
-        sub: savedUser.id,
+    this.logger.log(`User created successfully: ${savedUser.id}`);
+
+    this.setAccessTokenCookie(res, this.signAccessToken(savedUser));
+
+    return {
+      message: 'Registration completed successfully',
+      user: {
+        id: savedUser.id,
         email: savedUser.email,
         displayName: savedUser.displayName,
-      });
-
-      this.logger.debug(`Access token generated for user: ${email}`);
-
-      res.cookie('access_token', accessToken, {
-        httpOnly: true,
-        secure: env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-        path: '/',
-      });
-      return {
-        message: 'Registration completed successfully',
-        user: {
-          id: savedUser.id,
-          email: savedUser.email,
-          displayName: savedUser.displayName,
-          timezone: savedUser.timezone,
-          hourlyRate: savedUser.hourlyRate,
-          currency: savedUser.currency,
-          hasOpenaiKey: false,
-        },
-      };
-    });
+        timezone: savedUser.timezone,
+        hourlyRate: savedUser.hourlyRate,
+        currency: savedUser.currency,
+        hasOpenaiKey: false,
+      },
+    };
   }
 
-  public async loginBegin(
-    dto: LoginBeginRequestDto,
-  ): Promise<{ salt: string; serverPublicKey: string }> {
-    const { email, clientPublicKey } = dto;
+  public async loginBegin(dto: LoginBeginRequestDto): Promise<LoginBeginResult> {
+    const { clientPublicKey } = dto;
+    const email = normalizeEmail(dto.email);
 
     this.logger.log(`Starting login process for email: ${email}`);
 
     const user = await this.usersService.findByEmail(email);
 
-    if (!user?.encryption.salt || !user.encryption.verifier) {
-      this.logger.warn(`Login attempt for non-existent email: ${email}`);
+    if (!user?.isActive || !user.encryption.salt || !user.encryption.verifier) {
+      this.logger.warn(`Login attempt for unknown or inactive email: ${email}`);
       throw new BadRequestException('User does not exist');
     }
 
-    const { pubKey: serverPublicKey, privateKey: serverPrivateKey } =
-      generateServerEphemeralKeyPair(user.encryption.salt, user.encryption.verifier);
+    const serverPublicKey = generateLoginChallenge();
 
-    const loginSession = {
+    const session: LoginSession = {
       userId: user.id,
       clientPublicKey,
       serverPublicKey,
-      serverPrivateKey,
     };
 
-    await this.redisService.set(`login_session:${email}`, loginSession, 300);
+    await this.redisService.set(loginSessionKey(email), session, LOGIN_SESSION_TTL_SECONDS);
 
     return {
       salt: user.encryption.salt,
@@ -281,91 +293,114 @@ export class AuthService implements OnModuleInit {
   }
 
   public async loginVerify(
-    email: string,
+    rawEmail: string,
     clientProof: string,
     res: Response,
   ): Promise<{ accessToken: string }> {
+    const email = normalizeEmail(rawEmail);
+
     this.logger.log(`Verifying login for email: ${email}`);
 
-    const loginSession = await this.redisService.get<{
-      userId: TypeId<'users'>;
-      clientPublicKey: string;
-      serverPublicKey: string;
-      serverPrivateKey: string;
-    }>(`login_session:${email}`);
+    const key = loginSessionKey(email);
+    const session = await this.redisService.get<LoginSession>(key);
 
-    if (!loginSession) {
+    if (!session) {
       this.logger.warn(`No active login session found for email: ${email}`);
-      throw new BadRequestException('No active login session found');
+      throw new UnauthorizedException(INVALID_CREDENTIALS_MESSAGE);
     }
 
-    const { userId, clientPublicKey, serverPublicKey } = loginSession;
+    // The session is single-use: any attempt, successful or not, consumes it.
+    await this.redisService.del(key);
 
-    const user = await this.usersService.findById(userId);
-    if (!user?.encryption) {
-      this.logger.error(`User or encryption data not found for ID: ${userId}`);
-      throw new BadRequestException('User data not found');
+    const user = await this.usersService.findById(session.userId);
+    const verifier = user?.encryption.verifier;
+
+    if (!user?.isActive || !verifier) {
+      this.logger.error(`Missing, inactive or incomplete user for ID: ${session.userId}`);
+      throw new UnauthorizedException(INVALID_CREDENTIALS_MESSAGE);
     }
 
-    const { salt, verifier } = user.encryption;
-
-    if (!salt || !verifier) {
-      this.logger.error(`Salt or verifier is null for user ID: ${userId}`);
-      throw new BadRequestException('Invalid user encryption data');
-    }
-
-    const isValidProof = verifyClientLoginProof(
-      salt,
+    const isValidProof = verifyClientLoginProof({
       verifier,
-      serverPublicKey,
-      clientPublicKey,
+      clientPublicKey: session.clientPublicKey,
+      serverPublicKey: session.serverPublicKey,
       clientProof,
-    );
+    });
 
     if (!isValidProof) {
       this.logger.warn(`Invalid client proof for email: ${email}`);
-      throw new UnauthorizedException('Invalid client proof');
+      throw new UnauthorizedException(INVALID_CREDENTIALS_MESSAGE);
     }
 
-    const accessToken = this.jwtService.sign({
-      sub: user.id,
-      email: user.email,
-      displayName: user.displayName,
-    });
+    const accessToken = this.signAccessToken(user);
+    this.setAccessTokenCookie(res, accessToken);
 
-    await this.redisService.del(`login_session:${email}`);
-
-    this.logger.log(`Login successful for email: ${email}`);
-    res.cookie('access_token', accessToken, {
-      httpOnly: true,
-      secure: env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-      path: '/',
-    });
+    this.logger.log(`Login successful for user: ${user.id}`);
 
     return { accessToken };
   }
 
   public logout(res: Response): MessageResponseDto {
-    res.clearCookie('access_token', {
-      httpOnly: true,
-      secure: env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
-    });
+    res.clearCookie(ACCESS_COOKIE_NAME, AUTH_COOKIE_OPTIONS);
     return { message: 'Logged out successfully' };
   }
 
-  public async getDemoToken(): Promise<string> {
-    const user = await this.usersService.findByEmail('demo@devpulse.com');
-    if (!user) throw new NotFoundException();
+  private verifySignupToken(token: string): SignupTokenPayload {
+    try {
+      const payload: unknown = this.jwtService.verify<object>(token, {
+        audience: SIGNUP_TOKEN_AUDIENCE,
+      });
 
+      if (isSignupTokenPayload(payload)) {
+        return payload;
+      }
+      this.logger.warn('Signup token has an unexpected payload');
+    } catch (error) {
+      this.logger.warn(`Invalid or expired signup token: ${String(error)}`);
+    }
+
+    throw new UnauthorizedException(INVALID_SIGNUP_TOKEN_MESSAGE);
+  }
+
+  private signAccessToken(user: Pick<User, 'id' | 'email' | 'displayName'>): string {
     return this.jwtService.sign({
       sub: user.id,
       email: user.email,
       displayName: user.displayName,
     });
+  }
+
+  private setAccessTokenCookie(res: Response, accessToken: string): void {
+    res.cookie(ACCESS_COOKIE_NAME, accessToken, {
+      ...AUTH_COOKIE_OPTIONS,
+      maxAge: ACCESS_COOKIE_MAX_AGE_MS,
+    });
+  }
+
+  /**
+   * Best-effort limit on wrong guesses. Not atomic: pair it with a rate limiter
+   * (e.g. @nestjs/throttler) or an atomic Redis INCR.
+   */
+  private async registerFailedCodeAttempt(key: string, record: SignupCodeRecord): Promise<void> {
+    const attempts = record.attempts + 1;
+    const remainingSeconds = Math.ceil((record.expiresAt - Date.now()) / 1000);
+
+    if (attempts >= MAX_CODE_ATTEMPTS || remainingSeconds <= 0) {
+      await this.redisService.del(key);
+      return;
+    }
+
+    await this.redisService.set(key, { ...record, attempts }, remainingSeconds);
+  }
+
+  private isDisplayNameAllowed(displayName: string): boolean {
+    const normalized = displayName.normalize('NFKC').toLowerCase();
+
+    return !(
+      blockedUsernames.includes(normalized) ||
+      reservedUsernames.includes(normalized) ||
+      bannedWords.some((word) => normalized.includes(word))
+    );
   }
 
   private async loadDisposableDomains(): Promise<void> {
@@ -374,8 +409,8 @@ export class AuthService implements OnModuleInit {
       const disposableEmailsText = await fs.readFile(filePath, 'utf8');
       const domains = disposableEmailsText
         .split('\n')
-        .map((line) => line.trim())
-        .filter((e) => e.length > 0 && !e.startsWith('#'));
+        .map((line) => line.trim().toLowerCase())
+        .filter((line) => line.length > 0 && !line.startsWith('#'));
 
       this.disposableDomains = new Set(domains);
       this.logger.log(`Loaded ${String(this.disposableDomains.size)} disposable email domains.`);
@@ -388,8 +423,8 @@ export class AuthService implements OnModuleInit {
   }
 
   private isDisposableEmail(email: string): boolean {
-    const [, domain] = email.split('@');
-    if (!domain) return false;
-    return this.disposableDomains.has(domain.toLowerCase());
+    const atIndex = email.lastIndexOf('@');
+    if (atIndex === -1) return false;
+    return this.disposableDomains.has(email.slice(atIndex + 1).toLowerCase());
   }
 }

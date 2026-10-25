@@ -1,10 +1,25 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 
 import { type TypeId } from '@devpulse/lib/ids';
 
+import { normalizeEmail } from '../../common/utils/normalize-email';
 import { assertSafeBaseUrl } from '../../worklog/llm/validate-base-url';
-import { User } from '../entities/user.entity';
+import { type User } from '../entities/user.entity';
 import { UserRepository } from '../repositories/users.repository';
+
+export type UpdatableUserFields = Partial<
+  Pick<
+    User,
+    | 'displayName'
+    | 'timezone'
+    | 'hourlyRate'
+    | 'currency'
+    | 'openaiKey'
+    | 'llmProvider'
+    | 'llmModel'
+    | 'llmBaseUrl'
+  >
+>;
 
 @Injectable()
 export class UsersService {
@@ -13,8 +28,7 @@ export class UsersService {
   constructor(private readonly userRepository: UserRepository) {}
 
   public async findByEmail(email: string): Promise<User | null> {
-    const normalizedEmail = email.toLowerCase().trim();
-    return this.userRepository.findByEmail(normalizedEmail);
+    return this.userRepository.findByEmail(normalizeEmail(email));
   }
 
   public async findByDisplayName(displayName: string): Promise<User | null> {
@@ -26,34 +40,19 @@ export class UsersService {
   }
 
   public async existsByEmail(email: string): Promise<boolean> {
-    return this.userRepository.existsByEmail(email.toLowerCase().trim());
+    return this.userRepository.existsByEmail(normalizeEmail(email));
   }
 
   public async save(user: User): Promise<User> {
-    this.logger.log(`Saving user: ${user.email}`);
+    this.logger.log(`Saving user: ${user.id}`);
     return this.userRepository.save(user);
   }
 
-  public async update(
-    userId: TypeId<'users'>,
-    updates: Partial<
-      Pick<
-        User,
-        | 'displayName'
-        | 'timezone'
-        | 'hourlyRate'
-        | 'currency'
-        | 'openaiKey'
-        | 'llmProvider'
-        | 'llmModel'
-        | 'llmBaseUrl'
-      >
-    >,
-  ): Promise<User> {
+  public async update(userId: TypeId<'users'>, updates: UpdatableUserFields): Promise<User> {
     if (updates.displayName) {
       const existing = await this.userRepository.findByDisplayName(updates.displayName);
       if (existing && existing.id !== userId) {
-        throw new Error('Display name is already taken');
+        throw new ConflictException('Display name is already taken');
       }
     }
 
