@@ -1,8 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
 
+import { type TypeId } from '@devpulse/lib';
+
 export class WorkSessionSummaryDto {
-  @ApiProperty({ description: 'Work session ID' })
-  public id!: string;
+  @ApiProperty({ description: 'Work session ID', example: 'ws_123456789' })
+  public id!: TypeId<'workSessions'>;
 
   @ApiProperty({ description: 'Session start time' })
   public startedAt!: string;

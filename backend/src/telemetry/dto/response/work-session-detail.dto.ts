@@ -1,5 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 
+import { type TypeId } from '@devpulse/lib';
+
 export class SessionCommitDto {
   @ApiProperty()
   public hash!: string;
@@ -44,8 +46,8 @@ export class SessionCommandDto {
 }
 
 export class WorkSessionDetailDto {
-  @ApiProperty()
-  public id!: string;
+  @ApiProperty({ example: 'ws_123456789' })
+  public id!: TypeId<'workSessions'>;
 
   @ApiProperty({ nullable: true })
   public projectName!: string | null;
