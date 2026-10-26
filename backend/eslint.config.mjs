@@ -1,4 +1,5 @@
 import { nestjsConfig } from '@devpulse/eslint-config';
+import tseslint from 'typescript-eslint';
 
 export default nestjsConfig({
   ignores: ['eslint.config.mjs'],
@@ -9,6 +10,10 @@ export default nestjsConfig({
       rules: {
         '@typescript-eslint/no-unsafe-call': 'off',
       },
+    },
+    {
+      files: ['**/*.js', '**/*.mjs'],
+      ...tseslint.configs.disableTypeChecked,
     },
   ],
 });

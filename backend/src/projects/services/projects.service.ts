@@ -45,16 +45,16 @@ export class ProjectsService {
       .getRawMany<RawProjectQueryResult>();
 
     return rawProjects.map((p) => {
-      const activeSeconds = Number(p.activeSeconds ?? 0);
+      const activeSeconds = Number(p.activeSeconds);
       const lastActiveIso = p.lastActive ? new Date(p.lastActive).toISOString() : null;
 
       return {
-        id: p.id ?? '',
-        name: p.name ?? 'Untitled Project',
-        remote: p.remote ?? null,
+        id: p.id,
+        name: p.name,
+        remote: p.remote,
         activeTime: formatDuration(activeSeconds),
-        focusScore: Math.round(Number(p.avgFocus ?? 0)),
-        sessions: Number(p.sessionsCount ?? 0),
+        focusScore: Math.round(Number(p.avgFocus)),
+        sessions: Number(p.sessionsCount),
         lastActive: lastActiveIso,
         totalCommits: 0,
         totalCommands: 0,
@@ -88,21 +88,20 @@ export class ProjectsService {
       .addGroupBy('project.git_remote_url')
       .getRawOne<RawProjectQueryResult>();
 
-    if (!rawProject?.id) {
+    if (!rawProject) {
       throw new NotFoundException('Project not found');
     }
 
     const sessions = await this.sessionRepo.find({
       where: {
-        projectId: rawProject.id as TypeId<'projects'>,
+        projectId: rawProject.id,
         userId,
         status: WorkSessionStatus.CLOSED,
       },
       order: { startedAt: 'DESC' },
     });
 
-    const activeSeconds = Number(rawProject.activeSeconds ?? 0);
-
+    const activeSeconds = Number(rawProject.activeSeconds);
     const { totalCommits, totalCommands, languages, branches } =
       this.aggregateSessionDetails(sessions);
 
@@ -116,11 +115,11 @@ export class ProjectsService {
 
     return {
       id: rawProject.id,
-      name: rawProject.name ?? 'Untitled Project',
-      remote: rawProject.remote ?? null,
+      name: rawProject.name,
+      remote: rawProject.remote,
       activeTime: formatDuration(activeSeconds),
-      focusScore: Math.round(Number(rawProject.avgFocus ?? 0)),
-      sessions: Number(rawProject.sessionsCount ?? 0),
+      focusScore: Math.round(Number(rawProject.avgFocus)),
+      sessions: Number(rawProject.sessionsCount),
       lastActive: rawProject.lastActive ? new Date(rawProject.lastActive).toISOString() : null,
       totalCommits,
       totalCommands,
@@ -129,7 +128,6 @@ export class ProjectsService {
       recentSessions,
     };
   }
-
   private aggregateSessionDetails(sessions: Array<WorkSession>): {
     totalCommits: number;
     totalCommands: number;

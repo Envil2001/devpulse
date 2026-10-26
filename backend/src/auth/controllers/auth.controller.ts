@@ -7,16 +7,14 @@ import {
   HttpStatus,
   Post,
   Res,
+  UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
 
-import { env } from '@devpulse/env/api';
-
 import { AuthThrottle } from '../../common/decorators/throtte.decorators';
 import { MessageResponseDto } from '../../common/dto/message-response.dto';
-import { User } from '../../users/entities/user.entity';
 import { UserRepository } from '../../users/repositories/users.repository';
 import { CurrentUser } from '../decorators/current-user.decorator';
 import { BeginSignupRequestDto } from '../dto/requests/begin-signup-request.dto';
@@ -29,7 +27,23 @@ import { SignUpCompleteResponseDto } from '../dto/response/sign-up-complete.resp
 import { UserResponseDto } from '../dto/response/user-response.dto';
 import { VerifySignUpResponseDto } from '../dto/response/verify-signup-response.dto';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
+import { type LoginBeginResult } from '../interfaces/auth-internal.interface';
+import { type AuthenticatedUser } from '../interfaces/jwt-payload.interface';
 import { AuthService } from '../services/auth.service';
+
+const BEARER_PREFIX = 'Bearer ';
+
+const extractBearerToken = (authHeader: string | undefined): string => {
+  const token = authHeader?.startsWith(BEARER_PREFIX)
+    ? authHeader.slice(BEARER_PREFIX.length).trim()
+    : '';
+
+  if (!token) {
+    throw new UnauthorizedException('Missing bearer token');
+  }
+
+  return token;
+};
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -77,20 +91,17 @@ export class AuthController {
   @ApiResponse({ status: HttpStatus.OK, type: SignUpCompleteResponseDto })
   public async signupComplete(
     @Body() dto: CompleteSignupRequestDto,
-    @Headers('authorization') authHeader: string,
+    @Headers('authorization') authHeader: string | undefined,
     @Res({ passthrough: true }) res: Response,
   ): Promise<SignUpCompleteResponseDto> {
-    const signUpToken = authHeader.replace('Bearer ', '');
-    return this.authService.signUpComplete(dto, signUpToken, res);
+    return this.authService.signUpComplete(dto, extractBearerToken(authHeader), res);
   }
 
   @Post('signin/begin')
   @AuthThrottle()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Begin login process (get salt and server key)' })
-  public async signinBegin(
-    @Body() dto: LoginBeginRequestDto,
-  ): Promise<{ salt: string; serverPublicKey: string }> {
+  public async signinBegin(@Body() dto: LoginBeginRequestDto): Promise<LoginBeginResult> {
     return this.authService.loginBegin(dto);
   }
 
@@ -99,22 +110,11 @@ export class AuthController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current user profile' })
   @ApiResponse({ status: HttpStatus.OK, type: UserResponseDto })
-  public async getMe(@CurrentUser() user: User): Promise<UserResponseDto> {
+  public async getMe(@CurrentUser() user: AuthenticatedUser): Promise<UserResponseDto> {
     const fullUser = await this.userRepo.findById(user.id);
 
     if (!fullUser) {
-      return {
-        id: user.id,
-        email: user.email,
-        displayName: user.displayName,
-        timezone: user.timezone,
-        hourlyRate: user.hourlyRate,
-        currency: user.currency,
-        hasOpenaiKey: false,
-        llmProvider: null,
-        llmModel: null,
-        llmBaseUrl: null,
-      };
+      throw new UnauthorizedException('User not found');
     }
 
     return {
@@ -135,12 +135,6 @@ export class AuthController {
   @ApiOperation({ summary: 'Logout and clear cookies' })
   @ApiResponse({ status: HttpStatus.OK, type: MessageResponseDto })
   public logout(@Res({ passthrough: true }) res: Response): MessageResponseDto {
-    res.clearCookie('access_token', {
-      httpOnly: true,
-      secure: env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
-    });
-    return { message: 'Logged out successfully' };
+    return this.authService.logout(res);
   }
 }

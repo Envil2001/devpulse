@@ -1,5 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 
+import { type TypeId } from '@devpulse/lib';
+
 export class ProjectLanguageDto {
   @ApiProperty({ description: 'Programming language name', example: 'typescript' })
   public name!: string;
@@ -21,7 +23,7 @@ export class ProjectBranchDto {
 
 export class ProjectRecentSessionDto {
   @ApiProperty({ description: 'Unique session identifier', example: 'ws_abc123def456' })
-  public id!: string;
+  public id!: TypeId<'workSessions'>;
 
   @ApiProperty({
     description: 'Session start timestamp (ISO 8601)',
@@ -49,7 +51,7 @@ export class ProjectRecentSessionDto {
 
 export class ProjectSummaryDto {
   @ApiProperty({ description: 'Unique project identifier', example: 'p_123456789' })
-  public id!: string;
+  public id!: TypeId<'projects'>;
 
   @ApiProperty({
     description: 'Project name (usually derived from repository name)',

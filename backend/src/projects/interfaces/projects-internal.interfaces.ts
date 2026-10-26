@@ -1,9 +1,11 @@
+import { type TypeId } from '@devpulse/lib';
+
 export interface RawProjectQueryResult {
-  id: string | null;
-  name: string | null;
+  id: TypeId<'projects'>;
+  name: string;
   remote: string | null;
-  activeSeconds: string | number | null;
-  avgFocus: string | number | null;
-  sessionsCount: string | number | null;
-  lastActive: Date | string | null;
+  activeSeconds: string | number;
+  avgFocus: string | number;
+  sessionsCount: string | number;
+  lastActive: string | Date | null;
 }
