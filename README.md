@@ -59,5 +59,5 @@ The worklog generator includes:
 - AI usage detection and contextual mention in summaries;
 - natural, non-robotic tone suitable for professional reports.
 
-See `docs/setup.md` for configuration details and `docs/database.md` for the
+See `docs/setup.md` for configuration details and `docs/architecture-db.md` for the
 `ai_assisted` and `ai_interactions_count` fields in the `work_sessions` table.
