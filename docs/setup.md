@@ -1,38 +1,98 @@
-# Wymagania Środowiskowe i Procedura Uruchomienia
+# Environment Requirements and Run Guide
 
-## 1. Wymagania środowiskowe (Backend + Frontend)
-
-Poniższa tabela przedstawia minimalne i rekomendowane wymagania niezbędne do uruchomienia pełnego środowiska projektowego (baza danych, backend, frontend).
-
-| Komponent                  | Wersja minimalna                                      | Wersja rekomendowana             |
-| :------------------------- | :---------------------------------------------------- | :------------------------------- |
-| **System Operacyjny**      | macOS 12+, Linux (Ubuntu 20.04+), Windows 10 (z WSL2) | macOS 14+, Linux (Ubuntu 22.04+) |
-| **Node.js**                | v20.x (LTS)                                           | v20.11.0 lub nowszy              |
-| **Menedżer pakietów**      | pnpm v9.x                                             | pnpm v9.14.2                     |
-| **Baza danych**            | PostgreSQL 15 (Docker)                                | PostgreSQL 16 (Docker)           |
-| **Usługi pomocnicze**      | Redis 7 (Docker)                                      | Redis 7.x (Docker)               |
-| **Zależności systemowe**   | `git` w zmiennej PATH                                 | `git` w wersji 2.40+             |
-| **Środowisko kontenerowe** | Docker Desktop / Docker Engine                        | Docker z obsługą Docker Compose  |
-
-## 2. Wymagania dla Rozszerzenia VS Code
-
-- **VS Code:** wersja **1.93.0** lub nowsza (wymagane przez VS Code Shell Integration API).
-- **System Operacyjny:** macOS, Windows, Linux.
-- **Zależności systemowe:** `git` w zmiennej PATH (wymagane do śledzenia commitów).
-- **Uprawnienia:** Środowisko musi być zaufane (Trusted Workspace), aby rozszerzenie mogło uruchomić telemetrię.
-
-## 3. Zewnętrzne usługi (opcjonalne dla dev)
-
-Aby w pełni korzystać z funkcji AI oraz wysyłki e-maili, wymagane są klucze API:
-
-- **OpenRouter API** (lub OpenAI API) – do generowania podsumowań AI (Worklog). Użytkownik musi skonfigurować klucz w profilu (pole `openaiKey`), aby móc generować podsumowania pracy.
-- **Resend** – do wysyłki e-maili (np. weryfikacja konta).
+This document covers environment requirements (OS, software, hardware, cloud), the frontend / backend split, external services, and how a new person stands up the code, database, and services, runs tests, and builds a production version.
 
 ---
 
-## 4. Procedura uruchomienia (Środowisko deweloperskie)
+## 1. Environment requirements
 
-### Krok 1: Klonowanie i instalacja zależności
+DevPulse is a monorepo: **backend** (NestJS API + PostgreSQL + Redis) and **frontend** (Next.js dashboard + VS Code extension). Minimum and recommended requirements are below.
+
+### 1.1. Frontend / backend split
+
+| Layer | Components | Local prerequisites |
+| :---- | :--------- | :------------------ |
+| **Backend** | NestJS (`backend/`), PostgreSQL 16, Redis 7 | Node.js, pnpm, Docker Compose, `.env` |
+| **Frontend (Web)** | Next.js (`packages/web/`) | Node.js, pnpm, modern browser |
+| **Frontend (IDE)** | VS Code extension (`packages/vscode-extension/`) | VS Code ≥ 1.93.0, `git` on `PATH` |
+
+### 1.2. Operating system and software
+
+| Component | Minimum | Recommended |
+| :-------- | :------ | :---------- |
+| **Operating system** | macOS 12+, Linux (Ubuntu 20.04+), Windows 10/11 (WSL2) | macOS 14+ or Ubuntu 22.04+ LTS |
+| **Node.js** | v20.11.0 (LTS) | v22.x (Active LTS) |
+| **pnpm** | v9.0.0+ | v9.14.2 (locked in `packageManager`) |
+| **PostgreSQL** | 15 (Docker) | 16 Alpine (`postgres:16-alpine` in `docker-compose.yml`) |
+| **Redis** | 7.0 (Docker) | 7.x Alpine (`redis:7-alpine`) |
+| **Docker** | Docker Engine 24+ / Docker Desktop | Docker Compose v2 (`docker compose`) |
+| **Browser** | Chrome 120+, Firefox 120+, or Safari 17+ | Current Chromium (Chrome / Edge) |
+| **Git** | 2.34+ on `PATH` | 2.40+ |
+| **VS Code** (extension only) | 1.93.0 | latest stable |
+
+### 1.3. Hardware
+
+A local dev environment runs Postgres/Redis containers, the NestJS API, and the Next.js dashboard at the same time.
+
+| Resource | Minimum | Recommended |
+| :------- | :------ | :---------- |
+| **RAM** | 8 GB | 16 GB |
+| **CPU** | 2 cores | 4 cores |
+| **Disk** | ~10 GB free (repo + `node_modules` + Docker volumes) | SSD, 20 GB+ |
+
+### 1.4. Cloud
+
+A VPS is **not** required to run telemetry and the dashboard locally. Cloud is needed for production and for optional features (email, AI):
+
+| Environment | What to host | Notes |
+| :---------- | :----------- | :---- |
+| **Dev (local)** | nothing — Postgres and Redis in Docker | API: `localhost:3000`, web: `localhost:3001` |
+| **Prod / staging** | VPS or PaaS (backend + web + Postgres + Redis), domain, TLS | see `docs/deployment.md` |
+| **SaaS subscriptions** | Resend, OpenRouter (or OpenAI) | keys per user / per environment; see §3 |
+
+---
+
+## 2. VS Code extension requirements
+
+- **VS Code:** version **1.93.0** or newer (Shell Integration API).
+- **Git:** `git` binary on `PATH` (commit tracking).
+- **Workspace Trust:** the folder must be a trusted workspace; telemetry is paused in restricted mode.
+
+---
+
+## 3. External software (subscriptions and cloud)
+
+DevPulse is not locked to a single LLM vendor. Users configure AI keys in their profile (Settings). Transactional email goes through Resend.
+
+### 3.1. Resend (email)
+
+| | |
+| :-- | :-- |
+| **Service** | [Resend](https://resend.com) — cloud email API |
+| **Subscription** | Resend account + API key (`RESEND_API_KEY`); the free plan is enough for development |
+| **Used for** | account verification codes and security notifications |
+| **Variables** | `RESEND_API_KEY`, `EMAIL_FROM` (sender, e.g. `DevPulse <noreply@your-domain>`) |
+| **Dev** | without a real key, registration will not send mail; the rest of the API and dashboard work after any non-empty string is set in `.env` (required by the env schema) |
+
+### 3.2. AI — OpenRouter (default cloud) and Ollama (local)
+
+Worklog summaries use an OpenAI-compatible interface (`OpenAiCompatibleSummaryService`). The provider is selected in the user profile:
+
+| Provider | Type | Subscription / hosting | Configuration |
+| :------- | :-- | :--------------------- | :------------ |
+| **OpenRouter** (`openrouter`) | cloud | account on [openrouter.ai](https://openrouter.ai), API key; free models (`:free`) need no paid plan | default provider; automatic model fallback on rate limits / unavailability |
+| **OpenAI** (`openai`) | cloud | paid OpenAI API (GPT-4o, etc.) | key and model name in profile settings |
+| **Ollama / custom** (`custom`) | local or self-hosted | no cloud — [Ollama](https://ollama.com) (also vLLM, LM Studio, LocalAI) | `llmBaseUrl` pointing at the local endpoint, e.g. `http://127.0.0.1:11434/v1` |
+
+LLM keys are **not** stored in the server `.env` — each user supplies their own key in the dashboard. The backend does not ship a shared company key.
+
+---
+
+## 4. Development setup (code, database, services)
+
+A new person needs: a cloned repo, a `.env` file, running Postgres/Redis containers, migrations, and two Node processes (backend + web).
+
+### Step 1: Code and dependencies
 
 ```bash
 git clone https://github.com/Envil2001/devpulse.git
@@ -40,67 +100,95 @@ cd devpulse
 pnpm install
 ```
 
-### Krok 2: Konfiguracja zmiennych środowiskowych
-
-Skopiuj plik `.env.example` do `.env` w katalogu głównym:
+### Step 2: Environment variables
 
 ```bash
 cp .env.example .env
 ```
 
-Następnie uzupełnij plik `.env` (m.in. `DATABASE_URL`, `REDIS_URL`, klucze API).
+Fill in at least:
 
-### Krok 3: Uruchomienie infrastruktury (Docker)
+- `DATABASE_URL`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`
+- `REDIS_URL`
+- `JWT_SECRET` (min. 32 characters)
+- `RESEND_API_KEY`, `EMAIL_FROM` (required by backend env)
 
-Uruchom bazę danych PostgreSQL oraz Redis:
+### Step 3: Database and Redis (Docker)
 
 ```bash
 docker compose up -d
+docker compose ps
 ```
 
-### Krok 4: Migracje bazy danych
+Containers: PostgreSQL `:5432`, Redis `:6379`.
 
-Przejdź do katalogu backendu i uruchom migracje TypeORM:
+### Step 4: Migrations
 
 ```bash
 cd backend
 pnpm migration:run
 ```
 
-### Krok 5: Uruchomienie backendu (NestJS)
+Optional test data:
 
 ```bash
-# W katalogu backend/
+pnpm seed
+```
+
+### Step 5: Backend (NestJS)
+
+```bash
+# still in backend/
 pnpm start:dev
 ```
 
-API będzie dostępne pod adresem `http://localhost:3000/api/v1`.
-Surowa specyfikacja OpenAPI (format JSON, używany przez frontend do generowania dokumentacji) jest dostępna pod adresem `http://localhost:3000/api/v1/docs-json`.
+- API: `http://localhost:3000/api/v1`
+- OpenAPI JSON: `http://localhost:3000/api/v1/docs-json`
 
-### Krok 6: Uruchomienie frontendu (Next.js)
+### Step 6: Frontend (Next.js)
 
-Otwórz nowy terminal i przejdź do katalogu web:
+New terminal:
 
 ```bash
 cd packages/web
 pnpm dev
 ```
 
-Panel główny będzie dostępny pod adresem `http://localhost:3001`.
-Dokumentacja API (interaktywny Swagger UI) jest dostępna pod adresem: `http://localhost:3001/docs`
+- Dashboard: `http://localhost:3001`
+- Swagger UI: `http://localhost:3001/docs`
 
-### Krok 7: Uruchomienie rozszerzenia VS Code
+### Step 7: VS Code extension
 
-1. Otwórz główny folder projektu (`devpulse/`) w VS Code.
-2. Naciśnij **F5** (Run -> Start Debugging).
-3. Otworzy się nowe okno `[Extension Development Host]`.
-4. W nowym oknie użyj komendy `DevPulse: Set API Key` i wklej klucz wygenerowany w panelu (Settings -> API Keys).
+1. Open the root `devpulse/` folder in VS Code.
+2. **Run and Debug** → **Launch Extension** (or **F5**).
+3. In the `[Extension Development Host]` window, run `DevPulse: Set API Key`.
+4. Paste a key from the web dashboard (**Settings → API Keys**).
 
 ---
 
-## 5. Proces budowania wersji produkcyjnej (Prod)
+## 5. Running tests
 
-### Backend (NestJS)
+Backend unit and integration tests (Jest). Postgres/Redis from `docker compose up` should be running if tests hit the database.
+
+```bash
+cd backend
+pnpm test
+```
+
+Whole monorepo (typecheck + lint):
+
+```bash
+pnpm typecheck
+pnpm lint
+```
+
+---
+
+## 6. Production build and run
+
+Infrastructure (Postgres + Redis) still comes from Compose; apps are compiled from TypeScript to production artifacts.
+
+### Backend
 
 ```bash
 cd backend
@@ -108,7 +196,9 @@ pnpm build
 pnpm start:prod
 ```
 
-### Frontend (Next.js)
+(`start:prod` runs `node dist/main`.)
+
+### Frontend (Web)
 
 ```bash
 cd packages/web
@@ -116,7 +206,9 @@ pnpm build
 pnpm start
 ```
 
-### Rozszerzenie VS Code
+The dashboard listens on port **3001**.
+
+### VS Code extension (`.vsix` package)
 
 ```bash
 cd packages/vscode-extension
@@ -124,4 +216,4 @@ pnpm compile
 pnpm vsce package --no-dependencies
 ```
 
-Wynikiem będzie plik `devpulse-0.0.1.vsix`, który można zainstalować za pomocą komendy w VS Code: `Extensions: Install from VSIX...`.
+Install `devpulse-0.0.1.vsix` in VS Code via **Extensions: Install from VSIX...**.
