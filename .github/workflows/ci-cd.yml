@@ -42,3 +42,17 @@ jobs:
 
       - name: Run Tests
         run: pnpm --filter backend test
+        env:
+          NODE_ENV: test
+          POSTGRES_USER: devpulse_user
+          POSTGRES_PASSWORD: supersecretpassword
+          POSTGRES_DB: devpulse_db
+          DATABASE_URL: 'postgresql://devpulse_user:supersecretpassword@localhost:5432/devpulse_db?schema=public'
+          REDIS_URL: redis://localhost:6379
+          JWT_SECRET: 'super-secret-test-jwt-secret-min-32-chars-long-123456789'
+          JWT_EXPIRES_IN: 7d
+          DEVPULSE_API_URL: http://localhost:3000/api/v1
+          NEXT_PUBLIC_API_URL: http://localhost:3000/api/v1
+          RESEND_API_KEY: re_test123
+          EMAIL_FROM: onboarding@resend.dev
+          OPENAI_API_KEY: sk-test-123
