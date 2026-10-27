@@ -39,3 +39,6 @@ jobs:
 
       - name: Run Lint
         run: pnpm lint
+
+      - name: Run Tests
+        run: pnpm --filter backend test
