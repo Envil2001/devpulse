@@ -38,6 +38,13 @@ export const TOURS: readonly TourDefinition[] = [
         placement: 'bottom',
       },
       {
+        id: 'system-status',
+        target: target('system-status'),
+        title: 'System status',
+        content: 'Monitor your workspace health: tracked sessions, VS Code extension status, and data sync.',
+        placement: 'bottom',
+      },
+      {
         id: 'ai-roi',
         target: target('ai-roi'),
         title: 'AI Assistance & ROI',
