@@ -26,6 +26,7 @@ import { TerminalActivityPanel } from './terminal-activity-panel';
 import { ComparisonPanel } from './comparison-panel';
 import { HeatmapPanel } from './heatmap-panel';
 import { AiRoiPanel } from './ai-roi-panel';
+import { StatusMonitoringPanel } from './status-monitoring-panel';
 
 function getInitialCustomDates() {
   const to = new Date();
@@ -83,6 +84,10 @@ export function DashboardView() {
 
       <div data-tour="stats-overview">
         <DashboardSummaryCards range={range} projectId={projectId} />
+      </div>
+
+      <div data-tour="system-status">
+        <StatusMonitoringPanel />
       </div>
 
       <div data-tour="ai-roi">
