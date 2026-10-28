@@ -50,7 +50,7 @@ export interface WorkSessionSummary {
   endedAt: string;
   projectName: string;
   gitBranch: string | null;
-  durationMs: number;
+  durationMs: number; // Active duration in seconds
   focusScore: number;
   earnedMoney: number;
   primaryLanguage: string | null;

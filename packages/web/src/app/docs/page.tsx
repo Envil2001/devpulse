@@ -1,6 +1,7 @@
 import { EndpointCard } from '@/features/docs/components/endpoint-card';
 import { DocsLayoutWrapper } from '@/features/docs/components/docs-layout-wrapper';
 import { generateIdFromTitle } from '@/shared/lib/docs';
+import { env } from '@devpulse/env/client';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,6 +23,8 @@ interface OpenAPIResponseContent {
 interface OpenAPIResponse {
   content?: Record<string, OpenAPIResponseContent>;
 }
+
+type OpenAPIMethod = 'get' | 'post' | 'put' | 'patch' | 'delete';
 
 interface OpenAPIOperation {
   summary?: string;
@@ -49,8 +52,7 @@ interface OpenAPISpec {
 }
 
 async function getOpenAPISpec(): Promise<OpenAPISpec> {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
-  const response = await fetch(`${apiUrl}/docs-json`, {
+  const response = await fetch(`${env.NEXT_PUBLIC_API_URL}/docs-json`, {
     next: { revalidate: 60 },
   });
 
@@ -62,31 +64,19 @@ async function getOpenAPISpec(): Promise<OpenAPISpec> {
 }
 
 function extractScopes(security?: Array<Record<string, Array<string>>>): Array<string> {
-  if (!security || security.length === 0) return [];
+  if (!security?.length) return [];
 
-  const scopes = new Set<string>();
-  for (const securityItem of security) {
-    const apiKeyScopes = securityItem['ApiKeyAuth'];
-    if (apiKeyScopes) {
-      apiKeyScopes.forEach((scope) => scopes.add(scope));
-    }
-  }
-
-  return Array.from(scopes);
+  const scopes = security.flatMap((securityItem) => securityItem['ApiKeyAuth'] || []);
+  return Array.from(new Set(scopes));
 }
 
-function extractResponseExample(responses?: Record<string, unknown>): string | undefined {
-  if (!responses) return undefined;
+function extractResponseExample(responses?: Record<string, OpenAPIResponse>): string | undefined {
+  const example = responses?.['200']?.content?.['application/json']?.example;
 
-  const successResponse = responses['200'] as
-    { content?: Record<string, { example?: unknown }> } | undefined;
-  if (!successResponse?.content) return undefined;
-
-  const jsonContent = successResponse.content['application/json'];
-  if (!jsonContent?.example) return undefined;
-
-  return JSON.stringify(jsonContent.example, null, 2);
+  return example === undefined ? undefined : JSON.stringify(example, null, 2);
 }
+
+const methods: Array<OpenAPIMethod> = ['get', 'post', 'put', 'patch', 'delete'];
 
 export default async function DocsPage() {
   const spec = await getOpenAPISpec();
@@ -103,23 +93,21 @@ export default async function DocsPage() {
     responseExample?: string;
   }> = [];
 
-  if (paths) {
-    for (const [path, pathItem] of Object.entries(paths)) {
-      for (const [method, operation] of Object.entries(pathItem)) {
-        if (operation && typeof operation === 'object' && 'summary' in operation) {
-          const op = operation as OpenAPIOperation;
-          endpoints.push({
-            id: generateIdFromTitle(op.summary || path),
-            method: method.toUpperCase(),
-            path,
-            summary: op.summary || path,
-            description: op.description,
-            scopes: extractScopes(op.security),
-            parameters: op.parameters,
-            responseExample: extractResponseExample(op.responses as Record<string, unknown>),
-          });
-        }
-      }
+  for (const [path, pathItem] of Object.entries(paths || {})) {
+    for (const method of methods) {
+      const operation = pathItem[method];
+      if (!operation) continue;
+
+      endpoints.push({
+        id: generateIdFromTitle(operation.summary || path),
+        method: method.toUpperCase(),
+        path,
+        summary: operation.summary || path,
+        description: operation.description,
+        scopes: extractScopes(operation.security),
+        parameters: operation.parameters,
+        responseExample: extractResponseExample(operation.responses),
+      });
     }
   }
 
