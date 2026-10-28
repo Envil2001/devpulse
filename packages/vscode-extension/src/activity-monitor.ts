@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 
 import { IntervalTimer, ReschedulableTimer } from './utils/timers.js';
+import { isTrackedTextDocument } from './utils/tracked-documents.js';
 
 export type ActivityState = 'active' | 'idle';
 
@@ -9,29 +10,28 @@ export interface ActivityStateChange {
   changedAt: number;
 }
 
-const DEFAULT_IDLE_THRESHOLD_MS = 2 * 60 * 1000;
-
-const WINDOW_BLUR_GRACE_MS = 10 * 1000;
-
-const SLEEP_CHECK_INTERVAL_MS = 15 * 1000;
-
-const SLEEP_DRIFT_TOLERANCE = 3;
-
-function isTrackedTextDocument(document: vscode.TextDocument): boolean {
-  if (document.isClosed) {
-    return false;
-  }
-  const { scheme } = document.uri;
-  return scheme === 'file' || scheme === 'untitled';
+export interface ActivityMonitorOptions {
+  idleThresholdMs?: number;
+  log?: vscode.LogOutputChannel;
 }
+
+const DEFAULT_IDLE_THRESHOLD_MS = 2 * 60 * 1000;
+const WINDOW_BLUR_GRACE_MS = 10 * 1000;
+const SLEEP_CHECK_INTERVAL_MS = 15 * 1000;
+const SLEEP_DRIFT_TOLERANCE = 3;
 
 export class ActivityMonitor implements vscode.Disposable {
   private state: ActivityState;
   private lastSleepCheckAt: number = Date.now();
+  private lastActivityAt: number = Date.now();
+  private blurredAt: number | null = null;
   private stopped = false;
 
   private readonly disposables: Array<vscode.Disposable> = [];
   private readonly emitter = new vscode.EventEmitter<ActivityStateChange>();
+
+  private readonly idleThresholdMs: number;
+  private readonly log?: vscode.LogOutputChannel;
 
   private readonly idleTimer: ReschedulableTimer;
   private readonly blurTimer: ReschedulableTimer;
@@ -39,16 +39,17 @@ export class ActivityMonitor implements vscode.Disposable {
 
   readonly onDidChangeActivityState = this.emitter.event;
 
-  constructor(
-    private readonly idleThresholdMs: number = DEFAULT_IDLE_THRESHOLD_MS,
-    private readonly log?: vscode.LogOutputChannel,
-  ) {
+  constructor(options: ActivityMonitorOptions = {}) {
+    this.idleThresholdMs = options.idleThresholdMs ?? DEFAULT_IDLE_THRESHOLD_MS;
+    this.log = options.log;
+
     this.idleTimer = new ReschedulableTimer(() => {
-      this.transitionTo('idle');
+      this.transitionToIdle(this.lastActivityAt);
     });
 
     this.blurTimer = new ReschedulableTimer(() => {
-      this.transitionTo('idle');
+      // blurredAt is always set before scheduling; fall back defensively.
+      this.transitionToIdle(this.blurredAt ?? this.lastActivityAt);
     });
 
     this.sleepCheckTimer = new IntervalTimer(() => {
@@ -75,6 +76,10 @@ export class ActivityMonitor implements vscode.Disposable {
         if (!isTrackedTextDocument(event.document) || event.contentChanges.length === 0) return;
         this.pulseActivity();
       }),
+      vscode.workspace.onDidChangeNotebookDocument((event) => {
+        if (event.cellChanges.length === 0 && event.contentChanges.length === 0) return;
+        this.pulseActivity();
+      }),
       vscode.window.onDidChangeTextEditorSelection((event) => {
         if (!isTrackedTextDocument(event.textEditor.document)) return;
         this.pulseActivity();
@@ -96,6 +101,7 @@ export class ActivityMonitor implements vscode.Disposable {
           this.pulseActivity();
         } else {
           this.idleTimer.cancel();
+          this.blurredAt = Date.now();
           this.scheduleBlurIdleTransition();
         }
       }),
@@ -104,6 +110,9 @@ export class ActivityMonitor implements vscode.Disposable {
         this.pulseActivity();
       }),
       vscode.window.onDidOpenTerminal(() => {
+        this.pulseActivity();
+      }),
+      vscode.tasks.onDidStartTask(() => {
         this.pulseActivity();
       }),
       vscode.debug.onDidStartDebugSession(() => {
@@ -122,12 +131,26 @@ export class ActivityMonitor implements vscode.Disposable {
         this.pulseActivity();
       }),
     );
+
+    const w = vscode.window as typeof vscode.window & {
+      onDidStartTerminalShellExecution?: (listener: () => unknown) => vscode.Disposable;
+    };
+    if (typeof w.onDidStartTerminalShellExecution === 'function') {
+      this.disposables.push(
+        w.onDidStartTerminalShellExecution(() => {
+          this.pulseActivity();
+        }),
+      );
+    }
   }
 
   private pulseActivity(): void {
     this.blurTimer.cancel();
+    this.blurredAt = null;
+    this.lastActivityAt = Date.now();
+
     if (this.state === 'idle') {
-      this.transitionTo('active');
+      this.transitionToActive();
     }
     this.scheduleIdleTransition();
   }
@@ -150,23 +173,37 @@ export class ActivityMonitor implements vscode.Disposable {
       return;
     }
 
+    if (this.lastActivityAt > previousCheckpoint) {
+      return;
+    }
+
     const sleptSeconds = Math.round((elapsed - SLEEP_CHECK_INTERVAL_MS) / 1000);
     this.log?.warn(`system sleep detected, ~${String(sleptSeconds)}s`);
 
     this.idleTimer.cancel();
     this.blurTimer.cancel();
 
-    this.transitionTo('idle', previousCheckpoint);
+    this.transitionToIdle(this.blurredAt ?? this.lastActivityAt);
   }
 
-  private transitionTo(next: ActivityState, changedAt: number = Date.now()): void {
+  private transitionToActive(): void {
     if (this.stopped) return;
-    if (this.state === next) return;
+    if (this.state === 'active') return;
 
-    this.state = next;
-    this.log?.info(next);
+    this.state = 'active';
+    this.log?.info('active');
 
-    this.emitter.fire({ state: next, changedAt });
+    this.emitter.fire({ state: 'active', changedAt: Date.now() });
+  }
+
+  private transitionToIdle(anchor: number): void {
+    if (this.stopped) return;
+    if (this.state === 'idle') return;
+
+    this.state = 'idle';
+    this.log?.info(`idle (anchor=${String(anchor)})`);
+
+    this.emitter.fire({ state: 'idle', changedAt: anchor });
   }
 
   dispose(): void {

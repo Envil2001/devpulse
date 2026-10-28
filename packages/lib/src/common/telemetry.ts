@@ -35,4 +35,5 @@ export interface TelemetryEventDto {
   filesList?: Array<string>;
 
   aiTool?: string;
+  aiEstimated?: boolean;
 }

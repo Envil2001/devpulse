@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   IsArray,
+  IsBoolean,
   IsDateString,
   IsIn,
   IsInt,
@@ -154,6 +155,14 @@ export class TelemetryEventItemDto implements TelemetryEventDto {
   @IsString()
   @IsOptional()
   public aiTool?: string;
+
+  @ApiProperty({
+    description: 'Whether AI interaction is estimated (heuristic-based)',
+    required: false,
+  })
+  @IsBoolean()
+  @IsOptional()
+  public aiEstimated?: boolean;
 }
 
 export class IngestTelemetryBatchRequestDto {

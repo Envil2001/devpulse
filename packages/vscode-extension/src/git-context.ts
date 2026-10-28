@@ -1,4 +1,6 @@
 import { execFile } from 'node:child_process';
+// eslint-disable-next-line unicorn/import-style
+import * as path from 'node:path';
 import { promisify } from 'node:util';
 
 import * as vscode from 'vscode';
@@ -16,13 +18,6 @@ export interface GitContext {
   workspaceFolderPath: string | null;
 }
 
-interface WorkspaceFolderLike {
-  name: string;
-  uri: {
-    fsPath: string;
-  };
-}
-
 function isSameContext(a: GitContext, b: GitContext): boolean {
   return (
     a.workspaceName === b.workspaceName &&
@@ -32,105 +27,56 @@ function isSameContext(a: GitContext, b: GitContext): boolean {
   );
 }
 
-function isWorkspaceFolderLike(value: unknown): value is WorkspaceFolderLike {
-  if (typeof value !== 'object' || value === null) {
-    return false;
-  }
-
-  const candidate = value as {
-    name?: unknown;
-    uri?: { fsPath?: unknown };
-  };
-
-  return typeof candidate.name === 'string' && typeof candidate.uri?.fsPath === 'string';
-}
-
-let lastActiveFolder: vscode.WorkspaceFolder | undefined;
-
-function resolveWorkspaceFolder(): vscode.WorkspaceFolder | undefined {
-  const activeEditor = vscode.window.activeTextEditor;
-  const fallback = lastActiveFolder ?? vscode.workspace.workspaceFolders?.[0];
-
-  if (!activeEditor) {
-    return fallback;
-  }
-
-  const scheme = activeEditor.document.uri.scheme;
-
-  if (scheme !== 'file') {
-    return fallback;
-  }
-
-  const folder = vscode.workspace.getWorkspaceFolder(activeEditor.document.uri);
-
-  if (folder) {
-    lastActiveFolder = folder;
-    return folder;
-  }
-
-  return undefined;
-}
-
-function resolveWorkspaceName(folder: WorkspaceFolderLike | null): string | null {
-  if (vscode.workspace.name !== undefined && vscode.workspace.name.trim().length > 0) {
-    return vscode.workspace.name.trim();
-  }
-
-  if (folder !== null && folder.name.trim().length > 0) {
-    return folder.name.trim();
-  }
-
+function resolveWorkspaceName(folder: vscode.WorkspaceFolder | null): string | null {
+  const name = vscode.workspace.name;
+  if (name !== undefined && name.trim().length > 0) return name.trim();
+  if (folder !== null && folder.name.trim().length > 0) return folder.name.trim();
   return null;
 }
 
-async function runGit(folderPath: string, args: Array<string>): Promise<string | null> {
+function stripUrlCredentials(url: string): string {
+  if (!/^https?:\/\//i.test(url)) return url;
   try {
-    const { stdout } = await execFileAsync('git', args, {
-      cwd: folderPath,
-      timeout: GIT_COMMAND_TIMEOUT_MS,
-    });
-
-    const value = stdout.trim();
-    return value.length > 0 ? value : null;
+    const parsed = new URL(url);
+    if (!parsed.username && !parsed.password) return url;
+    parsed.username = '';
+    parsed.password = '';
+    return parsed.toString();
   } catch {
-    return null;
+    return url;
   }
 }
 
-async function resolveGitBranch(folderPath: string): Promise<string | null> {
-  const branch = await runGit(folderPath, ['rev-parse', '--abbrev-ref', 'HEAD']);
-
-  if (branch === null || branch === 'HEAD') {
-    return null;
-  }
-
-  return branch;
-}
-
-async function resolveGitRemoteUrl(folderPath: string): Promise<string | null> {
-  return runGit(folderPath, ['config', '--get', 'remote.origin.url']);
-}
-
-async function resolveGitDir(folderPath: string): Promise<string | null> {
-  return runGit(folderPath, ['rev-parse', '--absolute-git-dir']);
+function isUnexpectedGitError(error: unknown): boolean {
+  if (typeof error !== 'object' || error === null) return true;
+  if (!('code' in error)) return true;
+  return typeof error.code !== 'number';
 }
 
 interface DetectedGitState {
   context: GitContext;
   gitDir: string | null;
+  commonDir: string | null;
 }
 
 export class GitContextProvider implements vscode.Disposable {
   private readonly disposables: Array<vscode.Disposable> = [];
   private readonly emitter = new vscode.EventEmitter<GitContext>();
 
-  private refreshChain: Promise<void> = Promise.resolve();
-
   private gitWatchers: Array<vscode.Disposable> = [];
   private watchedGitDir: string | null = null;
+  private watchedCommonDir: string | null = null;
 
   private gitDebounceTimer: ReturnType<typeof setTimeout> | undefined;
   private activeEditorDebounce: ReturnType<typeof setTimeout> | undefined;
+
+  private refreshInFlight = false;
+  private refreshDirty = false;
+  private forceGitRefresh = false;
+  private initialized = false;
+  private disposed = false;
+
+  private lastActiveFolderPath: string | null = null;
 
   private context: GitContext = {
     workspaceName: null,
@@ -159,6 +105,7 @@ export class GitContextProvider implements vscode.Disposable {
   }
 
   private readonly handleGitMetadataChange = (): void => {
+    this.forceGitRefresh = true;
     clearTimeout(this.gitDebounceTimer);
     this.gitDebounceTimer = setTimeout(() => {
       this.gitDebounceTimer = undefined;
@@ -175,23 +122,34 @@ export class GitContextProvider implements vscode.Disposable {
   }
 
   private scheduleRefresh(): void {
-    this.refreshChain = this.refreshChain.then(
-      () => this.runRefresh(),
-      () => this.runRefresh(),
-    );
+    if (this.disposed) return;
+    this.refreshDirty = true;
+    if (this.refreshInFlight) return;
+    void this.drainRefresh();
+  }
+
+  private async drainRefresh(): Promise<void> {
+    this.refreshInFlight = true;
+    try {
+      while (this.refreshDirty && !this.disposed) {
+        this.refreshDirty = false;
+        await this.runRefresh();
+      }
+    } finally {
+      this.refreshInFlight = false;
+    }
   }
 
   private async runRefresh(): Promise<void> {
+    if (this.disposed) return;
     try {
-      const { context: nextContext, gitDir } = await this.detectContext();
+      const { context: nextContext, gitDir, commonDir } = await this.detectContext();
 
-      if (this.watchedGitDir !== gitDir) {
-        this.resetGitWatchers(gitDir);
+      if (this.watchedGitDir !== gitDir || this.watchedCommonDir !== commonDir) {
+        this.resetGitWatchers(gitDir, commonDir);
       }
 
-      if (isSameContext(this.context, nextContext)) {
-        return;
-      }
+      if (isSameContext(this.context, nextContext)) return;
 
       this.context = nextContext;
       this.log?.info(
@@ -203,52 +161,88 @@ export class GitContextProvider implements vscode.Disposable {
     }
   }
 
-  private resetGitWatchers(gitDir: string | null): void {
+  private resetGitWatchers(gitDir: string | null, commonDir: string | null): void {
     for (const watcher of this.gitWatchers) {
       watcher.dispose();
     }
     this.gitWatchers = [];
     this.watchedGitDir = gitDir;
+    this.watchedCommonDir = commonDir;
 
-    this.log?.info(`resetGitWatchers: gitDir="${gitDir ?? 'n/a'}"`);
+    this.log?.info(
+      `resetGitWatchers: gitDir="${gitDir ?? 'n/a'}" commonDir="${commonDir ?? 'n/a'}"`,
+    );
 
-    if (gitDir === null) {
-      return;
+    if (gitDir === null) return;
+
+    const sharedDir = commonDir ?? gitDir;
+    const next: Array<vscode.Disposable> = [];
+
+    if (sharedDir === gitDir) {
+      next.push(this.watchFiles(vscode.Uri.file(gitDir), '{HEAD,packed-refs,config}'));
+    } else {
+      next.push(
+        this.watchFiles(vscode.Uri.file(gitDir), 'HEAD'),
+        this.watchFiles(vscode.Uri.file(sharedDir), '{packed-refs,config}'),
+      );
     }
 
-    const base = vscode.Uri.file(gitDir);
+    this.gitWatchers = next;
+  }
 
-    const headWatcher = vscode.workspace.createFileSystemWatcher(
-      new vscode.RelativePattern(base, 'HEAD'),
+  private watchFiles(base: vscode.Uri, pattern: string): vscode.Disposable {
+    const watcher = vscode.workspace.createFileSystemWatcher(
+      new vscode.RelativePattern(base, pattern),
     );
-    const packedRefsWatcher = vscode.workspace.createFileSystemWatcher(
-      new vscode.RelativePattern(base, 'packed-refs'),
-    );
-    const configWatcher = vscode.workspace.createFileSystemWatcher(
-      new vscode.RelativePattern(base, 'config'),
-    );
-
-    this.gitWatchers.push(
-      headWatcher,
-      packedRefsWatcher,
-      configWatcher,
-      headWatcher.onDidChange(this.handleGitMetadataChange),
-      headWatcher.onDidCreate(this.handleGitMetadataChange),
-      headWatcher.onDidDelete(this.handleGitMetadataChange),
-      packedRefsWatcher.onDidChange(this.handleGitMetadataChange),
-      packedRefsWatcher.onDidCreate(this.handleGitMetadataChange),
-      packedRefsWatcher.onDidDelete(this.handleGitMetadataChange),
-      configWatcher.onDidChange(this.handleGitMetadataChange),
-      configWatcher.onDidCreate(this.handleGitMetadataChange),
-      configWatcher.onDidDelete(this.handleGitMetadataChange),
+    const callback = this.handleGitMetadataChange;
+    return vscode.Disposable.from(
+      watcher,
+      watcher.onDidChange(callback),
+      watcher.onDidCreate(callback),
+      watcher.onDidDelete(callback),
     );
   }
 
+  private resolveWorkspaceFolder(): vscode.WorkspaceFolder | null {
+    const activeEditor = vscode.window.activeTextEditor;
+    if (activeEditor?.document.uri.scheme === 'file') {
+      const folder = vscode.workspace.getWorkspaceFolder(activeEditor.document.uri);
+      if (folder) {
+        this.lastActiveFolderPath = folder.uri.fsPath;
+        return folder;
+      }
+    }
+
+    if (this.lastActiveFolderPath !== null) {
+      const cached = vscode.workspace.workspaceFolders?.find(
+        (f) => f.uri.fsPath === this.lastActiveFolderPath,
+      );
+      if (cached) return cached;
+      this.lastActiveFolderPath = null;
+    }
+
+    return vscode.workspace.workspaceFolders?.[0] ?? null;
+  }
+
   private async detectContext(): Promise<DetectedGitState> {
-    const detectedFolder = resolveWorkspaceFolder();
-    const folder = isWorkspaceFolderLike(detectedFolder) ? detectedFolder : null;
+    const folder = this.resolveWorkspaceFolder();
     const workspaceFolderPath = folder?.uri.fsPath ?? null;
     const workspaceName = resolveWorkspaceName(folder);
+
+    if (
+      this.initialized &&
+      !this.forceGitRefresh &&
+      workspaceFolderPath === this.context.workspaceFolderPath
+    ) {
+      return {
+        context: { ...this.context, workspaceName, workspaceFolderPath },
+        gitDir: this.watchedGitDir,
+        commonDir: this.watchedCommonDir,
+      };
+    }
+
+    this.forceGitRefresh = false;
+    this.initialized = true;
 
     this.log?.info(
       `detectContext: folder="${folder?.name ?? 'n/a'}" path="${workspaceFolderPath ?? 'n/a'}"`,
@@ -263,27 +257,70 @@ export class GitContextProvider implements vscode.Disposable {
           workspaceFolderPath: null,
         },
         gitDir: null,
+        commonDir: null,
       };
     }
 
-    const [gitBranch, gitRemoteUrl, gitDir] = await Promise.all([
-      resolveGitBranch(workspaceFolderPath),
-      resolveGitRemoteUrl(workspaceFolderPath),
-      resolveGitDir(workspaceFolderPath),
+    const [gitBranch, gitRemoteUrl, gitDir, commonDir] = await Promise.all([
+      this.resolveGitBranch(workspaceFolderPath),
+      this.resolveGitRemoteUrl(workspaceFolderPath),
+      this.resolveGitDir(workspaceFolderPath),
+      this.resolveGitCommonDir(workspaceFolderPath),
     ]);
 
     return {
-      context: {
-        workspaceName,
-        gitBranch,
-        gitRemoteUrl,
-        workspaceFolderPath,
-      },
+      context: { workspaceName, gitBranch, gitRemoteUrl, workspaceFolderPath },
       gitDir,
+      commonDir,
     };
   }
 
+  private async runGit(folderPath: string, args: Array<string>): Promise<string | null> {
+    try {
+      const { stdout } = await execFileAsync('git', args, {
+        cwd: folderPath,
+        timeout: GIT_COMMAND_TIMEOUT_MS,
+      });
+      const value = stdout.trim();
+      return value.length > 0 ? value : null;
+    } catch (error) {
+      if (isUnexpectedGitError(error)) {
+        this.log?.debug(`git ${args.join(' ')} failed in ${folderPath}: ${String(error)}`);
+      }
+      return null;
+    }
+  }
+
+  private async resolveGitBranch(folderPath: string): Promise<string | null> {
+    return this.runGit(folderPath, ['symbolic-ref', '--short', '-q', 'HEAD']);
+  }
+
+  private async resolveGitRemoteUrl(folderPath: string): Promise<string | null> {
+    const originUrl = await this.runGit(folderPath, ['remote', 'get-url', 'origin']);
+    if (originUrl !== null) return stripUrlCredentials(originUrl);
+
+    const remotes = await this.runGit(folderPath, ['remote']);
+    if (remotes === null) return null;
+    const first = remotes.split('\n')[0]?.trim();
+    if (!first) return null;
+
+    const url = await this.runGit(folderPath, ['remote', 'get-url', first]);
+    return url === null ? null : stripUrlCredentials(url);
+  }
+
+  private async resolveGitDir(folderPath: string): Promise<string | null> {
+    return this.runGit(folderPath, ['rev-parse', '--absolute-git-dir']);
+  }
+
+  private async resolveGitCommonDir(folderPath: string): Promise<string | null> {
+    const value = await this.runGit(folderPath, ['rev-parse', '--git-common-dir']);
+    if (value === null) return null;
+    return path.isAbsolute(value) ? value : path.resolve(folderPath, value);
+  }
+
   dispose(): void {
+    this.disposed = true;
+
     if (this.activeEditorDebounce !== undefined) {
       clearTimeout(this.activeEditorDebounce);
       this.activeEditorDebounce = undefined;
@@ -294,7 +331,7 @@ export class GitContextProvider implements vscode.Disposable {
       this.gitDebounceTimer = undefined;
     }
 
-    this.resetGitWatchers(null);
+    this.resetGitWatchers(null, null);
 
     for (const disposable of this.disposables) {
       disposable.dispose();
