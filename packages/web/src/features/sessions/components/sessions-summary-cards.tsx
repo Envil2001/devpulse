@@ -16,7 +16,7 @@ export function SessionsSummaryCards({
   isLoading,
   uniqueProjectsCount,
 }: SessionsSummaryCardsProps) {
-  const totalMs = useMemo(() => {
+  const totalSeconds = useMemo(() => {
     return sessions.reduce((acc, s) => acc + (s.durationMs ?? 0), 0);
   }, [sessions]);
 
@@ -33,7 +33,7 @@ export function SessionsSummaryCards({
           Total Time
         </span>
         <span className="mt-1 font-mono text-lg font-semibold tabular-nums text-foreground">
-          {isLoading ? '—' : formatDuration(totalMs / 1000)}
+          {isLoading ? '—' : formatDuration(totalSeconds)}
         </span>
       </div>
 

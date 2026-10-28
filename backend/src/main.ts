@@ -2,6 +2,7 @@ import { BadRequestException, ValidationPipe, VersioningType } from '@nestjs/com
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, type OpenAPIObject, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
+import type { Request, Response } from 'express';
 import helmet from 'helmet';
 
 import { env } from '@devpulse/env/api';
@@ -84,15 +85,15 @@ async function bootstrap(): Promise<void> {
 
   const httpAdapter = app.getHttpAdapter();
   const expressApp = httpAdapter.getInstance() as {
-    get: (path: string, handler: (req: unknown, res: unknown) => void) => void;
+    get: (path: string, handler: (req: Request, res: Response) => void) => void;
   };
 
   expressApp.get('/api/v1/docs-json', (req, res) => {
-    (res as { json: (data: unknown) => void }).json(publicDocumentFactory());
+    res.json(publicDocumentFactory());
   });
 
   expressApp.get('/api/v1/dev-docs-json', (req, res) => {
-    (res as { json: (data: unknown) => void }).json(fullDocumentFactory());
+    res.json(fullDocumentFactory());
   });
 
   SwaggerModule.setup('api/v1/dev-docs', app, fullDocumentFactory);
