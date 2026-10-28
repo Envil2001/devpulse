@@ -1,6 +1,6 @@
 import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { Job, Worker } from 'bullmq';
-import Redis from 'ioredis/built/Redis';
+import type { Redis } from 'ioredis';
 import { DataSource, EntityManager, IsNull, LessThan, Repository } from 'typeorm';
 
 import { stripUrlCredentials, typeIdGenerator } from '@devpulse/lib';
@@ -26,6 +26,7 @@ const MAX_COMMANDS = 500;
 const MAX_COMMITS = 100;
 const FOCUS_FAILURE_MAX_PENALTY = 20;
 const UNKNOWN_PROJECT_NAME = 'Unknown';
+const RAW_EVENTS_CHUNK_SIZE = 100;
 
 const NOISY_LANGUAGES: ReadonlySet<string> = new Set(['plaintext', 'log', 'jsonc']);
 const FOCUS_RELEVANT_KINDS: ReadonlySet<string> = new Set(['test', 'build', 'lint', 'task']);
@@ -149,9 +150,16 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
 
     await this.dataSource.transaction(async (manager: EntityManager) => {
       const projectCache = new Map<string, Project>();
+      const rawEventsBatch: Array<TelemetryEvent> = [];
 
       for (const item of events) {
-        await this.processEvent(manager, user, item, projectCache);
+        await this.processEvent(manager, user, item, projectCache, rawEventsBatch);
+      }
+
+      if (rawEventsBatch.length > 0) {
+        await manager
+          .getRepository(TelemetryEvent)
+          .save(rawEventsBatch, { chunk: RAW_EVENTS_CHUNK_SIZE });
       }
     });
   }
@@ -187,6 +195,7 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
     user: User,
     item: TimedEvent,
     projectCache: Map<string, Project>,
+    rawEventsBatch: Array<TelemetryEvent>,
   ): Promise<void> {
     const { event, branch, time } = item;
     const sessionRepo = manager.getRepository(WorkSession);
@@ -203,7 +212,7 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
         await sessionRepo.save(active);
       }
 
-      await this.persistRawEvent(manager, user, project, active, item, 0);
+      rawEventsBatch.push(this.buildRawEvent(manager, user, project, active, item, 0));
       return;
     }
 
@@ -235,7 +244,7 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
       session = await sessionRepo.save(created);
     }
 
-    await this.persistRawEvent(manager, user, project, session, item, idleCreditSec);
+    rawEventsBatch.push(this.buildRawEvent(manager, user, project, session, item, idleCreditSec));
   }
 
   private findActiveSession(
@@ -545,16 +554,23 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
     session.primaryLanguage = this.topLanguage(session.languageSeconds);
   }
 
-  private async persistRawEvent(
+  private buildRawEvent(
     manager: EntityManager,
     user: User,
     project: Project | null,
     session: WorkSession | null,
     item: TimedEvent,
     idleCreditSec: number,
-  ): Promise<void> {
+  ): TelemetryEvent {
     const { event, branch, time } = item;
     const repo = manager.getRepository(TelemetryEvent);
+
+    const filesChanged: Array<string> =
+      event.filesList && event.filesList.length > 0
+        ? event.filesList
+        : event.filePath
+          ? [event.filePath]
+          : [];
 
     const rawEvent = repo.create({
       user,
@@ -564,7 +580,7 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
       eventTimestamp: time,
       activeSeconds: 0,
       idleSeconds: idleCreditSec,
-      filesChanged: event.filePath ? [event.filePath] : [],
+      filesChanged,
       fileExtensions: event.language ? [event.language] : [],
       machineId: event.machineId ?? null,
       vscodeSessionId: event.sessionId ?? null,
@@ -580,6 +596,6 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
     });
     rawEvent.id = typeIdGenerator('telemetryEvents');
 
-    await repo.save(rawEvent);
+    return rawEvent;
   }
 }

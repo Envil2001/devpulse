@@ -13,28 +13,34 @@ import { TelemetryBridge } from './telemetry/telemetry-bridge.js';
 import { ActivityMonitor } from './activity-monitor.js';
 import { GitContextProvider } from './git-context.js';
 
-let telemetryBridge: TelemetryBridge | undefined;
 const DEACTIVATE_FLUSH_TIMEOUT_MS = 3000;
+
+interface TelemetrySession extends vscode.Disposable {
+  readonly bridge: TelemetryBridge;
+}
+
+let session: TelemetrySession | undefined;
 
 function canStartTelemetry(): boolean {
   return vscode.workspace.isTrusted && vscode.env.isTelemetryEnabled;
 }
 
 export function activate(context: vscode.ExtensionContext): void {
-  console.log('DevPulse extension is now active!');
-
   const outputChannel = vscode.window.createOutputChannel('DevPulse', { log: true });
   const state = new StatusBarState();
   context.subscriptions.push(outputChannel, state);
 
-  const initialSubscriptions: Array<vscode.Disposable> = [
-    outputChannel,
-    state,
-    ...registerCommands(context, { state, getBridge: () => telemetryBridge, outputChannel }),
-  ];
-  context.subscriptions.push(...initialSubscriptions);
+  outputChannel.info('DevPulse extension is now active.');
 
-  const gitContextProvider = new GitContextProvider();
+  context.subscriptions.push(
+    ...registerCommands(context, {
+      state,
+      getBridge: () => session?.bridge,
+      outputChannel,
+    }),
+  );
+
+  const gitContextProvider = new GitContextProvider(outputChannel);
   const statusBar = new DevPulseStatusBar(gitContextProvider, state);
   context.subscriptions.push(gitContextProvider, statusBar);
   statusBar.show();
@@ -43,19 +49,17 @@ export function activate(context: vscode.ExtensionContext): void {
   const statsPoller = new StatsPoller(apiClient, state, outputChannel);
   context.subscriptions.push(statsPoller);
 
-  let isTelemetryStarted = false;
-
   const startTelemetry = (): void => {
-    if (isTelemetryStarted) return;
-    isTelemetryStarted = true;
+    if (session) return;
+    if (!canStartTelemetry()) return;
 
-    const activityMonitor = new ActivityMonitor();
+    const activityMonitor = new ActivityMonitor({ log: outputChannel });
     const taskMonitor = new TasksMonitor(outputChannel);
     const terminalMonitor = new TerminalMonitor(outputChannel);
     const gitCommitWatcher = new GitCommitWatcher(outputChannel);
     const aiMonitor = new AiMonitor(outputChannel);
 
-    telemetryBridge = new TelemetryBridge(
+    const bridge = new TelemetryBridge(
       context,
       activityMonitor,
       aiMonitor,
@@ -68,61 +72,91 @@ export function activate(context: vscode.ExtensionContext): void {
     );
 
     if (state.isPaused) {
-      telemetryBridge.pause();
+      bridge.pause();
     }
 
-    context.subscriptions.push(
+    const owned = vscode.Disposable.from(
       activityMonitor,
-      telemetryBridge,
       terminalMonitor,
       taskMonitor,
       gitCommitWatcher,
+      aiMonitor,
+      bridge,
+      {
+        dispose: () => {
+          statsPoller.stop();
+        },
+      },
     );
 
-    telemetryBridge.start().catch((error: unknown) => {
+    session = {
+      bridge,
+      dispose: () => {
+        owned.dispose();
+      },
+    };
+
+    bridge.start().catch((error: unknown) => {
       outputChannel.error(`Telemetry failed to start: ${String(error)}`);
+      stopTelemetry();
     });
 
-    statsPoller.start();
+    try {
+      statsPoller.start();
+    } catch (error: unknown) {
+      outputChannel.error(`StatsPoller.start failed: ${String(error)}`);
+      stopTelemetry();
+      return;
+    }
 
     outputChannel.info('Telemetry started.');
   };
 
   const stopTelemetry = (): void => {
-    if (!telemetryBridge || !isTelemetryStarted) return;
-    telemetryBridge.stop();
-    statsPoller.stop();
-    isTelemetryStarted = false;
-    outputChannel.warn('VS Code telemetry disabled. DevPulse stopped.');
+    const current = session;
+    session = undefined;
+    if (!current) return;
+
+    outputChannel.warn('Telemetry stopping (telemetry disabled or workspace untrusted).');
+
+    try {
+      current.bridge.stop();
+    } catch (error: unknown) {
+      outputChannel.error(`TelemetryBridge.stop failed: ${String(error)}`);
+    } finally {
+      try {
+        current.dispose();
+      } catch (error: unknown) {
+        outputChannel.error(`TelemetrySession.dispose failed: ${String(error)}`);
+      }
+    }
+  };
+
+  const reconcile = (): void => {
+    if (canStartTelemetry()) {
+      startTelemetry();
+    } else {
+      stopTelemetry();
+    }
   };
 
   context.subscriptions.push(
-    vscode.env.onDidChangeTelemetryEnabled((enabled) => {
-      if (!enabled) {
-        stopTelemetry();
-      } else if (vscode.workspace.isTrusted) {
-        startTelemetry();
-      }
+    vscode.env.onDidChangeTelemetryEnabled(() => {
+      reconcile();
+    }),
+    vscode.workspace.onDidGrantWorkspaceTrust(() => {
+      reconcile();
     }),
   );
 
-  if (canStartTelemetry()) {
-    startTelemetry();
-  } else {
-    outputChannel.warn('Telemetry is paused (untrusted workspace or VS Code telemetry disabled).');
-
-    context.subscriptions.push(
-      vscode.workspace.onDidGrantWorkspaceTrust(() => {
-        if (canStartTelemetry()) {
-          startTelemetry();
-        }
-      }),
-    );
-  }
+  reconcile();
 }
 
 export async function deactivate(): Promise<void> {
-  if (!telemetryBridge) return;
+  const current = session;
+  session = undefined;
+
+  if (!current) return;
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => {
@@ -130,10 +164,15 @@ export async function deactivate(): Promise<void> {
   }, DEACTIVATE_FLUSH_TIMEOUT_MS);
 
   try {
-    await telemetryBridge.shutdown(controller.signal);
-  } catch {
-    // shutting down, best effort
+    await current.bridge.shutdown(controller.signal);
+  } catch (error: unknown) {
+    console.warn('DevPulse shutdown error:', error);
   } finally {
     clearTimeout(timeoutId);
+    try {
+      current.dispose();
+    } catch {
+      // best effort during shutdown
+    }
   }
 }

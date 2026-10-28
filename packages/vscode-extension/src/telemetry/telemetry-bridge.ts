@@ -130,8 +130,8 @@ export class TelemetryBridge implements vscode.Disposable {
       this.aiMonitor.onDidDetectAi((event) => {
         this.enqueue(
           this.create('ai_interaction', {
-            command: event.tool,
-            filesChanged: event.linesCount,
+            aiTool: event.tool,
+            aiEstimated: event.estimated,
           }),
         );
       }),

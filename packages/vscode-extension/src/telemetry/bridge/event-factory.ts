@@ -32,6 +32,8 @@ export interface EventPartial {
   insertions?: number;
   deletions?: number;
   filesList?: Array<string>;
+  aiTool?: string;
+  aiEstimated?: boolean;
 }
 
 export interface EventFactoryContext {
@@ -74,5 +76,7 @@ export function createEvent(
     insertions: partial.insertions,
     deletions: partial.deletions,
     filesList: partial.filesList,
+    aiTool: partial.aiTool,
+    aiEstimated: partial.aiEstimated,
   };
 }
