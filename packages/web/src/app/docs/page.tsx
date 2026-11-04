@@ -13,11 +13,17 @@ interface OpenAPIParameter {
   schema?: {
     type?: string;
     enum?: Array<string>;
+    example?: unknown;
+    default?: unknown;
+    minimum?: number;
+    maximum?: number;
   };
+  example?: unknown;
 }
 
 interface OpenAPIResponseContent {
   example?: unknown;
+  examples?: Record<string, { value?: unknown }>;
 }
 
 interface OpenAPIResponse {
@@ -71,9 +77,22 @@ function extractScopes(security?: Array<Record<string, Array<string>>>): Array<s
 }
 
 function extractResponseExample(responses?: Record<string, OpenAPIResponse>): string | undefined {
-  const example = responses?.['200']?.content?.['application/json']?.example;
+  const content = responses?.['200']?.content?.['application/json'];
+  const example = content?.example ?? Object.values(content?.examples ?? {})[0]?.value;
 
   return example === undefined ? undefined : JSON.stringify(example, null, 2);
+}
+
+function getEndpointUrl(apiBaseUrl: string, path: string): string {
+  const base = new URL(apiBaseUrl);
+  const basePath = base.pathname.replace(/\/$/, '');
+  const endpointPath = path.startsWith('/') ? path : `/${path}`;
+
+  if (endpointPath === basePath || endpointPath.startsWith(`${basePath}/`)) {
+    return `${base.origin}${endpointPath}`;
+  }
+
+  return `${apiBaseUrl.replace(/\/$/, '')}${endpointPath}`;
 }
 
 const methods: Array<OpenAPIMethod> = ['get', 'post', 'put', 'patch', 'delete'];
@@ -86,6 +105,7 @@ export default async function DocsPage() {
     id: string;
     method: string;
     path: string;
+    url: string;
     summary: string;
     description?: string;
     scopes: Array<string>;
@@ -102,6 +122,7 @@ export default async function DocsPage() {
         id: generateIdFromTitle(operation.summary || path),
         method: method.toUpperCase(),
         path,
+        url: getEndpointUrl(env.NEXT_PUBLIC_API_URL, path),
         summary: operation.summary || path,
         description: operation.description,
         scopes: extractScopes(operation.security),
@@ -126,6 +147,9 @@ export default async function DocsPage() {
               <span className="font-mono text-xs text-subtle">Version</span>
               <span className="font-mono text-xs text-brand">{info?.version || '1.0'}</span>
             </div>
+            <p className="mt-4 font-mono text-xs text-secondary">
+              Base URL: {env.NEXT_PUBLIC_API_URL}
+            </p>
           </div>
 
           <div id="authentication" className="mb-16 scroll-mt-24">
@@ -140,6 +164,34 @@ export default async function DocsPage() {
               <pre className="overflow-x-auto rounded-lg bg-gray-alpha-50 p-4 font-mono text-xs">
                 <code className="text-secondary">X-API-Key: dp_live_1234567890abcdef</code>
               </pre>
+              <p className="mt-4 text-sm leading-relaxed text-secondary">
+                Store the key only on your server. Browser-based calls require the browser origin to
+                be explicitly allowed by CORS.
+              </p>
+            </div>
+          </div>
+
+          <div id="responses" className="mb-16 scroll-mt-24">
+            <h2 className="mb-4 text-xl font-semibold tracking-tight text-foreground">Responses</h2>
+            <div className="rounded-xl border border-border bg-surface p-6">
+              <p className="mb-4 text-sm leading-relaxed text-secondary">
+                Every JSON response uses the same envelope. Endpoint payloads are always inside{' '}
+                <code className="font-mono text-xs text-brand">data</code>.
+              </p>
+              <pre className="overflow-x-auto rounded-lg bg-gray-alpha-50 p-4 font-mono text-xs text-secondary">
+                <code>{`{
+  "success": true,
+  "data": { "…": "endpoint payload" },
+  "timestamp": "2026-11-04T09:00:00.000Z",
+  "path": "/api/v1/integrations/analytics/status"
+}`}</code>
+              </pre>
+              <p className="mt-4 text-sm leading-relaxed text-secondary">
+                Errors use <code className="font-mono text-xs text-brand">success: false</code> and
+                include <code className="font-mono text-xs text-brand">error.code</code> and{' '}
+                <code className="font-mono text-xs text-brand">error.message</code>. Common
+                statuses: 400, 401, 403, and 429.
+              </p>
             </div>
           </div>
 
@@ -150,6 +202,7 @@ export default async function DocsPage() {
                 id={endpoint.id}
                 method={endpoint.method}
                 path={endpoint.path}
+                url={endpoint.url}
                 summary={endpoint.summary}
                 description={endpoint.description}
                 scopes={endpoint.scopes}

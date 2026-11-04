@@ -1,9 +1,11 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 import { cn } from '@/shared/lib/cn';
 import { formatDuration } from '@devpulse/lib';
+import { formatDateLabel, parseDateInput, toDateInput } from '@/shared/lib/date';
 import {
   Panel,
   PanelHeader,
@@ -21,6 +23,8 @@ const STEP = CELL + GAP;
 const HOUR_1 = 3600;
 const HOUR_2 = 7200;
 const HOUR_4 = 14400;
+
+const BRAND = '#15ffab';
 
 function intensity(seconds: number): 0 | 1 | 2 | 3 | 4 {
   if (seconds <= 0) return 0;
@@ -43,13 +47,6 @@ function fillFor(level: 0 | 1 | 2 | 3 | 4): string {
     case 4:
       return 'rgba(21,255,171,1)';
   }
-}
-
-function toIsoDate(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
 }
 
 interface Cell {
@@ -75,7 +72,7 @@ function buildYearGrid(year: number, seriesByDate: Map<string, number>): YearGri
   const yearStart = new Date(year, 0, 1);
   const yearEnd = new Date(year, 11, 31);
 
-  const startDow = (yearStart.getDay() + 6) % 7; // Monday=0
+  const startDow = (yearStart.getDay() + 6) % 7;
   const gridStart = new Date(yearStart);
   gridStart.setDate(gridStart.getDate() - startDow);
 
@@ -95,14 +92,11 @@ function buildYearGrid(year: number, seriesByDate: Map<string, number>): YearGri
 
     const dow = (d.getDay() + 6) % 7;
     const week = Math.floor(i / 7);
-    const iso = toIsoDate(d);
+    const iso = toDateInput(d);
     const inYear = d.getFullYear() === year;
 
     if (inYear && d.getDate() === 1) {
-      months.push({
-        week,
-        label: d.toLocaleString('en-US', { month: 'short' }),
-      });
+      months.push({ week, label: d.toLocaleString('en-US', { month: 'short' }) });
     }
 
     cells.push({
@@ -140,8 +134,8 @@ function computeStreaks(cells: Array<Cell>): StreakStats {
     }
   }
 
-  const today = toIsoDate(new Date());
-  const yesterday = toIsoDate(new Date(Date.now() - 86_400_000));
+  const today = toDateInput(new Date());
+  const yesterday = toDateInput(new Date(Date.now() - 86_400_000));
 
   let anchor = -1;
   for (let i = inYear.length - 1; i >= 0; i--) {
@@ -218,6 +212,28 @@ export function HeatmapPanel({ projectId }: HeatmapPanelProps) {
 
   const streaks = useMemo(() => computeStreaks(grid.cells), [grid.cells]);
 
+  const totalSeconds = useMemo(
+    () => grid.cells.filter((c) => c.inYear).reduce((sum, c) => sum + c.seconds, 0),
+    [grid.cells],
+  );
+
+  const [hoveredCell, setHoveredCell] = useState<{ cell: Cell; rect: DOMRect } | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+
+  useEffect(() => {
+    const clearHover = () => setHoveredCell(null);
+    window.addEventListener('scroll', clearHover, { passive: true, capture: true });
+    return () => window.removeEventListener('scroll', clearHover, { capture: true });
+  }, []);
+
+  const todayIso = useMemo(() => toDateInput(new Date()), []);
+
+  const displayedCell = useMemo(() => {
+    if (hoveredCell) return hoveredCell.cell;
+    if (selectedDate) return grid.cells.find((c) => c.date === selectedDate) ?? null;
+    return null;
+  }, [hoveredCell, selectedDate, grid.cells]);
+
   if (isLoading) {
     return (
       <Panel>
@@ -244,7 +260,6 @@ export function HeatmapPanel({ projectId }: HeatmapPanelProps) {
   const svgHeight = 7 * STEP;
   const leftPad = 24;
   const topPad = 18;
-
   const isEmptyYear = streaks.activeDays === 0;
 
   return (
@@ -315,23 +330,84 @@ export function HeatmapPanel({ projectId }: HeatmapPanelProps) {
                 .filter((c) => c.inYear)
                 .map((c) => {
                   const level = intensity(c.seconds);
+                  const isToday = c.date === todayIso;
+                  const isSelected = c.date === selectedDate;
+                  const isHovered = hoveredCell?.cell.date === c.date;
+
                   return (
-                    <rect
-                      key={c.date}
-                      x={leftPad + c.week * STEP}
-                      y={topPad + c.dow * STEP}
-                      width={CELL}
-                      height={CELL}
-                      rx={2}
-                      fill={fillFor(level)}
-                    >
-                      <title>
-                        {c.date}: {formatDuration(c.seconds)}
-                      </title>
-                    </rect>
+                    <g key={c.date}>
+                      <rect
+                        x={leftPad + c.week * STEP}
+                        y={topPad + c.dow * STEP}
+                        width={CELL}
+                        height={CELL}
+                        rx={2}
+                        fill={fillFor(level)}
+                        className="cursor-pointer"
+                        role="button"
+                        aria-label={`${formatDateLabel(parseDateInput(c.date))}: ${
+                          c.seconds > 0 ? formatDuration(c.seconds) : 'no activity'
+                        }`}
+                        onMouseEnter={(e) => {
+                          setHoveredCell({
+                            cell: c,
+                            rect: e.currentTarget.getBoundingClientRect(),
+                          });
+                        }}
+                        onMouseLeave={() => setHoveredCell(null)}
+                        onClick={() => setSelectedDate((prev) => (prev === c.date ? null : c.date))}
+                      />
+
+                      {(isToday || isSelected || isHovered) && (
+                        <rect
+                          x={leftPad + c.week * STEP - 1}
+                          y={topPad + c.dow * STEP - 1}
+                          width={CELL + 2}
+                          height={CELL + 2}
+                          rx={3}
+                          fill="none"
+                          stroke={
+                            isSelected
+                              ? BRAND
+                              : isToday
+                                ? 'rgba(255,255,255,0.6)'
+                                : 'rgba(255,255,255,0.25)'
+                          }
+                          strokeWidth={1.5}
+                          pointerEvents="none"
+                        />
+                      )}
+                    </g>
                   );
                 })}
             </svg>
+          </div>
+
+          <div className="min-h-5 text-xs">
+            {displayedCell ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="font-medium text-foreground">
+                  {formatDateLabel(parseDateInput(displayedCell.date))}
+                </span>
+                <span className="text-subtle">·</span>
+                <span className="font-mono tabular-nums text-foreground">
+                  {displayedCell.seconds > 0
+                    ? formatDuration(displayedCell.seconds)
+                    : 'no activity'}
+                </span>
+                {selectedDate === displayedCell.date && (
+                  <span className="rounded-full border border-brand/30 bg-brand-soft px-2 py-0.5 text-[10px] font-medium text-brand">
+                    pinned
+                  </span>
+                )}
+              </div>
+            ) : (
+              <span className="text-subtle">
+                {isEmptyYear
+                  ? `No activity in ${String(effectiveYear)}`
+                  : `${String(streaks.activeDays)} active days · ${formatDuration(totalSeconds)} total in ${String(effectiveYear)}`}
+              </span>
+            )}
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-4">
@@ -366,6 +442,28 @@ export function HeatmapPanel({ projectId }: HeatmapPanelProps) {
           </div>
         </div>
       </PanelContent>
+
+      {hoveredCell &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div
+            className="pointer-events-none fixed z-[100] -translate-x-1/2 -translate-y-full rounded-md border border-border bg-surface px-2.5 py-1.5 text-xs shadow-lg"
+            style={{
+              left: hoveredCell.rect.left + hoveredCell.rect.width / 2,
+              top: hoveredCell.rect.top - 6,
+            }}
+          >
+            <div className="font-medium text-foreground">
+              {formatDateLabel(parseDateInput(hoveredCell.cell.date))}
+            </div>
+            <div className="mt-0.5 font-mono text-[11px] tabular-nums text-subtle">
+              {hoveredCell.cell.seconds > 0
+                ? formatDuration(hoveredCell.cell.seconds)
+                : 'no activity'}
+            </div>
+          </div>,
+          document.body,
+        )}
     </Panel>
   );
 }

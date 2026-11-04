@@ -7,21 +7,45 @@ import { useState, useMemo } from 'react';
 
 interface CodeTabsProps {
   method: string;
-  path: string;
+  url: string;
+  parameters?: Array<{
+    name: string;
+    in: 'header' | 'query' | 'path';
+    example?: unknown;
+    schema?: { example?: unknown; default?: unknown; type?: string };
+  }>;
   response?: string;
 }
 
-export function CodeTabs({ method, path, response }: CodeTabsProps) {
+function getExampleUrl(url: string, parameters: CodeTabsProps['parameters']): string {
+  const query = new URLSearchParams();
+
+  for (const parameter of parameters ?? []) {
+    if (parameter.in !== 'query') continue;
+    const value = parameter.example ?? parameter.schema?.example ?? parameter.schema?.default;
+    query.set(
+      parameter.name,
+      String(value ?? (parameter.schema?.type === 'number' ? 10 : 'value')),
+    );
+  }
+
+  if (query.size === 0) return url;
+
+  const separator = url.includes('?') ? '&' : '?';
+  return `${url}${separator}${query.toString()}`;
+}
+
+export function CodeTabs({ method, url, parameters, response }: CodeTabsProps) {
   const [activeTab, setActiveTab] = useState<Exclude<CodeType, 'json'>>('curl');
   const [hasCopied, setHasCopied] = useState(false);
 
-  const fullUrl = `https://api.devpulse.com${path}`;
+  const fullUrl = getExampleUrl(url, parameters);
 
   const snippets = useMemo(
     () => ({
       curl: `curl -X ${method} "${fullUrl}" \\\n  -H "x-api-key: dp_live_1234567890abcdef"`,
-      ts: `const response = await fetch("${fullUrl}", {\n  headers: {\n    "x-api-key": "dp_live_1234567890abcdef"\n  }\n});\nconst data = await response.json();`,
-      python: `import requests\n\nresponse = requests.get(\n    "${fullUrl}",\n    headers={"x-api-key": "dp_live_1234567890abcdef"}\n)\ndata = response.json()`,
+      ts: `const response = await fetch("${fullUrl}", {\n  method: "${method}",\n  headers: {\n    "x-api-key": "dp_live_1234567890abcdef"\n  }\n});\nconst result = await response.json();\nconst data = result.data;`,
+      python: `import requests\n\nresponse = requests.request(\n    "${method}",\n    "${fullUrl}",\n    headers={"x-api-key": "dp_live_1234567890abcdef"}\n)\nresult = response.json()\ndata = result["data"]`,
     }),
     [method, fullUrl],
   );

@@ -12,12 +12,16 @@ interface Parameter {
   schema?: {
     type?: string;
     enum?: Array<string>;
+    example?: unknown;
+    default?: unknown;
   };
+  example?: unknown;
 }
 
 interface EndpointCardProps {
   method: string;
   path: string;
+  url: string;
   summary: string;
   description?: string;
   scopes?: Array<string>;
@@ -29,6 +33,7 @@ interface EndpointCardProps {
 export function EndpointCard({
   method,
   path,
+  url,
   summary,
   description,
   scopes,
@@ -86,6 +91,7 @@ export function EndpointCard({
               <thead>
                 <tr className="border-b border-border bg-gray-alpha-50">
                   <th className="w-32 px-4 py-2 text-left font-medium text-subtle">Name</th>
+                  <th className="w-24 px-4 py-2 text-left font-medium text-subtle">Location</th>
                   <th className="w-24 px-4 py-2 text-left font-medium text-subtle">Type</th>
                   <th className="px-4 py-2 text-left font-medium text-subtle">Description</th>
                 </tr>
@@ -100,6 +106,11 @@ export function EndpointCard({
                     <td className="px-4 py-2.5">
                       <span className="font-mono text-xs capitalize text-subtle">{param.in}</span>
                     </td>
+                    <td className="px-4 py-2.5">
+                      <span className="font-mono text-xs text-subtle">
+                        {param.schema?.type ?? 'unknown'}
+                      </span>
+                    </td>
                     <td className="px-4 py-2.5 text-secondary">{param.description || '-'}</td>
                   </tr>
                 ))}
@@ -108,7 +119,7 @@ export function EndpointCard({
           </div>
         )}
 
-        <CodeTabs method={method} path={path} response={responseExample} />
+        <CodeTabs method={method} url={url} parameters={parameters} response={responseExample} />
       </div>
 
       <div className="my-8 border-t border-border" />

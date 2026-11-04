@@ -138,6 +138,14 @@ describe('IntegrationsAnalyticsController (Integration)', () => {
     expect(mockIntegrationsService.getRecentSessions).toHaveBeenCalledWith('u_user123', 50);
   });
 
+  it('should reject a non-numeric session limit', async () => {
+    const response = await request(getHttpServer(app))
+      .get('/integrations/analytics/sessions?limit=invalid')
+      .set('x-api-key', 'valid-api-key');
+
+    expect(response.status).toBe(400);
+  });
+
   it('should return 200 and user projects list', async () => {
     const response = await request(getHttpServer(app))
       .get('/integrations/analytics/projects')

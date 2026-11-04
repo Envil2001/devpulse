@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { AnalyticsModule } from '../analytics/analytics.module';
@@ -11,8 +11,14 @@ import { TelemetryQueue } from './queue/telemetry.queue';
 import { TelemetryWorker } from './telemetry.worker';
 
 @Module({
-  imports: [ApiKeysModule, UsersModule, TypeOrmModule.forFeature([WorkSession]), AnalyticsModule],
+  imports: [
+    ApiKeysModule,
+    UsersModule,
+    TypeOrmModule.forFeature([WorkSession]),
+    forwardRef(() => AnalyticsModule),
+  ],
   controllers: [TelemetryController],
   providers: [TelemetryQueue, TelemetryWorker],
+  exports: [TelemetryQueue],
 })
 export class TelemetryModule {}

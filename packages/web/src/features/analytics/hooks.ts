@@ -12,7 +12,7 @@ import {
   CommandsBreakdown,
 } from '@/shared/types';
 import { DashboardStats } from '@devpulse/lib';
-import { AiRoiMetrics, AnalyticsRangeParams } from './api';
+import { AiRoiMetrics, AnalyticsRangeParams, PipelineHealth } from './api';
 
 export type AnalyticsPeriod = 'today' | '7d' | '30d' | 'custom';
 
@@ -24,6 +24,7 @@ export interface DateRange extends QueryParams {
 export const analyticsKeys = {
   all: ['analytics'] as const,
   status: () => [...analyticsKeys.all, 'status'] as const,
+  pipelineHealth: () => [...analyticsKeys.all, 'pipeline-health'] as const,
   languages: (projectId?: string) => [...analyticsKeys.all, 'languages', projectId] as const,
   commands: (range: DateRange, projectId?: string) =>
     [...analyticsKeys.all, 'commands', range.startDate, range.endDate, projectId] as const,
@@ -157,5 +158,14 @@ export function useAiRoiMetrics(range: DateRange, projectId?: string) {
   return useQuery<AiRoiMetrics>({
     queryKey: analyticsKeys.aiRoi(range, projectId),
     queryFn: () => analyticsService.getAiRoi({ ...range, projectId }),
+  });
+}
+
+export function usePipelineHealth() {
+  return useQuery<PipelineHealth>({
+    queryKey: analyticsKeys.pipelineHealth(),
+    queryFn: () => analyticsService.getPipelineHealth(),
+    refetchInterval: 30_000,
+    staleTime: 15_000,
   });
 }

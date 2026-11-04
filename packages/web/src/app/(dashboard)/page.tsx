@@ -8,6 +8,7 @@ import {
   getLanguagesServer,
   getLiveStatusServer,
   getAiRoiServer,
+  getPipelineHealthServer,
 } from '@/features/analytics/server';
 import { DashboardView } from '@/features/analytics/components/dashboard-view';
 
@@ -40,6 +41,10 @@ export default async function DashboardPage() {
     queryClient.prefetchQuery({
       queryKey: analyticsKeys.aiRoi(defaultRange),
       queryFn: () => getAiRoiServer(defaultRange),
+    }),
+    queryClient.prefetchQuery({
+      queryKey: analyticsKeys.pipelineHealth(),
+      queryFn: getPipelineHealthServer,
     }),
   ]);
 

@@ -25,6 +25,29 @@ export interface AiRoiMetrics {
   estimatedHoursSaved: number;
 }
 
+export interface PipelineHealth {
+  telemetryBridge: {
+    status: 'operational' | 'idle';
+    lastEventAt: string | null;
+    minutesSinceLastEvent: number | null;
+  };
+  bullmq: {
+    waiting: number;
+    active: number;
+    failed: number;
+    status: 'operational' | 'degraded';
+  };
+  postgres: {
+    latencyMs: number;
+    status: 'operational' | 'degraded';
+  };
+  llm: {
+    status: 'operational' | 'unconfigured';
+    provider: 'openrouter' | 'openai' | 'custom' | null;
+    model: string | null;
+  };
+}
+
 export class AnalyticsService extends BaseService {
   async getDashboard(params: AnalyticsRangeParams = {}): Promise<DashboardStats> {
     return this.get<DashboardStats>('/analytics/dashboard', { params });
@@ -63,5 +86,9 @@ export class AnalyticsService extends BaseService {
 
   async getAiRoi(params: AnalyticsRangeParams = {}): Promise<AiRoiMetrics> {
     return this.get<AiRoiMetrics>('/analytics/ai-roi', { params });
+  }
+
+  async getPipelineHealth(): Promise<PipelineHealth> {
+    return this.get<PipelineHealth>('/analytics/pipeline-health');
   }
 }
