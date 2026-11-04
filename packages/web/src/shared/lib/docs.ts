@@ -28,15 +28,14 @@ export interface EndpointData {
   responseExample?: string;
 }
 
-export function groupEndpointsByPath(
-  endpoints: Array<EndpointData>,
-): Array<NavigationGroup> {
+export function groupEndpointsByPath(endpoints: Array<EndpointData>): Array<NavigationGroup> {
   const groups: Array<NavigationGroup> = [
     {
       category: 'Overview',
       items: [
         { title: 'Introduction', href: '#introduction' },
         { title: 'Authentication', href: '#authentication' },
+        { title: 'Responses', href: '#responses' },
       ],
     },
   ];

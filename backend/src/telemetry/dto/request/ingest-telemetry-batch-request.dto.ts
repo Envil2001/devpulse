@@ -171,4 +171,9 @@ export class IngestTelemetryBatchRequestDto {
   @ValidateNested({ each: true })
   @Type(() => TelemetryEventItemDto)
   public events!: Array<TelemetryEventItemDto>;
+
+  @ApiProperty({ description: 'Stable batch id for idempotent retries', required: false })
+  @IsString()
+  @IsOptional()
+  public batchId?: string;
 }

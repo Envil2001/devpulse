@@ -1,7 +1,7 @@
 import { serverGet } from '@/shared/api/server-client';
 import { TimeseriesPoint, BranchDataPoint, LanguagesBreakdown, LiveStatus } from '@/shared/types';
 import { DashboardStats } from '@devpulse/lib';
-import { AiRoiMetrics, AnalyticsRangeParams } from './api';
+import { AiRoiMetrics, AnalyticsRangeParams, PipelineHealth } from './api';
 
 export const getDashboardStatsServer = (params: AnalyticsRangeParams = {}) =>
   serverGet<DashboardStats>('/analytics/dashboard', { params });
@@ -27,3 +27,6 @@ export const getLiveStatusServer = () => serverGet<LiveStatus>('/analytics/statu
 
 export const getAiRoiServer = (params: AnalyticsRangeParams = {}) =>
   serverGet<AiRoiMetrics>('/analytics/ai-roi', { params });
+
+export const getPipelineHealthServer = () =>
+  serverGet<PipelineHealth>('/analytics/pipeline-health');

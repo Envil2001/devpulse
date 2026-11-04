@@ -1,10 +1,11 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { ApiKeysModule } from '../api-keys/api-keys.module';
 import { Project } from '../projects/entities/project.entity';
 import { ProjectsService } from '../projects/services/projects.service';
 import { WorkSession } from '../telemetry/entities/work-session.entity';
+import { TelemetryModule } from '../telemetry/telemetry.module';
 import { User } from '../users/entities/user.entity';
 
 import { AnalyticsController } from './controllers/analytics.controller';
@@ -15,7 +16,11 @@ import { AnalyticsExportService } from './services/analytics-export.service';
 import { IntegrationsAnalyticsService } from './services/integrations-analytics.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([WorkSession, Project, User]), ApiKeysModule],
+  imports: [
+    TypeOrmModule.forFeature([WorkSession, Project, User]),
+    ApiKeysModule,
+    forwardRef(() => TelemetryModule),
+  ],
   controllers: [AnalyticsController, IntegrationsAnalyticsController],
   providers: [
     AnalyticsService,

@@ -5,6 +5,7 @@ import { Repository, SelectQueryBuilder } from 'typeorm';
 import { TypeId } from '@devpulse/lib';
 
 import { WorkSession } from '../../telemetry/entities/work-session.entity';
+import { TelemetryQueue } from '../../telemetry/queue/telemetry.queue';
 import { User } from '../../users/entities/user.entity';
 import { GetAnalyticsRangeRequestDto } from '../dto/request/get-analytics-range-request.dto';
 import { GetAnalyticsBranchesResponseDto } from '../dto/response/get-analytics-branches-response.dto';
@@ -20,6 +21,7 @@ import {
   TimeseriesRaw,
   TopLanguageRaw,
 } from '../interfaces/analytics-raw.interfaces';
+import { PipelineHealth } from '../interfaces/pipeline-health.interface';
 
 @Injectable()
 export class AnalyticsService {
@@ -30,6 +32,7 @@ export class AnalyticsService {
     private readonly sessionRepo: Repository<WorkSession>,
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
+    private readonly telemetryQueue: TelemetryQueue,
   ) {}
 
   private applyBaseFilters(
@@ -224,5 +227,61 @@ export class AnalyticsService {
     const totalCommands = commands.reduce((acc, c) => acc + c.runs, 0);
 
     return { totalCommands, commands };
+  }
+
+  public async getPipelineHealth(userId: TypeId<'users'>): Promise<PipelineHealth> {
+    const [lastEvent, queueMetrics, llmInfo, latencyMs] = await Promise.all([
+      this.sessionRepo.findOne({
+        where: { userId },
+        order: { startedAt: 'DESC' },
+        select: ['startedAt', 'endedAt'],
+      }),
+      this.telemetryQueue.getQueueMetrics(),
+      this.userRepo
+        .createQueryBuilder('user')
+        .select(['user.llmProvider', 'user.llmModel'])
+        .addSelect('(user.openai_key IS NOT NULL)', 'hasKey')
+        .where('user.id = :userId', { userId })
+        .getRawOne<{
+          user_llm_provider: 'openrouter' | 'openai' | 'custom' | null;
+          user_llm_model: string | null;
+          hasKey: boolean;
+        }>(),
+      this.measureDbLatency(),
+    ]);
+
+    const minutesSinceLastEvent = lastEvent
+      ? Math.floor((Date.now() - lastEvent.startedAt.getTime()) / 60_000)
+      : null;
+
+    return {
+      telemetryBridge: {
+        status:
+          minutesSinceLastEvent !== null && minutesSinceLastEvent < 10 ? 'operational' : 'idle',
+        lastEventAt: lastEvent?.startedAt ?? null,
+        minutesSinceLastEvent,
+      },
+      bullmq: {
+        waiting: queueMetrics.waiting,
+        active: queueMetrics.active,
+        failed: queueMetrics.failed,
+        status: queueMetrics.failed === 0 ? 'operational' : 'degraded',
+      },
+      postgres: {
+        latencyMs,
+        status: latencyMs < 100 ? 'operational' : 'degraded',
+      },
+      llm: {
+        status: llmInfo?.hasKey ? 'operational' : 'unconfigured',
+        provider: llmInfo?.user_llm_provider ?? null,
+        model: llmInfo?.user_llm_model ?? null,
+      },
+    };
+  }
+
+  private async measureDbLatency(): Promise<number> {
+    const start = performance.now();
+    await this.sessionRepo.query('SELECT 1');
+    return Math.round((performance.now() - start) * 10) / 10;
   }
 }

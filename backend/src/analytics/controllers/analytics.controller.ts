@@ -22,6 +22,7 @@ import { GetAnalyticsTimeseriesResponseDto } from '../dto/response/get-analytics
 import { GetIntegrationAiRoiResponseDto } from '../dto/response/get-integration-ai-roi-response.dto';
 import { GetIntegrationLanguagesResponseDto } from '../dto/response/get-integration-languages-response.dto';
 import { GetIntegrationStatusResponseDto } from '../dto/response/get-integration-status-response.dto';
+import { PipelineHealth } from '../interfaces/pipeline-health.interface';
 import { AnalyticsService } from '../services/analytics.service';
 import { AnalyticsExportService } from '../services/analytics-export.service';
 import { IntegrationsAnalyticsService } from '../services/integrations-analytics.service';
@@ -131,5 +132,11 @@ export class AnalyticsController {
     @Query() query: GetAnalyticsRangeRequestDto,
   ): Promise<GetIntegrationAiRoiResponseDto> {
     return this.integrationsService.getAiRoiMetrics(user.id, query);
+  }
+
+  @Get('pipeline-health')
+  @ApiOperation({ summary: 'Real-time status of telemetry pipeline components' })
+  public async getPipelineHealth(@CurrentUser() user: AuthenticatedUser): Promise<PipelineHealth> {
+    return this.analyticsService.getPipelineHealth(user.id);
   }
 }

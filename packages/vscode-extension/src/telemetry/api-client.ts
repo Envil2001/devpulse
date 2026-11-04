@@ -23,6 +23,11 @@ export interface TodayStats {
   sessionsCount: number;
 }
 
+interface PostEventsPayload {
+  events: Array<TelemetryEventDto>;
+  batchId?: string;
+}
+
 interface TodayStatsResponse {
   totalActiveSeconds: number;
   averageFocusScore: number | null;
@@ -88,10 +93,7 @@ export class TelemetryApiClient {
     private readonly log?: vscode.LogOutputChannel,
   ) {}
 
-  public async postEventsBatch(
-    payload: { events: Array<TelemetryEventDto> },
-    signal?: AbortSignal,
-  ): Promise<void> {
+  public async postEventsBatch(payload: PostEventsPayload, signal?: AbortSignal): Promise<void> {
     const apiKey = await this.requireApiKey();
     const url = `${resolveApiBaseUrl()}/telemetry/events/batch`;
 

@@ -109,7 +109,7 @@ export function Endpoint({
       </div>
 
       <div className="w-full border-t border-border bg-surface p-8 lg:w-[48%] lg:border-l lg:border-t-0 lg:p-14">
-        <CodeTabs method={method} path={path} response={response} />
+        <CodeTabs method={method} url={path} response={response} />
       </div>
     </div>
   );

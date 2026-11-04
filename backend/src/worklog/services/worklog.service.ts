@@ -142,11 +142,6 @@ export class WorklogService {
     entry.model = model;
     await this.entryRepo.save(entry);
 
-    entry.factsHash = factsHash;
-    entry.text = text;
-    entry.model = model;
-    await this.entryRepo.save(entry);
-
     return { date, text, model, cached: false };
   }
 

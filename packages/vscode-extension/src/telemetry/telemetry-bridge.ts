@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 
 import * as vscode from 'vscode';
@@ -38,6 +39,7 @@ export class TelemetryBridge implements vscode.Disposable {
   private readonly contextTracker: ContextTracker;
   private readonly pendingBuffer = new PendingBuffer();
   private readonly flushScheduler: FlushScheduler;
+  private inflight: { batchId: string; events: Array<TelemetryEventDto> } | null = null;
 
   private queue: Array<TelemetryEventDto> = [];
   private flushing = false;
@@ -422,22 +424,32 @@ export class TelemetryBridge implements vscode.Disposable {
   }
 
   public async flush(signal?: AbortSignal, force = false): Promise<void> {
-    if (this.flushing || this.queue.length === 0) return;
+    if (this.flushing) return;
+    if (this.inflight === null && this.queue.length === 0) return;
     if (!force && Date.now() < this.nextAttemptAt) return;
 
     this.flushing = true;
-    const batch = this.queue.splice(0, this.queue.length);
+    this.inflight ??= {
+      batchId: randomUUID(),
+      events: this.queue.splice(0, this.queue.length),
+    };
+
+    const current = this.inflight;
 
     try {
-      await this.client.postEventsBatch({ events: batch }, signal);
+      await this.client.postEventsBatch(
+        { events: current.events, batchId: current.batchId },
+        signal,
+      );
 
+      const sent = current.events.length;
+      this.inflight = null;
       this.consecutiveFailures = 0;
       this.nextAttemptAt = 0;
       this.persistQueue();
 
       this.statusBarState.setHealth('ok');
-
-      this.log?.info(`flushed ${String(batch.length)} events`);
+      this.log?.info(`flushed ${String(sent)} events`);
     } catch (error: unknown) {
       if (error instanceof TelemetryRequestError) {
         if (error.isAuthError) {
@@ -452,15 +464,14 @@ export class TelemetryBridge implements vscode.Disposable {
       }
 
       if (error instanceof TelemetryRequestError && !error.retryable && !error.isAuthError) {
+        const dropped = current.events.length;
+        this.inflight = null;
         this.persistQueue();
         this.log?.error(
-          `dropped ${String(batch.length)} events: rejected by server (${String(error.status)})`,
+          `dropped ${String(dropped)} events: rejected by server (${String(error.status)})`,
         );
         return;
       }
-
-      this.queue = [...batch, ...this.queue];
-      this.persistQueue();
 
       this.consecutiveFailures += 1;
       this.nextAttemptAt =
@@ -468,7 +479,10 @@ export class TelemetryBridge implements vscode.Disposable {
         Math.min(RETRY_BASE_DELAY_MS * 2 ** (this.consecutiveFailures - 1), RETRY_MAX_DELAY_MS);
 
       const message = error instanceof Error ? error.message : String(error);
-      this.log?.error(`flush failed (${message}); buffered=${String(this.queue.length)}`);
+      this.log?.error(
+        `flush failed (${message}); inflight=${String(current.events.length)} ` +
+          `buffered=${String(this.queue.length)}`,
+      );
     } finally {
       this.flushing = false;
     }

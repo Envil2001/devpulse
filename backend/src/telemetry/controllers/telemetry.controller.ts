@@ -66,7 +66,9 @@ export class TelemetryController {
   ): Promise<IngestTelemetryBatchResponseDto> {
     this.logger.log(`Received ${String(dto.events.length)} events from user ${user.id}`);
 
-    await this.telemetryQueue.addEventsJob(user.id, dto.events);
+    await (dto.batchId
+      ? this.telemetryQueue.addEventsJob(user.id, dto.events, dto.batchId)
+      : this.telemetryQueue.addEventsJob(user.id, dto.events));
 
     return {
       success: true,
