@@ -12,10 +12,8 @@ import {
 } from '@/shared/components/layout/panel';
 import { useRequireAuth } from '@/features/auth/context';
 
-import { useRecentSessions } from '../hooks';
+import { RECENT_SESSIONS_LIMIT, useRecentSessions } from '../hooks';
 import { formatDuration } from '@devpulse/lib';
-
-const RECENT_LIMIT = 5;
 
 function formatTimeRange(
   startedAt: string,
@@ -44,7 +42,7 @@ function focusColorClass(score: number): string {
 
 export function RecentSessionsPanel({ projectId }: { projectId?: string }) {
   const { user } = useRequireAuth();
-  const { data: sessions = [], isLoading } = useRecentSessions(RECENT_LIMIT, projectId);
+  const { data: sessions = [], isLoading } = useRecentSessions(RECENT_SESSIONS_LIMIT, projectId);
 
   return (
     <Panel>

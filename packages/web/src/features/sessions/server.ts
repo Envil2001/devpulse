@@ -3,5 +3,10 @@ import { WorkSessionDetail, WorkSessionSummary } from '@/shared/types';
 
 export const getSessionsServer = () => serverGet<Array<WorkSessionSummary>>('/telemetry/sessions');
 
+export const getRecentSessionsServer = (limit: number, projectId?: string) =>
+  serverGet<Array<WorkSessionSummary>>('/telemetry/sessions', {
+    params: { limit, projectId },
+  });
+
 export const getSessionByIdServer = (id: string) =>
   serverGet<WorkSessionDetail>(`/telemetry/sessions/${id}`);

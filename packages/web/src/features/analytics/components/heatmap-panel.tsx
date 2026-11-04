@@ -157,21 +157,12 @@ function computeStreaks(cells: Array<Cell>): StreakStats {
 }
 
 interface HeatmapPanelProps {
+  range: DateRange;
   projectId?: string;
 }
 
-export function HeatmapPanel({ projectId }: HeatmapPanelProps) {
-  const wideRange: DateRange = useMemo(() => {
-    const end = new Date();
-    end.setHours(23, 59, 59, 999);
-    const start = new Date();
-    start.setFullYear(start.getFullYear() - 5);
-    start.setMonth(0, 1);
-    start.setHours(0, 0, 0, 0);
-    return { startDate: start.toISOString(), endDate: end.toISOString() };
-  }, []);
-
-  const { data: series = [], isLoading } = useAnalyticsTimeseries(wideRange, projectId);
+export function HeatmapPanel({ range, projectId }: HeatmapPanelProps) {
+  const { data: series = [], isLoading } = useAnalyticsTimeseries(range, projectId);
 
   const seriesByDate = useMemo(() => {
     const m = new Map<string, number>();

@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import { toDateInput } from '@/shared/lib/date';
 import { useRequireAuth } from '@/features/auth/context';
-import { AnalyticsPeriod, periodToDateRange, useLiveStatus } from '../hooks';
+import { AnalyticsPeriod, DateRange, periodToDateRange, useLiveStatus } from '../hooks';
 
 import {
   Page,
@@ -35,13 +35,21 @@ function getInitialCustomDates() {
   return { startDate: toDateInput(from), endDate: toDateInput(to) };
 }
 
-export function DashboardView() {
+interface DashboardViewProps {
+  initialRange: DateRange;
+  initialHeatmapRange: DateRange;
+}
+
+export function DashboardView({ initialRange, initialHeatmapRange }: DashboardViewProps) {
   const { user } = useRequireAuth();
   const { data: liveStatus } = useLiveStatus();
 
   const [period, setPeriod] = useState<AnalyticsPeriod>('7d');
   const [customDates, setCustomDates] = useState(getInitialCustomDates);
-  const range = useMemo(() => periodToDateRange(period, customDates), [period, customDates]);
+  const range = useMemo(
+    () => (period === '7d' ? initialRange : periodToDateRange(period, customDates)),
+    [customDates, initialRange, period],
+  );
 
   const [projectId, setProjectId] = useState<string | undefined>();
 
@@ -103,7 +111,7 @@ export function DashboardView() {
       </div>
 
       <div data-tour="heatmap">
-        <HeatmapPanel projectId={projectId} />
+        <HeatmapPanel range={initialHeatmapRange} projectId={projectId} />
       </div>
 
       <div data-tour="recent-sessions">
