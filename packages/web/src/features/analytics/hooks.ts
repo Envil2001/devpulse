@@ -73,6 +73,18 @@ export function periodToDateRange(
   return { startDate: start.toISOString(), endDate: now.toISOString() };
 }
 
+export function getHeatmapRange(now = new Date()): DateRange {
+  const end = new Date(now);
+  end.setHours(23, 59, 59, 999);
+
+  const start = new Date(now);
+  start.setFullYear(start.getFullYear() - 5);
+  start.setMonth(0, 1);
+  start.setHours(0, 0, 0, 0);
+
+  return { startDate: start.toISOString(), endDate: end.toISOString() };
+}
+
 export function useLiveStatus() {
   return useQuery<LiveStatus>({
     queryKey: analyticsKeys.status(),

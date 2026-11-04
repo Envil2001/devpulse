@@ -9,6 +9,8 @@ export const sessionsKeys = {
   detail: (id: string) => ['sessions', 'detail', id] as const,
 };
 
+export const RECENT_SESSIONS_LIMIT = 5;
+
 export function useSessions() {
   return useQuery<Array<WorkSessionSummary>>({
     queryKey: sessionsKeys.list(),
