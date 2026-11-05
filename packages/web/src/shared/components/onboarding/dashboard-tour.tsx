@@ -1,12 +1,14 @@
 'use client';
 
-import { useEffect, useSyncExternalStore } from 'react';
 import { usePathname } from 'next/navigation';
-import { Joyride, STATUS, type EventHandler, type Locale, type Options } from 'react-joyride';
-import { TourTooltip } from './tour-tooltip';
+import { useEffect, useSyncExternalStore } from 'react';
+import { type JSX } from 'react/jsx-runtime';
+import { type EventHandler, Joyride, type Locale, type Options, STATUS } from 'react-joyride';
+
 import { findTourById, findTourByPath } from './tour-steps';
 import { hasSeenTour, markTourSeen } from './tour-storage';
 import { tourStore } from './tour-store';
+import { TourTooltip } from './tour-tooltip';
 
 const DESKTOP_QUERY = '(min-width: 1024px)';
 
@@ -34,7 +36,7 @@ interface DashboardTourProps {
   userId: string;
 }
 
-export function DashboardTour({ userId }: DashboardTourProps) {
+export function DashboardTour({ userId }: DashboardTourProps): JSX.Element | null {
   const pathname = usePathname();
   const activeTourId = useSyncExternalStore(
     tourStore.subscribe,

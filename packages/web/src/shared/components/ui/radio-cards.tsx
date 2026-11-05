@@ -1,7 +1,9 @@
 'use client';
 
-import * as React from 'react';
 import type { LucideIcon } from 'lucide-react';
+import * as React from 'react';
+import { type JSX } from 'react/jsx-runtime';
+
 import { cn } from '@/shared/lib/cn';
 
 interface RadioCardsContextValue {
@@ -37,7 +39,7 @@ export function RadioCards({
   disabled,
   className,
   children,
-}: RadioCardsProps) {
+}: RadioCardsProps): JSX.Element {
   const generatedName = React.useId();
   const groupName = name ?? generatedName;
 
@@ -69,7 +71,7 @@ export function RadioCardsItem({
   title,
   description,
   className,
-}: RadioCardsItemProps) {
+}: RadioCardsItemProps): JSX.Element {
   const { name, value: selected, onValueChange, disabled } = useRadioCards();
   const isSelected = selected === value;
 

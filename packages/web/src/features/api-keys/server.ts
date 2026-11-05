@@ -1,4 +1,5 @@
 import { serverGet } from '@/shared/api/server-client';
-import { ApiKeySummary } from '@/shared/types';
+import { type ApiKeySummary } from '@/shared/types';
 
-export const getApiKeysServer = () => serverGet<Array<ApiKeySummary>>('/api-keys');
+export const getApiKeysServer = (): Promise<Array<ApiKeySummary>> =>
+  serverGet<Array<ApiKeySummary>>('/api-keys');

@@ -41,7 +41,8 @@ export const TOURS: readonly TourDefinition[] = [
         id: 'system-status',
         target: target('system-status'),
         title: 'System status',
-        content: 'Monitor your workspace health: tracked sessions, VS Code extension status, and data sync.',
+        content:
+          'Monitor your workspace health: tracked sessions, VS Code extension status, and data sync.',
         placement: 'bottom',
       },
       {

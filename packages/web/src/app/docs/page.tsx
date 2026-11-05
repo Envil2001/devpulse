@@ -1,7 +1,9 @@
-import { EndpointCard } from '@/features/docs/components/endpoint-card';
-import { DocsLayoutWrapper } from '@/features/docs/components/docs-layout-wrapper';
-import { generateIdFromTitle } from '@/shared/lib/docs';
 import { env } from '@devpulse/env/client';
+import { type JSX } from 'react/jsx-runtime';
+
+import { DocsLayoutWrapper } from '@/features/docs/components/docs-layout-wrapper';
+import { EndpointCard } from '@/features/docs/components/endpoint-card';
+import { generateIdFromTitle } from '@/shared/lib/docs';
 
 export const dynamic = 'force-dynamic';
 
@@ -97,7 +99,7 @@ function getEndpointUrl(apiBaseUrl: string, path: string): string {
 
 const methods: Array<OpenAPIMethod> = ['get', 'post', 'put', 'patch', 'delete'];
 
-export default async function DocsPage() {
+export default async function DocsPage(): Promise<JSX.Element> {
   const spec = await getOpenAPISpec();
   const { info, paths } = spec;
 

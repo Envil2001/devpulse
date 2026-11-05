@@ -1,4 +1,6 @@
-import { QueryParams } from '@/shared/api/api-client';
+import type { AiRoiMetrics, DashboardStats, PipelineHealth } from '@devpulse/lib';
+
+import { type QueryParams } from '@/shared/api/api-client';
 import { BaseService } from '@/shared/api/base.service';
 import type {
   BranchDataPoint,
@@ -7,7 +9,6 @@ import type {
   LiveStatus,
   TimeseriesPoint,
 } from '@/shared/types';
-import type { AiRoiMetrics, DashboardStats, PipelineHealth } from '@devpulse/lib';
 
 export interface AnalyticsRangeParams extends QueryParams {
   startDate?: string;

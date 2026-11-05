@@ -1,10 +1,19 @@
 'use client';
 
-import { Sparkles, TrendingUp, Clock, Bot, Cpu } from 'lucide-react';
-import { Panel } from '@/shared/components/layout/panel';
-import { useAiRoiMetrics, type DateRange } from '../hooks';
+import { Bot, Clock, Cpu, Sparkles, TrendingUp } from 'lucide-react';
+import { type JSX } from 'react/jsx-runtime';
 
-export function AiRoiPanel({ range, projectId }: { range: DateRange; projectId?: string }) {
+import { Panel } from '@/shared/components/layout/panel';
+
+import { type DateRange, useAiRoiMetrics } from '../hooks';
+
+export function AiRoiPanel({
+  range,
+  projectId,
+}: {
+  range: DateRange;
+  projectId?: string;
+}): JSX.Element {
   const { data: roi, isLoading } = useAiRoiMetrics(range, projectId);
 
   if (isLoading) {

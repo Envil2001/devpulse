@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 
 const authRoutes = ['/login', '/register'];
 const publicRoutes = [...authRoutes, '/docs'];
@@ -8,7 +8,7 @@ function matchesRoute(pathname: string, route: string): boolean {
   return pathname === route || pathname.startsWith(`${route}/`);
 }
 
-export function proxy(request: NextRequest) {
+export function proxy(request: NextRequest): NextResponse {
   const { pathname } = request.nextUrl;
   const hasToken = request.cookies.has('access_token');
   const isPublicRoute = publicRoutes.some((route) => matchesRoute(pathname, route));

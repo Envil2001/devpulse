@@ -1,19 +1,21 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import Link from 'next/link';
 import { ArrowLeft, Menu, X } from 'lucide-react';
+import Link from 'next/link';
+import { useMemo, useState } from 'react';
+import { type JSX } from 'react/jsx-runtime';
+
 import { Button } from '@/shared/components/ui/button';
-import { cn } from '@/shared/lib/cn';
-import { groupEndpointsByPath, type EndpointData } from '@/shared/lib/docs';
 import { useIntersectionObserver } from '@/shared/hooks/use-intersection-observer';
+import { cn } from '@/shared/lib/cn';
+import { type EndpointData, groupEndpointsByPath } from '@/shared/lib/docs';
 
 interface DocsLayoutWrapperProps {
   children: React.ReactNode;
   endpoints: Array<EndpointData>;
 }
 
-export function DocsLayoutWrapper({ children, endpoints }: DocsLayoutWrapperProps) {
+export function DocsLayoutWrapper({ children, endpoints }: DocsLayoutWrapperProps): JSX.Element {
   const [isOpen, setIsOpen] = useState(false);
   const { activeId, mainRef } = useIntersectionObserver();
 
@@ -57,7 +59,7 @@ export function DocsLayoutWrapper({ children, endpoints }: DocsLayoutWrapperProp
 
         <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-5">
           <div className="px-2">
-            <div className="mb-1 text-xs font-medium uppercase tracking-wider text-subtle">
+            <div className="mb-1 text-xs font-medium tracking-wider text-subtle uppercase">
               DevPulse API
             </div>
             <div className="text-xs text-secondary">v1.0 Public Reference</div>
@@ -65,7 +67,7 @@ export function DocsLayoutWrapper({ children, endpoints }: DocsLayoutWrapperProp
 
           {navigation.map((group) => (
             <div key={group.category} className="space-y-1">
-              <div className="mb-2 px-2 text-[11px] font-medium uppercase tracking-wider text-subtle">
+              <div className="mb-2 px-2 text-[11px] font-medium tracking-wider text-subtle uppercase">
                 {group.category}
               </div>
               <ul className="space-y-0.5">
@@ -104,7 +106,7 @@ export function DocsLayoutWrapper({ children, endpoints }: DocsLayoutWrapperProp
           <span className="text-sm font-medium text-foreground">API Reference</span>
         </header>
 
-        <main ref={mainRef} className="flex-1 scroll-smooth overflow-y-auto">
+        <main ref={mainRef} className="flex-1 overflow-y-auto scroll-smooth">
           {children}
         </main>
       </div>

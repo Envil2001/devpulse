@@ -1,8 +1,10 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { getJson, postJson, patchJson } from '@/shared/api/api-client';
+import { createContext, type ReactNode, useContext, useEffect, useState } from 'react';
+import { type JSX } from 'react/jsx-runtime';
+
+import { getJson, patchJson, postJson } from '@/shared/api/api-client';
 import type { User } from '@/shared/types';
 
 export interface UpdateProfileDto {
@@ -24,7 +26,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthContextProvider({ children }: { children: ReactNode }) {
+export function AuthContextProvider({ children }: { children: ReactNode }): JSX.Element {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
@@ -89,7 +91,7 @@ export function AuthenticatedUserProvider({
 }: {
   children: ReactNode;
   initialUser: User;
-}) {
+}): JSX.Element {
   const [user, setUser] = useState<User>(initialUser);
   const router = useRouter();
 
@@ -124,7 +126,7 @@ export function AuthenticatedUserProvider({
   );
 }
 
-export function useAuth() {
+export function useAuth(): AuthContextType {
   const context = useContext(AuthContext);
   if (!context) {
     throw new Error('useAuth must be used within AuthContextProvider');

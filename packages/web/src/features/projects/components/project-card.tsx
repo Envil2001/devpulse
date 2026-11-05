@@ -1,25 +1,26 @@
 'use client';
 
+import { ArrowUpRight, Clock, FolderGit2, Layers, Zap } from 'lucide-react';
 import Link from 'next/link';
-import { Clock, Zap, Layers, FolderGit2, ArrowUpRight } from 'lucide-react';
+import { type JSX } from 'react/jsx-runtime';
 
 import { cn } from '@/shared/lib/cn';
 import { formatDateTimeLabel } from '@/shared/lib/date';
-import { ProjectSummary } from '@/shared/types';
+import { type ProjectSummary } from '@/shared/types';
 
 interface ProjectCardProps {
   project: ProjectSummary;
   timezone: string;
 }
 
-export function ProjectCard({ project, timezone }: ProjectCardProps) {
+export function ProjectCard({ project, timezone }: ProjectCardProps): JSX.Element {
   return (
     <Link
       href={`/projects/${project.id}`}
       aria-label={`View details for project ${project.name}`}
       className={cn(
         'group relative flex flex-col justify-between rounded-xl border border-border bg-surface p-5',
-        'outline-none transition-colors duration-200',
+        'transition-colors duration-200 outline-none',
         'hover:border-gray-alpha-300 hover:bg-gray-alpha-50',
         'focus-visible:ring-2 focus-visible:ring-white/15',
       )}
@@ -44,7 +45,7 @@ export function ProjectCard({ project, timezone }: ProjectCardProps) {
 
           <ArrowUpRight
             className={cn(
-              'h-4 w-4 shrink-0 -translate-y-1 translate-x-1 text-subtle opacity-0 transition-all duration-200',
+              'h-4 w-4 shrink-0 translate-x-1 -translate-y-1 text-subtle opacity-0 transition-all duration-200',
               'group-hover:translate-x-0 group-hover:translate-y-0 group-hover:opacity-100',
             )}
             strokeWidth={1.5}
@@ -59,7 +60,7 @@ export function ProjectCard({ project, timezone }: ProjectCardProps) {
             <Clock className="h-3.5 w-3.5" strokeWidth={1.5} aria-hidden="true" />
             Time
           </span>
-          <span className="mt-1 font-mono text-xs font-medium tabular-nums text-foreground">
+          <span className="mt-1 font-mono text-xs font-medium text-foreground tabular-nums">
             {project.activeTime}
           </span>
         </div>
@@ -69,7 +70,7 @@ export function ProjectCard({ project, timezone }: ProjectCardProps) {
             <Zap className="h-3.5 w-3.5" strokeWidth={1.5} aria-hidden="true" />
             Focus
           </span>
-          <span className="mt-1 font-mono text-xs font-medium tabular-nums text-brand">
+          <span className="mt-1 font-mono text-xs font-medium text-brand tabular-nums">
             {project.focusScore}%
           </span>
         </div>
@@ -79,7 +80,7 @@ export function ProjectCard({ project, timezone }: ProjectCardProps) {
             <Layers className="h-3.5 w-3.5" strokeWidth={1.5} aria-hidden="true" />
             Sessions
           </span>
-          <span className="mt-1 font-mono text-xs font-medium tabular-nums text-foreground">
+          <span className="mt-1 font-mono text-xs font-medium text-foreground tabular-nums">
             {project.sessions}
           </span>
         </div>

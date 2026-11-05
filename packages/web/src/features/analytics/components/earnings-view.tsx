@@ -1,5 +1,8 @@
 'use client';
 
+import { type JSX } from 'react/jsx-runtime';
+
+import { RateConfigPanel } from '@/features/users/components/rate-config-panel';
 import {
   Page,
   PageDescription,
@@ -7,16 +10,16 @@ import {
   PageHeaderHeading,
   PageTitle,
 } from '@/shared/components/layout/page';
-import { RateConfigPanel } from '@/features/users/components/rate-config-panel';
-import { EarningsSummaryCards } from './earnings-summary-cards';
+
 import type { DateRange } from '../hooks';
+import { EarningsSummaryCards } from './earnings-summary-cards';
 
 interface EarningsViewProps {
   range30d: DateRange;
   range7d: DateRange;
 }
 
-export function EarningsView({ range30d, range7d }: EarningsViewProps) {
+export function EarningsView({ range30d, range7d }: EarningsViewProps): JSX.Element {
   return (
     <Page>
       <PageHeader>

@@ -1,8 +1,9 @@
+import { formatMinutes } from '@devpulse/lib';
+
 import { formatDateLabel, parseDateInput } from '@/shared/lib/date';
 import type { WorklogPlan } from '@/shared/types';
 
 import type { DayState } from '../hooks';
-import { formatMinutes } from '@devpulse/lib';
 
 export function buildReportText(plan: WorklogPlan, days: ReadonlyArray<DayState>): string {
   const finished = days.filter((item) => item.status === 'done' && item.result);

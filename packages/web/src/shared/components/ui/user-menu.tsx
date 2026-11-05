@@ -1,9 +1,12 @@
 'use client';
 
+import { BookOpen, LogOut, Settings } from 'lucide-react';
 import Link from 'next/link';
-import { LogOut, Settings, BookOpen } from 'lucide-react';
-import { useRequireAuth } from '@/features/auth/context';
+import { type JSX } from 'react/jsx-runtime';
 
+import { useRequireAuth } from '@/features/auth/context';
+import { Avatar, AvatarFallback } from '@/shared/components/ui/avatar';
+import { Button } from '@/shared/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,10 +15,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/shared/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback } from '@/shared/components/ui/avatar';
-import { Button } from '@/shared/components/ui/button';
 
-export function UserMenu() {
+export function UserMenu(): JSX.Element {
   const { user, logout } = useRequireAuth();
 
   const getInitials = (name: string) => {

@@ -1,19 +1,20 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { Command } from 'cmdk';
-import { LayoutDashboard, FolderGit2, Clock, DollarSign, Settings, BookOpen } from 'lucide-react';
+import { BookOpen, Clock, DollarSign, FolderGit2, LayoutDashboard, Settings } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useCallback, useEffect } from 'react';
+import { type JSX } from 'react/jsx-runtime';
 
 import { Dialog, DialogContent, DialogTitle } from '@/shared/components/ui/dialog';
 import { cn } from '@/shared/lib/cn';
-import { useCallback, useEffect } from 'react';
 
 interface CommandMenuProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export function CommandMenu({ open, onOpenChange }: CommandMenuProps) {
+export function CommandMenu({ open, onOpenChange }: CommandMenuProps): JSX.Element {
   const router = useRouter();
 
   useEffect(() => {
@@ -44,7 +45,7 @@ export function CommandMenu({ open, onOpenChange }: CommandMenuProps) {
         <Command
           className={cn(
             'flex h-full w-full flex-col overflow-hidden bg-transparent',
-            '**:[[cmdk-group-heading]]:px-2 **:[[cmdk-group-heading]]:pb-1.5 **:[[cmdk-group-heading]]:text-[11px] **:[[cmdk-group-heading]]:font-medium **:[[cmdk-group-heading]]:uppercase **:[[cmdk-group-heading]]:tracking-wider **:[[cmdk-group-heading]]:text-subtle',
+            '**:[[cmdk-group-heading]]:px-2 **:[[cmdk-group-heading]]:pb-1.5 **:[[cmdk-group-heading]]:text-[11px] **:[[cmdk-group-heading]]:font-medium **:[[cmdk-group-heading]]:tracking-wider **:[[cmdk-group-heading]]:text-subtle **:[[cmdk-group-heading]]:uppercase',
           )}
         >
           <div className="flex items-center border-b border-border px-3">
@@ -102,7 +103,7 @@ function CommandItem({ children, onSelect }: { children: React.ReactNode; onSele
     <Command.Item
       onSelect={onSelect}
       className={cn(
-        'relative flex cursor-pointer select-none items-center rounded-[10px] px-2.5 py-2 text-sm text-secondary outline-none transition-colors',
+        'relative flex cursor-pointer items-center rounded-[10px] px-2.5 py-2 text-sm text-secondary transition-colors outline-none select-none',
         'data-[selected=true]:bg-gray-alpha-100 data-[selected=true]:text-foreground',
       )}
     >

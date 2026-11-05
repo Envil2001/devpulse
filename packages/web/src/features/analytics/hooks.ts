@@ -1,18 +1,24 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
-
-import { downloadBlob } from '@/shared/lib/download';
-import { QueryParams } from '@/shared/api/api-client';
-import { useMemo } from 'react';
-import { analyticsService } from '@/shared/api/services';
-import {
-  LiveStatus,
-  LanguagesBreakdown,
-  TimeseriesPoint,
-  BranchDataPoint,
-  CommandsBreakdown,
-} from '@/shared/types';
 import { type AiRoiMetrics, type DashboardStats, type PipelineHealth } from '@devpulse/lib';
-import { AnalyticsRangeParams } from './api';
+import {
+  useMutation,
+  type UseMutationResult,
+  useQuery,
+  type UseQueryResult,
+} from '@tanstack/react-query';
+import { useMemo } from 'react';
+
+import { type QueryParams } from '@/shared/api/api-client';
+import { analyticsService } from '@/shared/api/services';
+import { downloadBlob } from '@/shared/lib/download';
+import {
+  type BranchDataPoint,
+  type CommandsBreakdown,
+  type LanguagesBreakdown,
+  type LiveStatus,
+  type TimeseriesPoint,
+} from '@/shared/types';
+
+import { type AnalyticsRangeParams } from './api';
 
 export type AnalyticsPeriod = 'today' | '7d' | '30d' | 'custom';
 
@@ -85,7 +91,7 @@ export function getHeatmapRange(now = new Date()): DateRange {
   return { startDate: start.toISOString(), endDate: end.toISOString() };
 }
 
-export function useLiveStatus() {
+export function useLiveStatus(): UseQueryResult<LiveStatus, Error> {
   return useQuery<LiveStatus>({
     queryKey: analyticsKeys.status(),
     queryFn: () => analyticsService.getLiveStatus(),
@@ -93,35 +99,49 @@ export function useLiveStatus() {
   });
 }
 
-export function useLanguagesBreakdown(projectId?: string) {
+export function useLanguagesBreakdown(
+  projectId?: string,
+): UseQueryResult<LanguagesBreakdown, Error> {
   return useQuery<LanguagesBreakdown>({
     queryKey: analyticsKeys.languages(projectId),
     queryFn: () => analyticsService.getLanguages({ projectId }),
   });
 }
 
-export function useDashboardStats(range: DateRange, projectId?: string) {
+export function useDashboardStats(
+  range: DateRange,
+  projectId?: string,
+): UseQueryResult<DashboardStats, Error> {
   return useQuery<DashboardStats>({
     queryKey: analyticsKeys.dashboard(range, projectId),
     queryFn: () => analyticsService.getDashboard({ ...range, projectId }),
   });
 }
 
-export function useAnalyticsTimeseries(range: DateRange, projectId?: string) {
+export function useAnalyticsTimeseries(
+  range: DateRange,
+  projectId?: string,
+): UseQueryResult<Array<TimeseriesPoint>, Error> {
   return useQuery<Array<TimeseriesPoint>>({
     queryKey: analyticsKeys.timeseries(range, projectId),
     queryFn: () => analyticsService.getTimeseries({ ...range, projectId }),
   });
 }
 
-export function useBranchesDistribution(range: DateRange, projectId?: string) {
+export function useBranchesDistribution(
+  range: DateRange,
+  projectId?: string,
+): UseQueryResult<Array<BranchDataPoint>, Error> {
   return useQuery<Array<BranchDataPoint>>({
     queryKey: analyticsKeys.branches(range, projectId),
     queryFn: () => analyticsService.getBranches({ ...range, projectId }),
   });
 }
 
-export function useCommandsBreakdown(range: DateRange, projectId?: string) {
+export function useCommandsBreakdown(
+  range: DateRange,
+  projectId?: string,
+): UseQueryResult<CommandsBreakdown, Error> {
   return useQuery<CommandsBreakdown>({
     queryKey: analyticsKeys.commands(range, projectId),
     queryFn: () => analyticsService.getCommands({ ...range, projectId }),
@@ -129,7 +149,7 @@ export function useCommandsBreakdown(range: DateRange, projectId?: string) {
   });
 }
 
-export function useExportSessions() {
+export function useExportSessions(): UseMutationResult<Blob, Error, AnalyticsRangeParams, unknown> {
   return useMutation({
     mutationFn: (params: AnalyticsRangeParams) => analyticsService.exportSessions(params),
     onSuccess: (blob: Blob, params: AnalyticsRangeParams) => {
@@ -154,7 +174,16 @@ export function previousPeriod(range: DateRange): DateRange {
   };
 }
 
-export function useDashboardComparison(range: DateRange, projectId?: string) {
+interface DashboardComparison {
+  current: DashboardStats | undefined;
+  previous: DashboardStats | undefined;
+  isLoading: boolean;
+}
+
+export function useDashboardComparison(
+  range: DateRange,
+  projectId?: string,
+): DashboardComparison {
   const current = useDashboardStats(range, projectId);
   const prevRange = useMemo(() => previousPeriod(range), [range]);
   const previous = useDashboardStats(prevRange, projectId);
@@ -166,14 +195,17 @@ export function useDashboardComparison(range: DateRange, projectId?: string) {
   };
 }
 
-export function useAiRoiMetrics(range: DateRange, projectId?: string) {
+export function useAiRoiMetrics(
+  range: DateRange,
+  projectId?: string,
+): UseQueryResult<AiRoiMetrics, Error> {
   return useQuery<AiRoiMetrics>({
     queryKey: analyticsKeys.aiRoi(range, projectId),
     queryFn: () => analyticsService.getAiRoi({ ...range, projectId }),
   });
 }
 
-export function usePipelineHealth() {
+export function usePipelineHealth(): UseQueryResult<PipelineHealth, Error> {
   return useQuery<PipelineHealth>({
     queryKey: analyticsKeys.pipelineHealth(),
     queryFn: () => analyticsService.getPipelineHealth(),

@@ -1,8 +1,8 @@
 import { useCallback, useRef, useState } from 'react';
 
 import { worklogService } from '@/shared/api/services';
-import type { WorklogDayResult, WorklogFormat, WorklogPlan, WorklogPlanDay } from '@/shared/types';
 import { getErrorMessage } from '@/shared/lib/error';
+import type { WorklogDayResult, WorklogFormat, WorklogPlan, WorklogPlanDay } from '@/shared/types';
 
 export type DayStatus = 'pending' | 'loading' | 'done' | 'failed';
 export type RunPhase = 'idle' | 'planning' | 'running' | 'finished';
@@ -20,7 +20,18 @@ export interface WorklogRunOptions {
   format: WorklogFormat;
 }
 
-export function useWorklogRun() {
+export interface WorklogRunResult {
+  phase: RunPhase;
+  plan: WorklogPlan | null;
+  days: Array<DayState>;
+  error: string | null;
+  start: (options: WorklogRunOptions) => Promise<void>;
+  resume: () => void;
+  cancel: () => void;
+  regenerateDay: (date: string) => Promise<void>;
+}
+
+export function useWorklogRun(): WorklogRunResult {
   const [phase, setPhase] = useState<RunPhase>('idle');
   const [plan, setPlan] = useState<WorklogPlan | null>(null);
   const [days, setDays] = useState<Array<DayState>>([]);

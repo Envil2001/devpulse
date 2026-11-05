@@ -1,23 +1,31 @@
 'use client';
 
-import { useMemo } from 'react';
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { Download } from 'lucide-react';
 import { differenceInCalendarDays } from 'date-fns';
+import { Download } from 'lucide-react';
+import { useMemo } from 'react';
+import { type JSX } from 'react/jsx-runtime';
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
-import { Button } from '@/shared/components/ui/button';
 import {
   Panel,
+  PanelContent,
+  PanelDescription,
   PanelHeader,
   PanelTitle,
-  PanelDescription,
-  PanelContent,
 } from '@/shared/components/layout/panel';
+import { Button } from '@/shared/components/ui/button';
 import { formatChartAxisLabel, toDateInput } from '@/shared/lib/date';
-import { useAnalyticsTimeseries, useExportSessions, type DateRange } from '../hooks';
+
+import { type DateRange, useAnalyticsTimeseries, useExportSessions } from '../hooks';
 import { ActivityChartTooltip } from './activity-chart-tooltip';
 
-export function ActivityChartPanel({ range, projectId }: { range: DateRange; projectId?: string }) {
+export function ActivityChartPanel({
+  range,
+  projectId,
+}: {
+  range: DateRange;
+  projectId?: string;
+}): JSX.Element {
   const { data: timeseries = [], isLoading } = useAnalyticsTimeseries(range, projectId);
   const exportMutation = useExportSessions();
 

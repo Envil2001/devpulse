@@ -1,7 +1,8 @@
 'use client';
 
-import * as React from 'react';
 import * as PopoverPrimitive from '@radix-ui/react-popover';
+import * as React from 'react';
+
 import { cn } from '@/shared/lib/cn';
 
 const Popover = PopoverPrimitive.Root;
@@ -26,7 +27,7 @@ const PopoverContent = React.forwardRef<
         'data-[side=top]:data-[state=open]:slide-in-from-bottom-1',
         'data-[side=left]:data-[state=open]:slide-in-from-right-1',
         'data-[side=right]:data-[state=open]:slide-in-from-left-1',
-        'data-[state=open]:animation-duration-[150ms] data-[state=closed]:animation-duration-[120ms]',
+        'data-[state=closed]:animation-duration-[120ms] data-[state=open]:animation-duration-[150ms]',
         className,
       )}
       {...props}
@@ -35,4 +36,4 @@ const PopoverContent = React.forwardRef<
 ));
 PopoverContent.displayName = PopoverPrimitive.Content.displayName;
 
-export { Popover, PopoverTrigger, PopoverContent, PopoverAnchor };
+export { Popover, PopoverAnchor, PopoverContent, PopoverTrigger };

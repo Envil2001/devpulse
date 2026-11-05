@@ -1,8 +1,10 @@
 'use client';
 
-import { useState } from 'react';
 import { AlertCircle, Check, Copy, Maximize2, Sparkles } from 'lucide-react';
+import { useState } from 'react';
+import { type JSX } from 'react/jsx-runtime';
 
+import { Panel } from '@/shared/components/layout/panel';
 import { Button } from '@/shared/components/ui/button';
 import { DateRangePicker } from '@/shared/components/ui/date-range-picker';
 import {
@@ -12,15 +14,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/shared/components/ui/select';
-import { Panel } from '@/shared/components/layout/panel';
+import { cn } from '@/shared/lib/cn';
 import { toDateInput } from '@/shared/lib/date';
 import type { WorklogFormat } from '@/shared/types';
 
 import { useWorklogRun } from '../hooks';
 import { buildReportText } from '../lib/build-report';
-
 import { WorklogDrawer } from './worklog-drawer';
-import { cn } from '@/shared/lib/cn';
 
 const MAX_RANGE_DAYS = 31;
 
@@ -32,7 +32,7 @@ const FORMAT_OPTIONS: ReadonlyArray<{ value: WorklogFormat; label: string }> = [
 
 const COPIED_RESET_MS = 2000;
 
-export function AiWorklogCard() {
+export function AiWorklogCard(): JSX.Element {
   const { phase, plan, days, error, start, resume, cancel, regenerateDay } = useWorklogRun();
 
   const [startDate, setStartDate] = useState(() => toDateInput(new Date()));

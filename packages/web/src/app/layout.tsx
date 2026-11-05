@@ -1,6 +1,9 @@
+import './globals.css';
+
 import type { Metadata } from 'next';
 import { Inter, Martian_Mono } from 'next/font/google';
-import './globals.css';
+import { type JSX } from 'react/jsx-runtime';
+
 import { Providers } from './providers';
 
 const inter = Inter({
@@ -24,10 +27,10 @@ export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
-}>) {
+}>): JSX.Element {
   return (
     <html lang="en" className={`dark ${inter.variable} ${martianMono.variable}`}>
-      <body className="min-h-dvh flex flex-col bg-background text-foreground antialiased">
+      <body className="flex min-h-dvh flex-col bg-background text-foreground antialiased">
         <Providers>{children}</Providers>
       </body>
     </html>

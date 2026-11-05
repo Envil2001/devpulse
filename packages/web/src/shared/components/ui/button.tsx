@@ -1,17 +1,18 @@
 'use client';
 
-import * as React from 'react';
 import { Slot } from '@radix-ui/react-slot';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { Loader2 } from 'lucide-react';
+import * as React from 'react';
+
 import { cn } from '@/shared/lib/cn';
 
 const buttonVariants = cva(
   [
-    'group/button relative inline-flex shrink-0 items-center justify-center whitespace-nowrap font-medium',
+    'group/button relative inline-flex shrink-0 items-center justify-center font-medium whitespace-nowrap',
     'border border-transparent bg-clip-padding',
     'transition-colors duration-150',
-    'select-none outline-none',
+    'outline-none select-none',
     'focus-visible:ring-2 focus-visible:ring-white/15',
     'disabled:pointer-events-none disabled:opacity-50',
     '[&_svg]:pointer-events-none [&_svg]:shrink-0',
@@ -84,7 +85,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         {...props}
       >
         {loading && (
-          <Loader2 className="absolute left-1/2 top-1/2 size-4 -translate-x-1/2 -translate-y-1/2 animate-spin text-current" />
+          <Loader2 className="absolute top-1/2 left-1/2 size-4 -translate-x-1/2 -translate-y-1/2 animate-spin text-current" />
         )}
 
         <span

@@ -1,15 +1,15 @@
 'use client';
 
-import { useState } from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { Check, Copy, X } from 'lucide-react';
+import { useState } from 'react';
+import { type JSX } from 'react/jsx-runtime';
 
 import { Button } from '@/shared/components/ui/button';
 import { cn } from '@/shared/lib/cn';
 
 import type { useWorklogRun } from '../hooks';
 import { buildReportText } from '../lib/build-report';
-
 import { WorklogDayEntry } from './worklog-day-entry';
 
 const COPIED_RESET_MS = 2000;
@@ -32,7 +32,7 @@ export function WorklogDrawer({
   phase,
   onRegenerateDay,
   onCancel,
-}: WorklogDrawerProps) {
+}: WorklogDrawerProps): JSX.Element {
   const [copied, setCopied] = useState(false);
 
   const isBusy = phase === 'planning' || phase === 'running';
@@ -64,7 +64,7 @@ export function WorklogDrawer({
 
         <DialogPrimitive.Content
           className={cn(
-            'fixed right-0 top-0 z-50 flex h-full w-full max-w-2xl flex-col border-l border-border bg-surface shadow-lg',
+            'fixed top-0 right-0 z-50 flex h-full w-full max-w-2xl flex-col border-l border-border bg-surface shadow-lg',
             'data-[state=open]:animate-in data-[state=open]:slide-in-from-right',
             'data-[state=closed]:animate-out data-[state=closed]:slide-out-to-right',
             'data-[state=open]:animation-duration-[240ms]',

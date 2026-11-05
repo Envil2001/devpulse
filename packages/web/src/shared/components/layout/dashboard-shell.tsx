@@ -1,18 +1,21 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { type ReactNode, useState } from 'react';
+import { type JSX } from 'react/jsx-runtime';
+
 import { AuthenticatedUserProvider } from '@/features/auth/context';
 import { DashboardTour } from '@/shared/components/onboarding/dashboard-tour';
-import { Sidebar } from './sidebar';
+import { type User } from '@/shared/types';
+
 import { Header } from './header';
-import { User } from '@/shared/types';
+import { Sidebar } from './sidebar';
 
 interface DashboardShellProps {
   children: ReactNode;
   user: User;
 }
 
-export function DashboardShell({ children, user }: DashboardShellProps) {
+export function DashboardShell({ children, user }: DashboardShellProps): JSX.Element {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
@@ -32,7 +35,7 @@ export function DashboardShell({ children, user }: DashboardShellProps) {
           isCollapsed={isSidebarCollapsed}
         />
 
-        <div className="relative flex min-h-dvh min-w-0 flex-1 flex-col lg:pl-(--sidebar-width) transition-[padding] duration-200 ease-out">
+        <div className="relative flex min-h-dvh min-w-0 flex-1 flex-col transition-[padding] duration-200 ease-out lg:pl-(--sidebar-width)">
           <Header
             onMenuToggle={() => setIsMobileMenuOpen((p) => !p)}
             isMenuOpen={isMobileMenuOpen}

@@ -1,8 +1,10 @@
 'use client';
 
-import * as React from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { X } from 'lucide-react';
+import * as React from 'react';
+import { type JSX } from 'react/jsx-runtime';
+
 import { cn } from '@/shared/lib/cn';
 
 const Dialog = DialogPrimitive.Root;
@@ -20,7 +22,7 @@ const DialogOverlay = React.forwardRef<
       'fixed inset-0 z-50 bg-black/50',
       'data-[state=open]:animate-in data-[state=open]:fade-in-0',
       'data-[state=closed]:animate-out data-[state=closed]:fade-out-0',
-      'data-[state=open]:animation-duration-[200ms] data-[state=closed]:animation-duration-[150ms]',
+      'data-[state=closed]:animation-duration-[150ms] data-[state=open]:animation-duration-[200ms]',
       className,
     )}
     {...props}
@@ -37,17 +39,17 @@ const DialogContent = React.forwardRef<
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        'fixed left-1/2 top-1/2 z-50 grid w-full max-w-lg -translate-x-1/2 -translate-y-1/2 gap-4 rounded-2xl border border-border bg-surface p-6 shadow-lg',
+        'fixed top-1/2 left-1/2 z-50 grid w-full max-w-lg -translate-x-1/2 -translate-y-1/2 gap-4 rounded-2xl border border-border bg-surface p-6 shadow-lg',
         'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-98',
         'data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-98',
-        'data-[state=open]:animation-duration-[200ms] data-[state=closed]:animation-duration-[150ms]',
+        'data-[state=closed]:animation-duration-[150ms] data-[state=open]:animation-duration-[200ms]',
         className,
       )}
       {...props}
     >
       {children}
       <DialogPrimitive.Close
-        className="absolute right-3 top-3 inline-flex h-7 w-7 items-center justify-center rounded-lg text-subtle outline-none transition-colors hover:bg-gray-alpha-100 hover:text-foreground focus-visible:ring-2 focus-visible:ring-white/15 disabled:pointer-events-none"
+        className="absolute top-3 right-3 inline-flex h-7 w-7 items-center justify-center rounded-lg text-subtle transition-colors outline-none hover:bg-gray-alpha-100 hover:text-foreground focus-visible:ring-2 focus-visible:ring-white/15 disabled:pointer-events-none"
         aria-label="Close"
       >
         <X className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
@@ -58,12 +60,18 @@ const DialogContent = React.forwardRef<
 ));
 DialogContent.displayName = DialogPrimitive.Content.displayName;
 
-const DialogHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
+const DialogHeader = ({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>): JSX.Element => (
   <div className={cn('flex flex-col gap-1.5 text-left', className)} {...props} />
 );
 DialogHeader.displayName = 'DialogHeader';
 
-const DialogFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
+const DialogFooter = ({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>): JSX.Element => (
   <div className={cn('mt-2 flex justify-end gap-2', className)} {...props} />
 );
 DialogFooter.displayName = 'DialogFooter';
@@ -94,13 +102,13 @@ DialogDescription.displayName = DialogPrimitive.Description.displayName;
 
 export {
   Dialog,
-  DialogPortal,
-  DialogOverlay,
   DialogClose,
-  DialogTrigger,
   DialogContent,
-  DialogHeader,
-  DialogFooter,
-  DialogTitle,
   DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogOverlay,
+  DialogPortal,
+  DialogTitle,
+  DialogTrigger,
 };

@@ -1,10 +1,12 @@
 import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
-import { getQueryClient } from '@/shared/api/get-query-client';
-import { periodToDateRange, analyticsKeys } from '@/features/analytics/hooks';
-import { getDashboardStatsServer } from '@/features/analytics/server';
-import { EarningsView } from '@/features/analytics/components/earnings-view';
+import { type JSX } from 'react/jsx-runtime';
 
-export default async function EarningsPage() {
+import { EarningsView } from '@/features/analytics/components/earnings-view';
+import { analyticsKeys, periodToDateRange } from '@/features/analytics/hooks';
+import { getDashboardStatsServer } from '@/features/analytics/server';
+import { getQueryClient } from '@/shared/api/get-query-client';
+
+export default async function EarningsPage(): Promise<JSX.Element> {
   const queryClient = getQueryClient();
 
   const range30d = periodToDateRange('30d');

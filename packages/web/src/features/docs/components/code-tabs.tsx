@@ -1,9 +1,11 @@
 'use client';
 
 import { Check, Copy } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { type JSX } from 'react/jsx-runtime';
+
 import { cn } from '@/shared/lib/cn';
-import { highlightCode, type CodeType } from '@/shared/lib/code-highlight';
-import { useState, useMemo } from 'react';
+import { type CodeType, highlightCode } from '@/shared/lib/code-highlight';
 
 interface CodeTabsProps {
   method: string;
@@ -35,7 +37,7 @@ function getExampleUrl(url: string, parameters: CodeTabsProps['parameters']): st
   return `${url}${separator}${query.toString()}`;
 }
 
-export function CodeTabs({ method, url, parameters, response }: CodeTabsProps) {
+export function CodeTabs({ method, url, parameters, response }: CodeTabsProps): JSX.Element {
   const [activeTab, setActiveTab] = useState<Exclude<CodeType, 'json'>>('curl');
   const [hasCopied, setHasCopied] = useState(false);
 
@@ -116,7 +118,7 @@ export function CodeTabs({ method, url, parameters, response }: CodeTabsProps) {
       {highlightedResponse && (
         <div className="overflow-hidden rounded-xl border border-border bg-surface">
           <div className="flex items-center justify-between border-b border-border bg-gray-alpha-50 px-4 py-2.5">
-            <span className="text-xs font-medium uppercase tracking-wider text-subtle">
+            <span className="text-xs font-medium tracking-wider text-subtle uppercase">
               Response
             </span>
             <span className="rounded bg-brand/10 px-2 py-0.5 font-mono text-xs text-brand">

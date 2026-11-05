@@ -1,20 +1,21 @@
 'use client';
 
+import { formatDuration } from '@devpulse/lib';
 import { useEffect, useMemo, useState } from 'react';
+import { type JSX } from 'react/jsx-runtime';
 import { createPortal } from 'react-dom';
 
-import { cn } from '@/shared/lib/cn';
-import { formatDuration } from '@devpulse/lib';
-import { formatDateLabel, parseDateInput, toDateInput } from '@/shared/lib/date';
 import {
   Panel,
+  PanelContent,
+  PanelDescription,
   PanelHeader,
   PanelTitle,
-  PanelDescription,
-  PanelContent,
 } from '@/shared/components/layout/panel';
+import { cn } from '@/shared/lib/cn';
+import { formatDateLabel, parseDateInput, toDateInput } from '@/shared/lib/date';
 
-import { useAnalyticsTimeseries, type DateRange } from '../hooks';
+import { type DateRange, useAnalyticsTimeseries } from '../hooks';
 
 const CELL = 12;
 const GAP = 3;
@@ -161,7 +162,7 @@ interface HeatmapPanelProps {
   projectId?: string;
 }
 
-export function HeatmapPanel({ range, projectId }: HeatmapPanelProps) {
+export function HeatmapPanel({ range, projectId }: HeatmapPanelProps): JSX.Element | null {
   const { data: series = [], isLoading } = useAnalyticsTimeseries(range, projectId);
 
   const seriesByDate = useMemo(() => {
@@ -381,7 +382,7 @@ export function HeatmapPanel({ range, projectId }: HeatmapPanelProps) {
                   {formatDateLabel(parseDateInput(displayedCell.date))}
                 </span>
                 <span className="text-subtle">·</span>
-                <span className="font-mono tabular-nums text-foreground">
+                <span className="font-mono text-foreground tabular-nums">
                   {displayedCell.seconds > 0
                     ? formatDuration(displayedCell.seconds)
                     : 'no activity'}
@@ -447,7 +448,7 @@ export function HeatmapPanel({ range, projectId }: HeatmapPanelProps) {
             <div className="font-medium text-foreground">
               {formatDateLabel(parseDateInput(hoveredCell.cell.date))}
             </div>
-            <div className="mt-0.5 font-mono text-[11px] tabular-nums text-subtle">
+            <div className="mt-0.5 font-mono text-[11px] text-subtle tabular-nums">
               {hoveredCell.cell.seconds > 0
                 ? formatDuration(hoveredCell.cell.seconds)
                 : 'no activity'}

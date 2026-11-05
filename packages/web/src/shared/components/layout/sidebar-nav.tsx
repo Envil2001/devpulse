@@ -1,6 +1,8 @@
 'use client';
 
-import { LayoutDashboard, FolderKanban, History, Wallet, Settings } from 'lucide-react';
+import { FolderKanban, History, LayoutDashboard, Settings, Wallet } from 'lucide-react';
+import { type JSX } from 'react/jsx-runtime';
+
 import { NavItem } from './nav-item';
 
 const mainNavItems = [
@@ -16,9 +18,9 @@ interface SidebarNavProps {
   isCollapsed?: boolean;
 }
 
-export function SidebarNav({ onNavClick, isCollapsed }: SidebarNavProps) {
+export function SidebarNav({ onNavClick, isCollapsed }: SidebarNavProps): JSX.Element {
   return (
-    <nav className="flex flex-1 min-h-0 flex-col overflow-y-auto scroll-subtle px-3 pb-3 pt-1.5">
+    <nav className="scroll-subtle flex min-h-0 flex-1 flex-col overflow-y-auto px-3 pt-1.5 pb-3">
       <ul className="flex flex-col gap-1" aria-label="Main navigation">
         {mainNavItems.map((item) => (
           <li key={item.name}>

@@ -1,6 +1,8 @@
 'use client';
 
+import { type JSX } from 'react/jsx-runtime';
 import type { TooltipRenderProps } from 'react-joyride';
+
 import { Button } from '@/shared/components/ui/button';
 import { cn } from '@/shared/lib/cn';
 
@@ -13,7 +15,7 @@ export function TourTooltip({
   primaryProps,
   skipProps,
   tooltipProps,
-}: TooltipRenderProps) {
+}: TooltipRenderProps): JSX.Element {
   const isFirst = index === 0;
 
   return (
@@ -33,7 +35,7 @@ export function TourTooltip({
             />
           ))}
         </div>
-        <span className="text-xs tabular-nums text-secondary">
+        <span className="text-xs text-secondary tabular-nums">
           {index + 1} / {size}
         </span>
       </div>

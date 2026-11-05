@@ -1,16 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { type JSX } from 'react/jsx-runtime';
+import { useForm } from 'react-hook-form';
+import * as z from 'zod';
 
-import { authService } from '@/shared/api/services';
 import { buildSignupCryptoPayload } from '@/features/auth/crypto';
-import { getErrorMessage } from '@/shared/lib/error';
-
+import { authService } from '@/shared/api/services';
+import { Button } from '@/shared/components/ui/button';
 import {
   Form,
   FormControl,
@@ -20,7 +20,8 @@ import {
   FormMessage,
 } from '@/shared/components/ui/form';
 import { Input } from '@/shared/components/ui/input';
-import { Button } from '@/shared/components/ui/button';
+import { getErrorMessage } from '@/shared/lib/error';
+
 import { useAuth } from '../context';
 
 const registerSchema = z.object({
@@ -37,7 +38,7 @@ const verifySchema = z.object({
   code: z.string().length(6, 'Verification code must be exactly 6 characters'),
 });
 
-export function RegisterForm() {
+export function RegisterForm(): JSX.Element {
   const router = useRouter();
   const { login } = useAuth();
   const [step, setStep] = useState<'register' | 'verify'>('register');

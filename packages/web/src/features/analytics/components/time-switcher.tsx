@@ -1,5 +1,7 @@
 'use client';
 
+import { type JSX } from 'react/jsx-runtime';
+
 import { DateRangePicker } from '@/shared/components/ui/date-range-picker';
 import { Tabs, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
 
@@ -21,7 +23,7 @@ export function TimeSwitcher({
   onValueChange,
   customRange,
   onCustomRangeChange,
-}: TimeSwitcherProps) {
+}: TimeSwitcherProps): JSX.Element {
   const handleRangeChange = (range: { startDate: string; endDate: string }) => {
     onCustomRangeChange?.(range);
     if (value !== 'custom') {

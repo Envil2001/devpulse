@@ -1,7 +1,6 @@
-import type { User } from '@/shared/types';
-
 import { ApiClientError } from '@/shared/api/api-client';
 import { getServerAuthToken, serverGet } from '@/shared/api/server-client';
+import type { User } from '@/shared/types';
 
 export async function getServerUser(): Promise<User | null> {
   const token = await getServerAuthToken();

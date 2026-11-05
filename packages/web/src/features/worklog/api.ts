@@ -1,6 +1,6 @@
-import { QueryParams } from '@/shared/api/api-client';
+import { type QueryParams } from '@/shared/api/api-client';
 import { BaseService } from '@/shared/api/base.service';
-import type { WorklogFormat, WorklogLanguage, WorklogPlan, WorklogDayResult } from '@/shared/types';
+import type { WorklogDayResult, WorklogFormat, WorklogLanguage, WorklogPlan } from '@/shared/types';
 
 export interface WorklogPlanParams extends QueryParams {
   startDate: string;

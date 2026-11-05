@@ -1,4 +1,5 @@
 import * as React from 'react';
+
 import { cn } from '@/shared/lib/cn';
 
 const Panel = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
@@ -46,4 +47,4 @@ const PanelContent = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLD
 );
 PanelContent.displayName = 'PanelContent';
 
-export { Panel, PanelHeader, PanelTitle, PanelDescription, PanelContent };
+export { Panel, PanelContent, PanelDescription, PanelHeader, PanelTitle };

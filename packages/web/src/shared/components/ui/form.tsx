@@ -1,13 +1,15 @@
 'use client';
 
-import * as React from 'react';
-import * as LabelPrimitive from '@radix-ui/react-label';
-
+import type * as LabelPrimitive from '@radix-ui/react-label';
 import { Slot } from '@radix-ui/react-slot';
+import * as React from 'react';
+import { type JSX } from 'react/jsx-runtime';
+import type { ControllerProps, FieldError, FieldPath, FieldValues } from 'react-hook-form';
 import { Controller, FormProvider, useFormContext } from 'react-hook-form';
-import type { ControllerProps, FieldPath, FieldValues } from 'react-hook-form';
-import { Label } from './label';
+
 import { cn } from '@/shared/lib/cn';
+
+import { Label } from './label';
 
 type FormFieldContextValue<
   TFieldValues extends FieldValues = FieldValues,
@@ -24,12 +26,25 @@ type FormItemContextValue = {
 
 export const FormItemContext = React.createContext<FormItemContextValue | undefined>(undefined);
 
+interface FormFieldDetails {
+  id: string;
+  name: string;
+  formItemId: string;
+  formDescriptionId: string;
+  formMessageId: string;
+  invalid: boolean;
+  isDirty: boolean;
+  isTouched: boolean;
+  isValidating: boolean;
+  error?: FieldError;
+}
+
 const FormField = <
   TFieldValues extends FieldValues = FieldValues,
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
 >({
   ...props
-}: ControllerProps<TFieldValues, TName>) => {
+}: ControllerProps<TFieldValues, TName>): JSX.Element => {
   return (
     <FormFieldContext.Provider value={{ name: props.name }}>
       <Controller {...props} />
@@ -37,7 +52,7 @@ const FormField = <
   );
 };
 
-const useFormField = () => {
+const useFormField = (): FormFieldDetails => {
   const fieldContext = React.useContext(FormFieldContext);
   const itemContext = React.useContext(FormItemContext);
 
@@ -140,11 +155,11 @@ FormMessage.displayName = 'FormMessage';
 
 export {
   FormProvider as Form,
-  useFormField,
-  FormItem,
   FormControl,
   FormDescription,
-  FormMessage,
-  FormLabel,
   FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  useFormField,
 };

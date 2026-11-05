@@ -1,8 +1,19 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { GitBranch, FolderGit2, Search, Calendar } from 'lucide-react';
+import { formatDuration } from '@devpulse/lib';
+import { Calendar, FolderGit2, GitBranch, Search } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { type JSX } from 'react/jsx-runtime';
 
+import { useRequireAuth } from '@/features/auth/context';
+import {
+  Page,
+  PageDescription,
+  PageHeader,
+  PageHeaderHeading,
+  PageTitle,
+} from '@/shared/components/layout/page';
+import { Panel, PanelHeader } from '@/shared/components/layout/panel';
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
 import {
@@ -13,22 +24,12 @@ import {
   SelectValue,
 } from '@/shared/components/ui/select';
 import { cn } from '@/shared/lib/cn';
-import { useSessions } from '../hooks';
 import { formatDateTimeLabel } from '@/shared/lib/date';
-import {
-  PageHeader,
-  PageHeaderHeading,
-  PageTitle,
-  PageDescription,
-  Page,
-} from '@/shared/components/layout/page';
-import { Panel, PanelHeader } from '@/shared/components/layout/panel';
-import { useRequireAuth } from '@/features/auth/context';
 
+import { useSessions } from '../hooks';
 import { SessionsSummaryCards } from './sessions-summary-cards';
-import { formatDuration } from '@devpulse/lib';
 
-export function SessionsListView() {
+export function SessionsListView(): JSX.Element {
   const { data: sessions = [], isLoading, error } = useSessions();
   const { user } = useRequireAuth();
   const [searchQuery, setSearchQuery] = useState('');
@@ -79,7 +80,7 @@ export function SessionsListView() {
           >
             <div className="relative w-full sm:w-72">
               <Search
-                className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-subtle"
+                className="absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2 text-subtle"
                 strokeWidth={1.5}
                 aria-hidden="true"
               />
@@ -118,7 +119,7 @@ export function SessionsListView() {
 
         <div
           data-tour="sessions-columns"
-          className="grid grid-cols-12 gap-4 border-b border-border pb-3 text-xs font-medium uppercase tracking-wider text-subtle"
+          className="grid grid-cols-12 gap-4 border-b border-border pb-3 text-xs font-medium tracking-wider text-subtle uppercase"
         >
           <div className="col-span-4 sm:col-span-3">Start Time</div>
           <div className="col-span-4 sm:col-span-3">Project</div>

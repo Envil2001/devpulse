@@ -1,17 +1,20 @@
 'use client';
 
 import { TerminalSquare } from 'lucide-react';
-import { cn } from '@/shared/lib/cn';
+import { type JSX } from 'react/jsx-runtime';
+
 import {
   Panel,
+  PanelContent,
+  PanelDescription,
   PanelHeader,
   PanelTitle,
-  PanelDescription,
-  PanelContent,
 } from '@/shared/components/layout/panel';
+import { cn } from '@/shared/lib/cn';
+
 import { useLanguagesBreakdown } from '../hooks';
 
-export function LanguagesPanel({ projectId }: { projectId?: string }) {
+export function LanguagesPanel({ projectId }: { projectId?: string }): JSX.Element {
   const { data, isLoading } = useLanguagesBreakdown(projectId);
 
   return (
@@ -24,7 +27,7 @@ export function LanguagesPanel({ projectId }: { projectId?: string }) {
       </PanelHeader>
 
       <PanelContent className="flex flex-col">
-        <div className="mb-2 grid grid-cols-12 gap-4 border-b border-border pb-2 text-xs font-medium uppercase tracking-wider text-subtle">
+        <div className="mb-2 grid grid-cols-12 gap-4 border-b border-border pb-2 text-xs font-medium tracking-wider text-subtle uppercase">
           <div className="col-span-8">Language</div>
           <div className="col-span-4 text-right">Active Time</div>
         </div>
@@ -58,7 +61,7 @@ export function LanguagesPanel({ projectId }: { projectId?: string }) {
                   strokeWidth={1.5}
                   aria-hidden="true"
                 />
-                <span className="truncate text-sm font-medium capitalize text-foreground">
+                <span className="truncate text-sm font-medium text-foreground capitalize">
                   {lang.language}
                 </span>
               </div>

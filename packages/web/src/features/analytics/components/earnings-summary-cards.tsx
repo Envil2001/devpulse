@@ -1,10 +1,12 @@
 'use client';
 
-import { DollarSign, Clock, TrendingUp } from 'lucide-react';
+import { Clock, DollarSign, TrendingUp } from 'lucide-react';
+import { type JSX } from 'react/jsx-runtime';
 
-import { cn } from '@/shared/lib/cn';
-import { Panel } from '@/shared/components/layout/panel';
 import { useRequireAuth } from '@/features/auth/context';
+import { Panel } from '@/shared/components/layout/panel';
+import { cn } from '@/shared/lib/cn';
+
 import { type DateRange, useDashboardStats } from '../hooks';
 
 interface EarningsSummaryCardsProps {
@@ -12,7 +14,10 @@ interface EarningsSummaryCardsProps {
   range7d: DateRange;
 }
 
-export function EarningsSummaryCards({ range30d, range7d }: EarningsSummaryCardsProps) {
+export function EarningsSummaryCards({
+  range30d,
+  range7d,
+}: EarningsSummaryCardsProps): JSX.Element {
   const { user } = useRequireAuth();
 
   const { data: stats30d } = useDashboardStats(range30d);

@@ -1,23 +1,25 @@
 'use client';
 
+import { Blocks, Key, Plus, Terminal } from 'lucide-react';
 import { useState } from 'react';
-import { Key, Plus, Blocks, Terminal } from 'lucide-react';
-import { Button } from '@/shared/components/ui/button';
+import { type JSX } from 'react/jsx-runtime';
+
 import {
   Panel,
+  PanelContent,
+  PanelDescription,
   PanelHeader,
   PanelTitle,
-  PanelDescription,
-  PanelContent,
 } from '@/shared/components/layout/panel';
-import { useApiKeys, useRevokeApiKey } from '../hooks';
+import { Button } from '@/shared/components/ui/button';
 
+import { useApiKeys, useRevokeApiKey } from '../hooks';
+import { ApiKeysTable } from './api-keys-table';
 import { CreateApiKeyDialog } from './create-api-key-dialog';
 import { RevealedKeyDialog } from './revealed-key-dialog';
 import { RevokeKeyDialog } from './revoke-key-dialog';
-import { ApiKeysTable } from './api-keys-table';
 
-export function ApiKeysPanel() {
+export function ApiKeysPanel(): JSX.Element {
   const { data: keys = [], isLoading, isError } = useApiKeys();
   const revokeKey = useRevokeApiKey();
 
