@@ -52,7 +52,7 @@ export function ActivityChartPanel({
   }, [timeseries, range.startDate, range.endDate]);
 
   return (
-    <Panel>
+    <Panel className="h-full">
       <PanelHeader>
         <div>
           <PanelTitle>Activity</PanelTitle>

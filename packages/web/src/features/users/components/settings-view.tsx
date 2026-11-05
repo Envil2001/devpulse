@@ -8,6 +8,7 @@ import { useRequireAuth } from '@/features/auth/context';
 import {
   Page,
   PageDescription,
+  PageEyebrow,
   PageHeader,
   PageHeaderHeading,
   PageTitle,
@@ -25,6 +26,7 @@ export function SettingsView(): JSX.Element {
     <Page className="mx-auto max-w-4xl">
       <PageHeader>
         <div>
+          <PageEyebrow>Workspace controls</PageEyebrow>
           <PageHeaderHeading>
             <PageTitle>Settings</PageTitle>
           </PageHeaderHeading>

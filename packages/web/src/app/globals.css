@@ -72,6 +72,9 @@
 
   --sidebar-width: 16rem;
   --sidebar-width-collapsed: 4rem;
+
+  /* Product motion */
+  --ease-product: cubic-bezier(0.2, 0, 0, 1);
 }
 
 @layer base {
@@ -89,6 +92,29 @@
 
   ::selection {
     background: var(--color-brand-soft);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      scroll-behavior: auto !important;
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
@@ -111,5 +137,41 @@
 
   .focus-ring {
     @apply outline-none focus-visible:ring-2 focus-visible:ring-white/15;
+  }
+
+  .page-enter {
+    animation: page-enter 300ms var(--ease-product) both;
+  }
+
+  .interactive-surface {
+    transition:
+      transform 180ms var(--ease-product),
+      border-color 180ms var(--ease-product),
+      background-color 180ms var(--ease-product),
+      box-shadow 180ms var(--ease-product);
+  }
+
+  .interactive-surface:hover {
+    transform: translateY(-2px);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .interactive-surface:hover {
+      transform: none;
+    }
+  }
+
+  .dashboard-hero {
+    background-color: #101012;
+    background-image:
+      radial-gradient(circle at 82% 0%, rgba(21, 255, 171, 0.13), transparent 32%),
+      radial-gradient(circle at 15% 120%, rgba(10, 197, 239, 0.06), transparent 38%),
+      linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+    background-size:
+      auto,
+      auto,
+      42px 42px,
+      42px 42px;
   }
 }

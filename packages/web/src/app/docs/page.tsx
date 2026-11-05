@@ -137,7 +137,7 @@ export default async function DocsPage(): Promise<JSX.Element> {
   return (
     <DocsLayoutWrapper endpoints={endpoints}>
       <div className="min-h-full">
-        <div className="mx-auto max-w-5xl px-6 py-12">
+        <div className="page-enter mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-12 lg:px-8 lg:py-16">
           <div id="introduction" className="mb-16 scroll-mt-24">
             <h1 className="mb-4 text-2xl font-semibold tracking-tight text-foreground">
               {info?.title || 'DevPulse API'}

@@ -22,6 +22,7 @@ import { useRequireAuth } from '@/features/auth/context';
 import {
   Page,
   PageDescription,
+  PageEyebrow,
   PageHeader,
   PageHeaderHeading,
   PageTitle,
@@ -123,6 +124,7 @@ export function SessionDetailView({ id }: SessionDetailViewProps): JSX.Element {
       <PageHeader>
         <div>
           <div className="mb-2">{backButton}</div>
+          <PageEyebrow>Session detail</PageEyebrow>
           <PageHeaderHeading>
             <PageTitle>{data.projectName ?? 'Unknown project'}</PageTitle>
           </PageHeaderHeading>
@@ -133,142 +135,155 @@ export function SessionDetailView({ id }: SessionDetailViewProps): JSX.Element {
         </div>
       </PageHeader>
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        {[
-          {
-            label: 'Active time',
-            icon: Clock,
-            value: formatDuration(data.activeSeconds),
-            sub: 'this session',
-            valueClass: 'text-foreground',
-          },
-          {
-            label: 'Idle time',
-            icon: Hourglass,
-            value: formatDuration(data.idleSeconds),
-            sub: 'this session',
-            valueClass: 'text-foreground',
-          },
-          {
-            label: 'Focus Score',
-            icon: Zap,
-            value: `${String(data.focusScore)}%`,
-            sub: 'average',
-            valueClass: focusColorClass(data.focusScore),
-          },
-          {
-            label: 'Commands',
-            icon: Terminal,
-            value: String(data.commandsRun),
-            sub: data.failedCommands > 0 ? `${String(data.failedCommands)} failed` : 'this session',
-            valueClass: 'text-foreground',
-          },
-        ].map((card) => {
-          const Icon = card.icon;
-          return (
-            <Panel key={card.label} className="flex flex-col justify-between p-5">
-              <div>
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-medium text-subtle">{card.label}</p>
-                  <Icon className="h-4 w-4 text-subtle" strokeWidth={1.5} aria-hidden="true" />
+      <Panel className="overflow-hidden p-0 lg:p-0">
+        <div className="grid grid-cols-2 sm:grid-cols-4">
+          {[
+            {
+              label: 'Active time',
+              icon: Clock,
+              value: formatDuration(data.activeSeconds),
+              sub: 'this session',
+              valueClass: 'text-foreground',
+            },
+            {
+              label: 'Idle time',
+              icon: Hourglass,
+              value: formatDuration(data.idleSeconds),
+              sub: 'this session',
+              valueClass: 'text-foreground',
+            },
+            {
+              label: 'Focus Score',
+              icon: Zap,
+              value: `${String(data.focusScore)}%`,
+              sub: 'average',
+              valueClass: focusColorClass(data.focusScore),
+            },
+            {
+              label: 'Commands',
+              icon: Terminal,
+              value: String(data.commandsRun),
+              sub:
+                data.failedCommands > 0 ? `${String(data.failedCommands)} failed` : 'this session',
+              valueClass: 'text-foreground',
+            },
+          ].map((card) => {
+            const Icon = card.icon;
+            return (
+              <div
+                key={card.label}
+                className={cn(
+                  'flex min-h-32 flex-col justify-between border-white/[0.06] p-5',
+                  card.label === 'Active time' && 'border-r border-b sm:border-b-0',
+                  card.label === 'Idle time' && 'border-b sm:border-r sm:border-b-0',
+                  card.label === 'Focus Score' && 'border-r',
+                )}
+              >
+                <div>
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-medium text-subtle">{card.label}</p>
+                    <Icon className="h-4 w-4 text-subtle" strokeWidth={1.5} aria-hidden="true" />
+                  </div>
+                  <div className="mt-2 flex items-baseline gap-2">
+                    <span
+                      className={cn(
+                        'font-mono text-2xl font-semibold tracking-tight tabular-nums',
+                        card.valueClass,
+                      )}
+                    >
+                      {card.value}
+                    </span>
+                  </div>
                 </div>
-                <div className="mt-2 flex items-baseline gap-2">
-                  <span
-                    className={cn(
-                      'font-mono text-2xl font-semibold tracking-tight tabular-nums',
-                      card.valueClass,
-                    )}
-                  >
-                    {card.value}
-                  </span>
-                </div>
+                <p className="mt-2 text-xs text-subtle">{card.sub}</p>
               </div>
-              <p className="mt-2 text-xs text-subtle">{card.sub}</p>
-            </Panel>
-          );
-        })}
-      </div>
-
-      <Panel>
-        <PanelHeader>
-          <div>
-            <PanelTitle>Context</PanelTitle>
-            <PanelDescription>Where and when this session happened</PanelDescription>
-          </div>
-        </PanelHeader>
-        <PanelContent>
-          <dl className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
-            <div className="flex items-start gap-2">
-              <FolderGit2 className="mt-0.5 h-4 w-4 shrink-0 text-subtle" strokeWidth={1.5} />
-              <div>
-                <dt className="text-xs text-subtle">Project</dt>
-                <dd className="text-foreground">{data.projectName ?? '—'}</dd>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-2">
-              <GitBranch className="mt-0.5 h-4 w-4 shrink-0 text-subtle" strokeWidth={1.5} />
-              <div>
-                <dt className="text-xs text-subtle">Branch</dt>
-                <dd className="font-mono text-foreground">{data.gitBranch ?? '—'}</dd>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-2">
-              <Clock className="mt-0.5 h-4 w-4 shrink-0 text-subtle" strokeWidth={1.5} />
-              <div>
-                <dt className="text-xs text-subtle">Started</dt>
-                <dd className="text-foreground">
-                  {formatDateTimeLabel(data.startedAt, user.timezone)}
-                </dd>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-2">
-              <Play className="mt-0.5 h-4 w-4 shrink-0 text-subtle" strokeWidth={1.5} />
-              <div>
-                <dt className="text-xs text-subtle">Status</dt>
-                <dd className="text-foreground capitalize">{data.status}</dd>
-              </div>
-            </div>
-          </dl>
-        </PanelContent>
+            );
+          })}
+        </div>
       </Panel>
 
-      {languages.length > 0 && (
-        <Panel>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-5">
+        <Panel className={cn(languages.length === 0 && 'lg:col-span-2')}>
           <PanelHeader>
             <div>
-              <PanelTitle>Languages</PanelTitle>
-              <PanelDescription>Time spent per language in this session</PanelDescription>
+              <PanelTitle>Context</PanelTitle>
+              <PanelDescription>Where and when this session happened</PanelDescription>
             </div>
           </PanelHeader>
           <PanelContent>
-            <div className="flex flex-col gap-3">
-              {languages.map(({ language, seconds }) => {
-                const percent =
-                  totalLanguageSeconds > 0 ? (seconds / totalLanguageSeconds) * 100 : 0;
-                return (
-                  <div key={language} className="flex flex-col gap-1">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-foreground capitalize">{language}</span>
-                      <span className="font-mono text-xs text-secondary">
-                        {formatDuration(seconds)} · {percent.toFixed(1)}%
-                      </span>
-                    </div>
-                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-alpha-100">
-                      <div
-                        className="h-full rounded-full bg-brand"
-                        style={{ width: `${percent}%` }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+            <dl className="grid grid-cols-1 gap-5 text-sm sm:grid-cols-2">
+              <div className="flex items-start gap-2">
+                <FolderGit2 className="mt-0.5 h-4 w-4 shrink-0 text-subtle" strokeWidth={1.5} />
+                <div>
+                  <dt className="text-xs text-subtle">Project</dt>
+                  <dd className="mt-0.5 text-foreground">{data.projectName ?? '—'}</dd>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-2">
+                <GitBranch className="mt-0.5 h-4 w-4 shrink-0 text-subtle" strokeWidth={1.5} />
+                <div>
+                  <dt className="text-xs text-subtle">Branch</dt>
+                  <dd className="mt-0.5 font-mono text-foreground">{data.gitBranch ?? '—'}</dd>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-2">
+                <Clock className="mt-0.5 h-4 w-4 shrink-0 text-subtle" strokeWidth={1.5} />
+                <div>
+                  <dt className="text-xs text-subtle">Started</dt>
+                  <dd className="mt-0.5 text-foreground">
+                    {formatDateTimeLabel(data.startedAt, user.timezone)}
+                  </dd>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-2">
+                <Play className="mt-0.5 h-4 w-4 shrink-0 text-subtle" strokeWidth={1.5} />
+                <div>
+                  <dt className="text-xs text-subtle">Status</dt>
+                  <dd className="mt-0.5 text-foreground capitalize">{data.status}</dd>
+                </div>
+              </div>
+            </dl>
           </PanelContent>
         </Panel>
-      )}
+
+        {languages.length > 0 && (
+          <Panel>
+            <PanelHeader>
+              <div>
+                <PanelTitle>Languages</PanelTitle>
+                <PanelDescription>Time spent per language in this session</PanelDescription>
+              </div>
+            </PanelHeader>
+            <PanelContent>
+              <div className="flex flex-col gap-4">
+                {languages.map(({ language, seconds }) => {
+                  const percent =
+                    totalLanguageSeconds > 0 ? (seconds / totalLanguageSeconds) * 100 : 0;
+                  return (
+                    <div key={language} className="flex flex-col gap-1.5">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-foreground capitalize">{language}</span>
+                        <span className="font-mono text-xs text-secondary">
+                          {formatDuration(seconds)} · {percent.toFixed(1)}%
+                        </span>
+                      </div>
+                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-alpha-100">
+                        <div
+                          className="h-full rounded-full bg-brand transition-[width] duration-300 ease-out"
+                          style={{ width: `${percent}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </PanelContent>
+          </Panel>
+        )}
+      </div>
 
       <Panel>
         <PanelHeader>

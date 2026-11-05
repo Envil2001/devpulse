@@ -27,7 +27,7 @@ export function AiRoiPanel({
   const hasAiActivity = roi && (roi.aiSessionsCount > 0 || roi.totalAiInteractions > 0);
 
   return (
-    <Panel className="relative overflow-hidden p-6">
+    <Panel className="relative overflow-hidden bg-[radial-gradient(circle_at_12%_0%,rgba(21,255,171,0.09),transparent_36%)] p-6">
       <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex items-start gap-4">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-brand/30 bg-brand-soft">

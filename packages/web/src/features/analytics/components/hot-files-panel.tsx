@@ -61,7 +61,7 @@ function HotPathList({ title, items, kind }: HotPathListProps): JSX.Element {
               </div>
               <div className="h-1 overflow-hidden rounded-full bg-gray-alpha-100">
                 <div
-                  className="h-full rounded-full bg-brand transition-all duration-500"
+                  className="h-full rounded-full bg-brand transition-[width] duration-300 ease-out"
                   style={{ width: `${String(item.percentage)}%` }}
                 />
               </div>

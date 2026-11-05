@@ -67,7 +67,7 @@ export function LanguagesPanel({ projectId }: { projectId?: string }): JSX.Eleme
               </div>
               <div className="h-1 w-full overflow-hidden rounded-full bg-gray-alpha-100">
                 <div
-                  className="h-full bg-brand transition-all duration-500"
+                  className="h-full bg-brand transition-[width] duration-300 ease-out"
                   style={{ width: `${lang.percentage}%` }}
                 />
               </div>

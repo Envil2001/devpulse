@@ -6,7 +6,12 @@ const Panel = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivEleme
   ({ className, ...props }, ref) => (
     <div
       ref={ref}
-      className={cn('rounded-2xl border border-border bg-surface p-5', className)}
+      className={cn(
+        'relative rounded-2xl border border-white/[0.07] bg-surface/90 p-5',
+        'shadow-[inset_0_1px_0_rgba(255,255,255,0.025),0_18px_50px_rgba(0,0,0,0.12)]',
+        'lg:p-6',
+        className,
+      )}
       {...props}
     />
   ),

@@ -54,7 +54,7 @@ export function RateConfigPanel(): JSX.Element {
   };
 
   return (
-    <Panel>
+    <Panel className="h-full">
       <PanelHeader>
         <PanelTitle>Rate configuration</PanelTitle>
       </PanelHeader>

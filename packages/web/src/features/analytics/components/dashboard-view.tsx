@@ -6,14 +6,7 @@ import { type JSX } from 'react/jsx-runtime';
 import { useRequireAuth } from '@/features/auth/context';
 import { RecentSessionsPanel } from '@/features/sessions/components/recent-sessions-panel';
 import { AiWorklogCard } from '@/features/worklog/components/ai-worklog-card';
-import {
-  Page,
-  PageActions,
-  PageDescription,
-  PageHeader,
-  PageHeaderHeading,
-  PageTitle,
-} from '@/shared/components/layout/page';
+import { Page } from '@/shared/components/layout/page';
 import { toDateInput } from '@/shared/lib/date';
 
 import {
@@ -25,16 +18,36 @@ import {
 } from '../hooks';
 import { ActivityChartPanel } from './activity-chart-panel';
 import { AiRoiPanel } from './ai-roi-panel';
-import { BranchesPanel } from './branches-panel';
 import { ComparisonPanel } from './comparison-panel';
+import { DashboardHero } from './dashboard-hero';
 import { DashboardSummaryCards } from './dashboard-summary-cards';
 import { HeatmapPanel } from './heatmap-panel';
 import { HotFilesPanel } from './hot-files-panel';
-import { LanguagesPanel } from './languages-panel';
 import { ProjectSelector } from './project-selector';
 import { StatusMonitoringPanel } from './status-monitoring-panel';
 import { TerminalActivityPanel } from './terminal-activity-panel';
 import { TimeSwitcher } from './time-switcher';
+import { WorkspaceBreakdownPanel } from './workspace-breakdown-panel';
+
+function SectionHeading({
+  index,
+  title,
+  description,
+}: {
+  index: string;
+  title: string;
+  description: string;
+}): JSX.Element {
+  return (
+    <div className="flex items-end gap-4 border-b border-border pb-3">
+      <span className="pb-0.5 font-mono text-[10px] tracking-[0.18em] text-brand">{index}</span>
+      <div>
+        <h2 className="text-lg font-medium tracking-[-0.02em] text-foreground">{title}</h2>
+        <p className="mt-0.5 text-xs text-subtle">{description}</p>
+      </div>
+    </div>
+  );
+}
 
 function getInitialCustomDates() {
   const to = new Date();
@@ -65,29 +78,12 @@ export function DashboardView({
   const [projectId, setProjectId] = useState<string | undefined>();
 
   return (
-    <Page>
-      <PageHeader>
-        <div>
-          <PageHeaderHeading>
-            <PageTitle>Hello, {user.displayName}</PageTitle>
-            {liveStatus?.isCodingNow && (
-              <div className="flex items-center gap-2 rounded-full border border-brand/30 bg-brand-soft px-3 py-1 text-sm text-brand">
-                <span className="relative flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand opacity-75" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-brand" />
-                </span>
-                <span className="font-medium">
-                  Coding in {liveStatus.currentProject || 'Unknown'}
-                  {liveStatus.currentLanguage && ` (${liveStatus.currentLanguage})`}
-                </span>
-              </div>
-            )}
-          </PageHeaderHeading>
-          <PageDescription>Here&apos;s what&apos;s happening with your workflow.</PageDescription>
-        </div>
-
-        <PageActions>
-          <div className="flex flex-wrap items-center gap-3">
+    <Page className="space-y-6">
+      <DashboardHero
+        displayName={user.displayName}
+        liveStatus={liveStatus}
+        controls={
+          <>
             <ProjectSelector value={projectId} onChange={setProjectId} />
             <div data-tour="period-switcher">
               <TimeSwitcher
@@ -97,54 +93,73 @@ export function DashboardView({
                 onCustomRangeChange={setCustomDates}
               />
             </div>
-          </div>
-        </PageActions>
-      </PageHeader>
+          </>
+        }
+      />
 
       <div data-tour="stats-overview">
         <DashboardSummaryCards range={range} projectId={projectId} />
       </div>
 
-      <div data-tour="system-status">
-        <StatusMonitoringPanel />
-      </div>
+      <section className="space-y-4">
+        <SectionHeading
+          index="01"
+          title="Momentum"
+          description="The headline movement in your current period."
+        />
+        <div className="grid grid-cols-1 gap-5 xl:grid-cols-12">
+          <div data-tour="activity-chart" className="xl:col-span-8 [&>div]:h-full">
+            <ActivityChartPanel range={range} projectId={projectId} />
+          </div>
+          <div data-tour="comparison" className="xl:col-span-4 [&>div]:h-full">
+            <ComparisonPanel range={range} projectId={projectId} />
+          </div>
+        </div>
+        <div data-tour="ai-roi">
+          <AiRoiPanel range={range} projectId={projectId} />
+        </div>
+      </section>
 
-      <div data-tour="ai-roi">
-        <AiRoiPanel range={range} projectId={projectId} />
-      </div>
+      <section className="space-y-4">
+        <SectionHeading
+          index="02"
+          title="Patterns"
+          description="Where consistency, tools and attention accumulate over time."
+        />
+        <div data-tour="heatmap">
+          <HeatmapPanel range={initialHeatmapRange} projectId={projectId} />
+        </div>
+        <div className="grid grid-cols-1 gap-5 xl:grid-cols-12">
+          <div data-tour="hot-files" className="xl:col-span-8 [&>div]:h-full">
+            <HotFilesPanel range={range} projectId={projectId} />
+          </div>
+          <div data-tour="breakdown" className="xl:col-span-4 [&>div]:h-full">
+            <WorkspaceBreakdownPanel range={range} projectId={projectId} />
+          </div>
+        </div>
+      </section>
 
-      <div data-tour="comparison">
-        <ComparisonPanel range={range} projectId={projectId} />
-      </div>
-
-      <div data-tour="activity-chart">
-        <ActivityChartPanel range={range} projectId={projectId} />
-      </div>
-
-      <div data-tour="heatmap">
-        <HeatmapPanel range={initialHeatmapRange} projectId={projectId} />
-      </div>
-
-      <div data-tour="hot-files">
-        <HotFilesPanel range={range} projectId={projectId} />
-      </div>
-
-      <div data-tour="recent-sessions">
-        <RecentSessionsPanel projectId={projectId} />
-      </div>
-
-      <div data-tour="terminal-activity">
-        <TerminalActivityPanel range={range} projectId={projectId} />
-      </div>
-
-      <div data-tour="ai-worklog">
-        <AiWorklogCard />
-      </div>
-
-      <div data-tour="breakdown" className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <BranchesPanel range={range} projectId={projectId} />
-        <LanguagesPanel projectId={projectId} />
-      </div>
+      <section className="space-y-4">
+        <SectionHeading
+          index="03"
+          title="Operations"
+          description="Recent work and the systems quietly keeping it in motion."
+        />
+        <div data-tour="recent-sessions">
+          <RecentSessionsPanel projectId={projectId} />
+        </div>
+        <div className="grid grid-cols-1 gap-5 xl:grid-cols-12">
+          <div data-tour="terminal-activity" className="xl:col-span-7 [&>div]:h-full">
+            <TerminalActivityPanel range={range} projectId={projectId} />
+          </div>
+          <div data-tour="system-status" className="xl:col-span-5 [&>div]:h-full">
+            <StatusMonitoringPanel />
+          </div>
+        </div>
+        <div data-tour="ai-worklog">
+          <AiWorklogCard />
+        </div>
+      </section>
     </Page>
   );
 }

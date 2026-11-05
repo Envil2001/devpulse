@@ -3,12 +3,14 @@
 import { formatDuration } from '@devpulse/lib';
 import { formatDistanceToNow } from 'date-fns';
 import { AlertCircle, Clock, GitBranch, GitCommit, Layers, Terminal, Zap } from 'lucide-react';
+import Link from 'next/link';
 import { type JSX } from 'react/jsx-runtime';
 
 import { useRequireAuth } from '@/features/auth/context';
 import {
   Page,
   PageDescription,
+  PageEyebrow,
   PageHeader,
   PageHeaderHeading,
   PageTitle,
@@ -46,6 +48,7 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps): JSX.El
     <Page>
       <PageHeader>
         <div>
+          <PageEyebrow>Project profile</PageEyebrow>
           <PageHeaderHeading>
             <PageTitle>{project.name}</PageTitle>
           </PageHeaderHeading>
@@ -53,48 +56,57 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps): JSX.El
         </div>
       </PageHeader>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        <Panel className="flex flex-col justify-between p-5">
-          <span className="flex items-center gap-1.5 text-xs text-subtle">
-            <Clock className="h-4 w-4" strokeWidth={1.5} /> Active Time
-          </span>
-          <span className="mt-2 font-mono text-2xl font-semibold text-foreground tabular-nums">
-            {project.activeTime}
-          </span>
-        </Panel>
-        <Panel className="flex flex-col justify-between p-5">
-          <span className="flex items-center gap-1.5 text-xs text-subtle">
-            <Zap className="h-4 w-4" strokeWidth={1.5} /> Focus Score
-          </span>
-          <span className="mt-2 font-mono text-2xl font-semibold text-brand tabular-nums">
-            {project.focusScore}%
-          </span>
-        </Panel>
-        <Panel className="flex flex-col justify-between p-5">
-          <span className="flex items-center gap-1.5 text-xs text-subtle">
-            <Layers className="h-4 w-4" strokeWidth={1.5} /> Sessions
-          </span>
-          <span className="mt-2 font-mono text-2xl font-semibold text-foreground tabular-nums">
-            {project.sessions}
-          </span>
-        </Panel>
-        <Panel className="flex flex-col justify-between p-5">
-          <span className="flex items-center gap-1.5 text-xs text-subtle">
-            <GitCommit className="h-4 w-4" strokeWidth={1.5} /> Commits
-          </span>
-          <span className="mt-2 font-mono text-2xl font-semibold text-foreground tabular-nums">
-            {project.totalCommits}
-          </span>
-        </Panel>
-        <Panel className="flex flex-col justify-between p-5">
-          <span className="flex items-center gap-1.5 text-xs text-subtle">
-            <Terminal className="h-4 w-4" strokeWidth={1.5} /> Commands
-          </span>
-          <span className="mt-2 font-mono text-2xl font-semibold text-foreground tabular-nums">
-            {project.totalCommands}
-          </span>
-        </Panel>
-      </div>
+      <Panel className="overflow-hidden p-0 lg:p-0">
+        <div className="grid grid-cols-2 lg:grid-cols-5">
+          {[
+            { label: 'Active time', icon: Clock, value: project.activeTime, accent: true },
+            {
+              label: 'Focus score',
+              icon: Zap,
+              value: `${String(project.focusScore)}%`,
+              accent: false,
+            },
+            { label: 'Sessions', icon: Layers, value: String(project.sessions), accent: false },
+            {
+              label: 'Commits',
+              icon: GitCommit,
+              value: String(project.totalCommits),
+              accent: false,
+            },
+            {
+              label: 'Commands',
+              icon: Terminal,
+              value: String(project.totalCommands),
+              accent: false,
+            },
+          ].map((metric, index) => {
+            const Icon = metric.icon;
+
+            return (
+              <div
+                key={metric.label}
+                className={`min-h-28 border-white/[0.06] p-5 ${
+                  index !== 4 ? 'border-b lg:border-r lg:border-b-0' : ''
+                } ${index % 2 === 0 && index < 4 ? 'border-r lg:border-r' : ''} ${
+                  index === 4 ? 'col-span-2 lg:col-span-1' : ''
+                }`}
+              >
+                <span className="flex items-center gap-1.5 text-xs text-subtle">
+                  <Icon className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
+                  {metric.label}
+                </span>
+                <span
+                  className={`mt-3 block font-mono text-2xl font-semibold tracking-tight tabular-nums ${
+                    metric.accent ? 'text-brand' : 'text-foreground'
+                  }`}
+                >
+                  {metric.value}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </Panel>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Panel>
@@ -161,11 +173,12 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps): JSX.El
             <span className="py-4 text-center text-sm text-secondary">No sessions yet</span>
           )}
           {project.recentSessions.map((session, i) => (
-            <div
+            <Link
               key={session.id}
+              href={`/sessions/${session.id}`}
               className={`grid grid-cols-12 items-center gap-4 py-3 text-sm ${
                 i !== project.recentSessions.length - 1 ? 'border-b border-border' : ''
-              }`}
+              } rounded-lg px-2 transition-colors duration-150 hover:bg-gray-alpha-50 focus-visible:ring-2 focus-visible:ring-white/15 focus-visible:outline-none`}
             >
               <div className="col-span-4 font-mono text-xs text-secondary">
                 {formatDateTimeLabel(session.startedAt, user.timezone)}
@@ -182,7 +195,7 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps): JSX.El
               <div className="col-span-2 text-right text-xs text-secondary capitalize">
                 {session.primaryLanguage ?? '—'}
               </div>
-            </div>
+            </Link>
           ))}
         </PanelContent>
       </Panel>
