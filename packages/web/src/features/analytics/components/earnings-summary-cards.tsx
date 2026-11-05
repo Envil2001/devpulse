@@ -1,18 +1,19 @@
 'use client';
 
-import { useMemo } from 'react';
 import { DollarSign, Clock, TrendingUp } from 'lucide-react';
 
 import { cn } from '@/shared/lib/cn';
 import { Panel } from '@/shared/components/layout/panel';
 import { useRequireAuth } from '@/features/auth/context';
-import { periodToDateRange, useDashboardStats } from '../hooks';
+import { type DateRange, useDashboardStats } from '../hooks';
 
-export function EarningsSummaryCards() {
+interface EarningsSummaryCardsProps {
+  range30d: DateRange;
+  range7d: DateRange;
+}
+
+export function EarningsSummaryCards({ range30d, range7d }: EarningsSummaryCardsProps) {
   const { user } = useRequireAuth();
-
-  const range30d = useMemo(() => periodToDateRange('30d'), []);
-  const range7d = useMemo(() => periodToDateRange('7d'), []);
 
   const { data: stats30d } = useDashboardStats(range30d);
   const { data: stats7d } = useDashboardStats(range7d);

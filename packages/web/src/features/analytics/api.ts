@@ -3,49 +3,16 @@ import { BaseService } from '@/shared/api/base.service';
 import type {
   BranchDataPoint,
   CommandsBreakdown,
-  DashboardStats,
   LanguagesBreakdown,
   LiveStatus,
   TimeseriesPoint,
 } from '@/shared/types';
+import type { AiRoiMetrics, DashboardStats, PipelineHealth } from '@devpulse/lib';
 
 export interface AnalyticsRangeParams extends QueryParams {
   startDate?: string;
   endDate?: string;
   projectId?: string;
-}
-
-export interface AiRoiMetrics {
-  aiSessionsCount: number;
-  manualSessionsCount: number;
-  totalAiInteractions: number;
-  aiVelocityLinesPerHour: number;
-  manualVelocityLinesPerHour: number;
-  speedupPercentage: number;
-  estimatedHoursSaved: number;
-}
-
-export interface PipelineHealth {
-  telemetryBridge: {
-    status: 'operational' | 'idle';
-    lastEventAt: string | null;
-    minutesSinceLastEvent: number | null;
-  };
-  bullmq: {
-    waiting: number;
-    active: number;
-    failed: number;
-    status: 'operational' | 'degraded';
-  };
-  postgres: {
-    latencyMs: number;
-    status: 'operational' | 'degraded';
-  };
-  llm: {
-    status: 'operational' | 'unconfigured';
-    provider: 'openrouter' | 'openai' | 'custom' | null;
-    model: string | null;
-  };
 }
 
 export class AnalyticsService extends BaseService {

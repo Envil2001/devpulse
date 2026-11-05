@@ -22,7 +22,7 @@ export class WorkSessionSummaryDto {
   public gitBranch!: string | null;
 
   @ApiProperty({ description: 'Active duration in seconds' })
-  public durationMs!: number;
+  public durationSeconds!: number;
 
   @ApiProperty({ description: 'Focus score' })
   public focusScore!: number;

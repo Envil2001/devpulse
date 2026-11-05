@@ -3,7 +3,13 @@
 import { useMemo, useState } from 'react';
 import { toDateInput } from '@/shared/lib/date';
 import { useRequireAuth } from '@/features/auth/context';
-import { AnalyticsPeriod, DateRange, periodToDateRange, useLiveStatus } from '../hooks';
+import {
+  AnalyticsPeriod,
+  DateRange,
+  getHeatmapRange,
+  periodToDateRange,
+  useLiveStatus,
+} from '../hooks';
 
 import {
   Page,
@@ -40,7 +46,10 @@ interface DashboardViewProps {
   initialHeatmapRange: DateRange;
 }
 
-export function DashboardView({ initialRange, initialHeatmapRange }: DashboardViewProps) {
+export function DashboardView({
+  initialRange = periodToDateRange('7d'),
+  initialHeatmapRange = getHeatmapRange(),
+}: DashboardViewProps) {
   const { user } = useRequireAuth();
   const { data: liveStatus } = useLiveStatus();
 

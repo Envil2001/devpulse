@@ -112,7 +112,7 @@ export class TelemetryController {
         endedAt: session.endedAt?.toISOString() ?? session.startedAt.toISOString(),
         projectName: session.project?.name ?? 'Unknown Project',
         gitBranch: session.gitBranch,
-        durationMs: session.activeSeconds,
+        durationSeconds: session.activeSeconds,
         focusScore: Math.round(session.focusScore),
         earnedMoney: session.earnedMoney,
         primaryLanguage: session.primaryLanguage,

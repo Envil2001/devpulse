@@ -8,7 +8,7 @@ import * as z from 'zod';
 import Link from 'next/link';
 
 import { buildLoginCryptoPayload, generateKeyPair } from '../crypto';
-import { ApiClientError } from '@/shared/api/api-client';
+import { getErrorMessage } from '@/shared/lib/error';
 import { useAuth } from '../context';
 import { authService } from '@/shared/api/services';
 
@@ -27,12 +27,6 @@ const loginSchema = z.object({
   email: z.string().email('Invalid email'),
   password: z.string().min(1, 'Password is required'),
 });
-
-function getErrorMessage(err: unknown): string {
-  if (err instanceof ApiClientError) return err.message;
-  if (err instanceof Error) return err.message;
-  return 'An unknown error occurred';
-}
 
 export function LoginForm() {
   const router = useRouter();

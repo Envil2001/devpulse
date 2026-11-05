@@ -5,7 +5,7 @@ import { AlertCircle, RefreshCw } from 'lucide-react';
 import { Button } from '@/shared/components/ui/button';
 
 import type { DayState } from '../hooks';
-import { formatDuration } from '@devpulse/lib';
+import { formatMinutes } from '@devpulse/lib';
 
 interface WorklogDayEntryProps {
   state: DayState;
@@ -21,7 +21,7 @@ export function WorklogDayEntry({ state, disabled, onRegenerate }: WorklogDayEnt
       <div className="mb-2 flex items-center justify-between gap-3">
         <div className="flex items-baseline gap-2">
           <h4 className="text-[13px] font-medium text-foreground">{day.date}</h4>
-          <span className="text-xs text-subtle">{formatDuration(day.activeMinutes)}</span>
+          <span className="text-xs text-subtle">{formatMinutes(day.activeMinutes)}</span>
         </div>
 
         {status === 'done' && result && (

@@ -35,3 +35,11 @@ export function formatDuration(seconds: number): string {
   const min = totalMin % 60;
   return min > 0 ? `${String(totalHours)}h ${String(min)}m` : `${String(totalHours)}h`;
 }
+
+export function formatMilliseconds(milliseconds: number): string {
+  return formatDuration(milliseconds / 1000);
+}
+
+export function formatMinutes(minutes: number): string {
+  return formatDuration(minutes * 60);
+}

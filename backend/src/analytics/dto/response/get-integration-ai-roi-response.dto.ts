@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { type AiRoiMetrics } from '@devpulse/lib';
 
-export class GetIntegrationAiRoiResponseDto {
+export class GetIntegrationAiRoiResponseDto implements AiRoiMetrics {
   @ApiProperty({ example: 4, description: 'Number of AI-assisted sessions' })
   public aiSessionsCount!: number;
 

@@ -23,7 +23,7 @@ export default async function EarningsPage() {
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <EarningsView />
+      <EarningsView range30d={range30d} range7d={range7d} />
     </HydrationBoundary>
   );
 }

@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 
 import { cn } from '@/shared/lib/cn';
-import { formatDuration } from '@devpulse/lib';
+import { formatDuration, formatMilliseconds } from '@devpulse/lib';
 import { formatDateTimeLabel } from '@/shared/lib/date';
 import { useRequireAuth } from '@/features/auth/context';
 import {
@@ -324,7 +324,7 @@ export function SessionDetailView({ id }: SessionDetailViewProps) {
                     </div>
 
                     <div className="col-span-2 text-right font-mono text-xs text-secondary tabular-nums">
-                      {formatDuration(cmd.durationMs / 1000)}
+                      {formatMilliseconds(cmd.durationMs)}
                     </div>
 
                     <div className="col-span-3 flex items-center justify-end gap-1.5 font-mono text-xs">

@@ -72,7 +72,7 @@ async function getOpenAPISpec(): Promise<OpenAPISpec> {
 function extractScopes(security?: Array<Record<string, Array<string>>>): Array<string> {
   if (!security?.length) return [];
 
-  const scopes = security.flatMap((securityItem) => securityItem['ApiKeyAuth'] || []);
+  const scopes = security.flatMap((securityItem) => securityItem['ApiKeyAuth'] ?? []);
   return Array.from(new Set(scopes));
 }
 
@@ -113,7 +113,7 @@ export default async function DocsPage() {
     responseExample?: string;
   }> = [];
 
-  for (const [path, pathItem] of Object.entries(paths || {})) {
+  for (const [path, pathItem] of Object.entries(paths ?? {})) {
     for (const method of methods) {
       const operation = pathItem[method];
       if (!operation) continue;
