@@ -1,9 +1,11 @@
 'use client';
 
 import { formatDistanceToNow } from 'date-fns';
+import { type JSX } from 'react/jsx-runtime';
+
 import { Button } from '@/shared/components/ui/button';
 import { cn } from '@/shared/lib/cn';
-import { ApiKeySummary } from '@/shared/types';
+import { type ApiKeySummary } from '@/shared/types';
 
 interface ApiKeysTableProps {
   list: ApiKeySummary[];
@@ -12,7 +14,12 @@ interface ApiKeysTableProps {
   isRevoking: boolean;
 }
 
-export function ApiKeysTable({ list, emptyMessage, onRevoke, isRevoking }: ApiKeysTableProps) {
+export function ApiKeysTable({
+  list,
+  emptyMessage,
+  onRevoke,
+  isRevoking,
+}: ApiKeysTableProps): JSX.Element {
   if (list.length === 0) {
     return (
       <div className="rounded-xl border border-border bg-surface p-6 text-center">
@@ -23,7 +30,7 @@ export function ApiKeysTable({ list, emptyMessage, onRevoke, isRevoking }: ApiKe
 
   return (
     <div className="flex flex-col">
-      <div className="mb-2 grid grid-cols-12 gap-4 border-b border-border pb-3 text-xs font-medium uppercase tracking-wider text-subtle">
+      <div className="mb-2 grid grid-cols-12 gap-4 border-b border-border pb-3 text-xs font-medium tracking-wider text-subtle uppercase">
         <div className="col-span-4">Name</div>
         <div className="col-span-3">Device</div>
         <div className="col-span-3">Created</div>
@@ -35,7 +42,7 @@ export function ApiKeysTable({ list, emptyMessage, onRevoke, isRevoking }: ApiKe
           key={key.id}
           className={cn(
             'relative grid grid-cols-12 items-center gap-4 py-3.5 text-sm transition-colors',
-            'hover:bg-gray-alpha-50 -mx-2 rounded-lg px-2',
+            '-mx-2 rounded-lg px-2 hover:bg-gray-alpha-50',
             i !== list.length - 1 &&
               'after:pointer-events-none after:absolute after:inset-x-2 after:bottom-0 after:h-px after:bg-border',
           )}

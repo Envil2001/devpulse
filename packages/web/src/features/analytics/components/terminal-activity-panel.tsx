@@ -1,19 +1,20 @@
 'use client';
 
+import { formatMilliseconds } from '@devpulse/lib';
+import { Bug, FlaskConical, GitBranch, Hammer, Package, Terminal, XCircle } from 'lucide-react';
 import { useState } from 'react';
-import { Terminal, XCircle, FlaskConical, Hammer, Bug, Package, GitBranch } from 'lucide-react';
+import { type JSX } from 'react/jsx-runtime';
 
-import { cn } from '@/shared/lib/cn';
 import {
   Panel,
+  PanelContent,
+  PanelDescription,
   PanelHeader,
   PanelTitle,
-  PanelDescription,
-  PanelContent,
 } from '@/shared/components/layout/panel';
+import { cn } from '@/shared/lib/cn';
 
-import { useCommandsBreakdown, type DateRange } from '../hooks';
-import { formatMilliseconds } from '@devpulse/lib';
+import { type DateRange, useCommandsBreakdown } from '../hooks';
 
 type KindFilter = 'all' | 'test' | 'build' | 'lint' | 'install' | 'git';
 
@@ -55,7 +56,7 @@ export function TerminalActivityPanel({
 }: {
   range: DateRange;
   projectId?: string;
-}) {
+}): JSX.Element {
   const { data, isLoading } = useCommandsBreakdown(range, projectId);
   const [filter, setFilter] = useState<KindFilter>('all');
 
@@ -94,7 +95,7 @@ export function TerminalActivityPanel({
       </PanelHeader>
 
       <PanelContent className="flex flex-col">
-        <div className="mb-2 grid grid-cols-12 gap-4 border-b border-border pb-2 text-xs font-medium uppercase tracking-wider text-subtle">
+        <div className="mb-2 grid grid-cols-12 gap-4 border-b border-border pb-2 text-xs font-medium tracking-wider text-subtle uppercase">
           <div className="col-span-6">Command</div>
           <div className="col-span-2 text-right">Runs</div>
           <div className="col-span-2 text-right">Avg</div>
@@ -141,11 +142,11 @@ export function TerminalActivityPanel({
               )}
             </div>
 
-            <div className="col-span-2 text-right font-mono text-xs tabular-nums text-secondary">
+            <div className="col-span-2 text-right font-mono text-xs text-secondary tabular-nums">
               {cmd.runs}
             </div>
 
-            <div className="col-span-2 text-right font-mono text-xs tabular-nums text-subtle">
+            <div className="col-span-2 text-right font-mono text-xs text-subtle tabular-nums">
               {formatMilliseconds(cmd.avgDurationMs)}
             </div>
 

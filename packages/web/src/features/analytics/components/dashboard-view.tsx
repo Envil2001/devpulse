@@ -1,38 +1,39 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { toDateInput } from '@/shared/lib/date';
+import { type JSX } from 'react/jsx-runtime';
+
 import { useRequireAuth } from '@/features/auth/context';
+import { RecentSessionsPanel } from '@/features/sessions/components/recent-sessions-panel';
+import { AiWorklogCard } from '@/features/worklog/components/ai-worklog-card';
 import {
-  AnalyticsPeriod,
-  DateRange,
+  Page,
+  PageActions,
+  PageDescription,
+  PageHeader,
+  PageHeaderHeading,
+  PageTitle,
+} from '@/shared/components/layout/page';
+import { toDateInput } from '@/shared/lib/date';
+
+import {
+  type AnalyticsPeriod,
+  type DateRange,
   getHeatmapRange,
   periodToDateRange,
   useLiveStatus,
 } from '../hooks';
-
-import {
-  Page,
-  PageHeader,
-  PageHeaderHeading,
-  PageTitle,
-  PageDescription,
-  PageActions,
-} from '@/shared/components/layout/page';
-import { TimeSwitcher } from './time-switcher';
-import { ProjectSelector } from './project-selector';
-import { AiWorklogCard } from '@/features/worklog/components/ai-worklog-card';
-
-import { DashboardSummaryCards } from './dashboard-summary-cards';
 import { ActivityChartPanel } from './activity-chart-panel';
-import { BranchesPanel } from './branches-panel';
-import { LanguagesPanel } from './languages-panel';
-import { RecentSessionsPanel } from '@/features/sessions/components/recent-sessions-panel';
-import { TerminalActivityPanel } from './terminal-activity-panel';
-import { ComparisonPanel } from './comparison-panel';
-import { HeatmapPanel } from './heatmap-panel';
 import { AiRoiPanel } from './ai-roi-panel';
+import { BranchesPanel } from './branches-panel';
+import { ComparisonPanel } from './comparison-panel';
+import { DashboardSummaryCards } from './dashboard-summary-cards';
+import { HeatmapPanel } from './heatmap-panel';
+import { LanguagesPanel } from './languages-panel';
+import { ProjectSelector } from './project-selector';
 import { StatusMonitoringPanel } from './status-monitoring-panel';
+import { TerminalActivityPanel } from './terminal-activity-panel';
+import { TimeSwitcher } from './time-switcher';
 
 function getInitialCustomDates() {
   const to = new Date();
@@ -49,7 +50,7 @@ interface DashboardViewProps {
 export function DashboardView({
   initialRange = periodToDateRange('7d'),
   initialHeatmapRange = getHeatmapRange(),
-}: DashboardViewProps) {
+}: DashboardViewProps): JSX.Element {
   const { user } = useRequireAuth();
   const { data: liveStatus } = useLiveStatus();
 

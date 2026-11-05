@@ -1,6 +1,7 @@
 import React from 'react';
+import { type JSX } from 'react/jsx-runtime';
 
-export default function AuthLayout({ children }: { children: React.ReactNode }) {
+export default function AuthLayout({ children }: { children: React.ReactNode }): JSX.Element {
   return (
     <div className="flex min-h-screen bg-background p-2 md:p-4">
       <section className="relative hidden w-1/2 overflow-hidden rounded-3xl border border-border bg-surface lg:block">
@@ -61,11 +62,11 @@ function SoftGlow() {
     <>
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute left-1/2 top-0 h-64 w-[120%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand/8 blur-[100px]"
+        className="pointer-events-none absolute top-0 left-1/2 h-64 w-[120%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand/8 blur-[100px]"
       />
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -bottom-24 right-0 h-72 w-72 rounded-full bg-purple-blue/10 blur-[120px]"
+        className="pointer-events-none absolute right-0 -bottom-24 h-72 w-72 rounded-full bg-purple-blue/10 blur-[120px]"
       />
     </>
   );
@@ -79,7 +80,7 @@ function ActivityShowcase() {
       <div className="flex items-center justify-between">
         <div>
           <p className="text-xs font-medium text-subtle">Today</p>
-          <p className="mt-1 font-mono text-2xl font-semibold tracking-tight tabular-nums text-foreground">
+          <p className="mt-1 font-mono text-2xl font-semibold tracking-tight text-foreground tabular-nums">
             6h 12m
           </p>
         </div>
@@ -102,7 +103,7 @@ function ActivityShowcase() {
         ))}
       </div>
 
-      <div className="mt-3 flex items-center justify-between text-[10px] uppercase tracking-wider text-subtle">
+      <div className="mt-3 flex items-center justify-between text-[10px] tracking-wider text-subtle uppercase">
         <span>9:00</span>
         <span>12:00</span>
         <span>15:00</span>

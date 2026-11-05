@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { type ReactNode, useState } from 'react';
+import { type JSX } from 'react/jsx-runtime';
 
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
@@ -66,7 +67,7 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
   );
 }
 
-export function LlmSettings({ initial, hasKey, onSave }: LlmSettingsProps) {
+export function LlmSettings({ initial, hasKey, onSave }: LlmSettingsProps): JSX.Element {
   const [provider, setProvider] = useState<LlmProvider>(initial.provider);
   const [model, setModel] = useState(initial.model);
   const [baseUrl, setBaseUrl] = useState(initial.baseUrl);

@@ -1,69 +1,62 @@
-import nextPlugin from '@next/eslint-plugin-next';
-import react from 'eslint-plugin-react';
-import reactHooks from 'eslint-plugin-react-hooks';
-import tailwindPlugin from 'eslint-plugin-tailwindcss';
-import globals from 'globals';
-import tseslint from 'typescript-eslint';
-
-import baseConfig from './base.js';
+import { defineConfig, globalIgnores } from 'eslint/config';
+import nextVitals from 'eslint-config-next/core-web-vitals';
+import nextTs from 'eslint-config-next/typescript';
+import eslintConfigPrettier from 'eslint-config-prettier/flat';
+import simpleImportSort from 'eslint-plugin-simple-import-sort';
+import unusedImports from 'eslint-plugin-unused-imports';
 
 /**
- * Next.js / React config — extends base + React hooks + Tailwind CSS.
+ * Next.js / React config — framework rules plus fixable source hygiene.
+ * Type-aware backend rules intentionally do not apply to React components.
  *
- * @param {Object}  options
+ * @param {Object} options
  * @param {string[]} [options.ignores]
- * @param {string}  [options.tsconfigRootDir]
+ * @param {string} [options.tsconfigRootDir]
  * @param {Record<string, unknown>} [options.rules]
  */
 export default function nextjsConfig(options = {}) {
-  const base = baseConfig({
-    ignores: options.ignores,
-    tsconfigRootDir: options.tsconfigRootDir,
-    globals: { ...globals.browser, ...globals.node },
-  });
-
-  return tseslint.config(
-    ...base,
-
-    react.configs.flat.recommended,
-    react.configs.flat['jsx-runtime'],
-
+  return defineConfig(
+    ...nextVitals,
+    ...nextTs,
+    eslintConfigPrettier,
     {
-      plugins: {
-        'react-hooks': reactHooks,
-        '@next/next': nextPlugin,
-        tailwindcss: tailwindPlugin,
+      files: ['**/*.{ts,tsx,mts,cts}'],
+      linterOptions: {
+        reportUnusedDisableDirectives: 'error',
       },
-      settings: {
-        react: { version: 'detect' },
-        tailwindcss: { callees: ['cn', 'clsx', 'cva'] },
+      plugins: {
+        'simple-import-sort': simpleImportSort,
+        'unused-imports': unusedImports,
+      },
+      languageOptions: {
+        parserOptions: {
+          tsconfigRootDir: options.tsconfigRootDir,
+        },
       },
       rules: {
-        // ── React hooks ───────────────────────────────────────────────────────
-        'react-hooks/rules-of-hooks': 'error',
-        'react-hooks/exhaustive-deps': 'warn',
-
-        // ── JSX ───────────────────────────────────────────────────────────────
-        'react/prop-types': 'off', // TypeScript handles this
-        'react/jsx-key': 'error',
-        'react/jsx-no-useless-fragment': 'warn',
-        'react/display-name': 'warn',
-
-        // ── Next.js ───────────────────────────────────────────────────────────
-        ...nextPlugin.configs.recommended.rules,
-        ...nextPlugin.configs['core-web-vitals'].rules,
-
-        // ── Tailwind ──────────────────────────────────────────────────────────
-        ...tailwindPlugin.configs.recommended.rules,
-        'tailwindcss/classnames-order': 'warn',
-        'tailwindcss/no-custom-classname': 'warn',
-        'tailwindcss/no-contradicting-classname': 'error',
-
-        // ── Unicorn overrides for React patterns ──────────────────────────────
-        'unicorn/no-array-reduce': 'off',
-
+        '@typescript-eslint/no-unused-vars': 'off',
+        '@typescript-eslint/explicit-function-return-type': 'off',
+        '@typescript-eslint/explicit-module-boundary-types': 'warn',
+        '@typescript-eslint/consistent-type-imports': [
+          'error',
+          { prefer: 'type-imports', fixStyle: 'inline-type-imports' },
+        ],
+        'unused-imports/no-unused-imports': 'error',
+        'unused-imports/no-unused-vars': [
+          'warn',
+          {
+            vars: 'all',
+            varsIgnorePattern: '^_',
+            args: 'after-used',
+            argsIgnorePattern: '^_',
+          },
+        ],
+        'simple-import-sort/imports': 'error',
+        'simple-import-sort/exports': 'error',
+        'no-console': ['warn', { allow: ['warn', 'error'] }],
         ...options.rules,
       },
     },
+    globalIgnores(['.next/**', 'out/**', 'build/**', 'next-env.d.ts', ...(options.ignores ?? [])]),
   );
 }

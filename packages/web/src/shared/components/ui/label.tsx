@@ -1,7 +1,8 @@
 'use client';
 
-import * as React from 'react';
 import * as LabelPrimitive from '@radix-ui/react-label';
+import * as React from 'react';
+
 import { cn } from '@/shared/lib/cn';
 
 const Label = React.forwardRef<
@@ -11,7 +12,7 @@ const Label = React.forwardRef<
   <LabelPrimitive.Root
     ref={ref}
     className={cn(
-      'text-[13px] font-medium leading-none text-foreground',
+      'text-[13px] leading-none font-medium text-foreground',
       'peer-disabled:cursor-not-allowed peer-disabled:opacity-50',
       className,
     )}

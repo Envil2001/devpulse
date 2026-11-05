@@ -1,6 +1,6 @@
 import eslint from '@eslint/js';
+import eslintConfigPrettier from 'eslint-config-prettier/flat';
 import * as importPlugin from 'eslint-plugin-import';
-import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
 import simpleImportSort from 'eslint-plugin-simple-import-sort';
 import unicorn from 'eslint-plugin-unicorn';
 import unusedImports from 'eslint-plugin-unused-imports';
@@ -27,9 +27,12 @@ export default function baseConfig(options = {}) {
 
     unicorn.configs['flat/recommended'],
 
-    eslintPluginPrettierRecommended,
+    eslintConfigPrettier,
 
     {
+      linterOptions: {
+        reportUnusedDisableDirectives: 'error',
+      },
       plugins: {
         import: importPlugin,
         'simple-import-sort': simpleImportSort,
@@ -65,6 +68,8 @@ export default function baseConfig(options = {}) {
         ],
         '@typescript-eslint/no-floating-promises': 'error',
         '@typescript-eslint/no-misused-promises': 'error',
+        '@typescript-eslint/switch-exhaustiveness-check': 'error',
+        '@typescript-eslint/consistent-type-exports': 'error',
 
         // ── Unused imports (auto-removed on --fix / save) ────────────────────
         'unused-imports/no-unused-imports': 'error',
@@ -102,6 +107,7 @@ export default function baseConfig(options = {}) {
         eqeqeq: ['error', 'always'],
         'no-var': 'error',
         'consistent-return': 'error',
+        'no-console': 'warn',
 
         // ── Unicorn overrides (disable overly strict rules) ───────────────────
         'unicorn/prevent-abbreviations': 'off',
@@ -109,19 +115,6 @@ export default function baseConfig(options = {}) {
         'unicorn/filename-case': 'off',
         'unicorn/no-array-for-each': 'off',
         'unicorn/prefer-module': 'off',
-
-        // ── Prettier ──────────────────────────────────────────────────────────
-        'prettier/prettier': [
-          'error',
-          {
-            singleQuote: true,
-            semi: true,
-            trailingComma: 'all',
-            printWidth: 100,
-            tabWidth: 2,
-            endOfLine: 'auto',
-          },
-        ],
 
         ...options.rules,
       },

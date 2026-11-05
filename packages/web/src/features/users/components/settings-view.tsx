@@ -1,7 +1,10 @@
 'use client';
 
 import { Compass, Globe, Key } from 'lucide-react';
+import { type JSX } from 'react/jsx-runtime';
+
 import { ApiKeysPanel } from '@/features/api-keys/components/api-keys-panel';
+import { useRequireAuth } from '@/features/auth/context';
 import {
   Page,
   PageDescription,
@@ -11,12 +14,11 @@ import {
 } from '@/shared/components/layout/page';
 import { Panel, PanelHeader, PanelTitle } from '@/shared/components/layout/panel';
 import { RestartTourButton } from '@/shared/components/onboarding/restart-tour-button';
-import { useRequireAuth } from '@/features/auth/context';
 
-import { TimezonePreference } from './timezone-preference';
 import { LlmSettings } from './llm-settings';
+import { TimezonePreference } from './timezone-preference';
 
-export function SettingsView() {
+export function SettingsView(): JSX.Element {
   const { user, updateProfile } = useRequireAuth();
 
   return (
@@ -62,7 +64,10 @@ export function SettingsView() {
             />
           </div>
 
-          <div data-tour="settings-openai" className="flex flex-col gap-4 border-t border-border pt-6">
+          <div
+            data-tour="settings-openai"
+            className="flex flex-col gap-4 border-t border-border pt-6"
+          >
             <div className="flex items-start gap-3">
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-gray-alpha-50">
                 <Key className="h-4.5 w-4.5 text-subtle" strokeWidth={1.5} />
@@ -92,7 +97,7 @@ export function SettingsView() {
             className="flex flex-col justify-between gap-4 border-t border-border pt-6 sm:flex-row sm:items-center"
           >
             <div className="flex items-start gap-3">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border-border bg-gray-alpha-50 border">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-gray-alpha-50">
                 <Compass className="h-4.5 w-4.5 text-subtle" strokeWidth={1.5} />
               </div>
               <div>

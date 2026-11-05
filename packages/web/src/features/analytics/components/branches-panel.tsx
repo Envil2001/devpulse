@@ -1,18 +1,27 @@
 'use client';
 
+import { formatDuration } from '@devpulse/lib';
 import { GitBranch } from 'lucide-react';
-import { cn } from '@/shared/lib/cn';
+import { type JSX } from 'react/jsx-runtime';
+
 import {
   Panel,
+  PanelContent,
+  PanelDescription,
   PanelHeader,
   PanelTitle,
-  PanelDescription,
-  PanelContent,
 } from '@/shared/components/layout/panel';
-import { useBranchesDistribution, type DateRange } from '../hooks';
-import { formatDuration } from '@devpulse/lib';
+import { cn } from '@/shared/lib/cn';
 
-export function BranchesPanel({ range, projectId }: { range: DateRange; projectId?: string }) {
+import { type DateRange, useBranchesDistribution } from '../hooks';
+
+export function BranchesPanel({
+  range,
+  projectId,
+}: {
+  range: DateRange;
+  projectId?: string;
+}): JSX.Element {
   const { data: branches = [], isLoading } = useBranchesDistribution(range, projectId);
 
   return (
@@ -25,7 +34,7 @@ export function BranchesPanel({ range, projectId }: { range: DateRange; projectI
       </PanelHeader>
 
       <PanelContent className="flex flex-col">
-        <div className="mb-2 grid grid-cols-12 gap-4 border-b border-border pb-2 text-xs font-medium uppercase tracking-wider text-subtle">
+        <div className="mb-2 grid grid-cols-12 gap-4 border-b border-border pb-2 text-xs font-medium tracking-wider text-subtle uppercase">
           <div className="col-span-8">Branch</div>
           <div className="col-span-4 text-right">Active Time</div>
         </div>
@@ -58,7 +67,7 @@ export function BranchesPanel({ range, projectId }: { range: DateRange; projectI
                 {branch.branchName}
               </span>
             </div>
-            <div className="col-span-4 text-right font-mono text-xs font-medium tabular-nums text-foreground">
+            <div className="col-span-4 text-right font-mono text-xs font-medium text-foreground tabular-nums">
               {formatDuration(branch.activeSeconds)}
             </div>
           </div>

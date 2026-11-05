@@ -1,11 +1,12 @@
 'use client';
 
+import { formatMinutes } from '@devpulse/lib';
 import { AlertCircle, RefreshCw } from 'lucide-react';
+import { type JSX } from 'react/jsx-runtime';
 
 import { Button } from '@/shared/components/ui/button';
 
 import type { DayState } from '../hooks';
-import { formatMinutes } from '@devpulse/lib';
 
 interface WorklogDayEntryProps {
   state: DayState;
@@ -13,7 +14,11 @@ interface WorklogDayEntryProps {
   onRegenerate: (date: string) => void;
 }
 
-export function WorklogDayEntry({ state, disabled, onRegenerate }: WorklogDayEntryProps) {
+export function WorklogDayEntry({
+  state,
+  disabled,
+  onRegenerate,
+}: WorklogDayEntryProps): JSX.Element {
   const { day, status, result, error } = state;
 
   return (
@@ -52,7 +57,7 @@ export function WorklogDayEntry({ state, disabled, onRegenerate }: WorklogDayEnt
       )}
 
       {status === 'done' && result && (
-        <p className="whitespace-pre-wrap text-[13px] leading-relaxed text-foreground">
+        <p className="text-[13px] leading-relaxed whitespace-pre-wrap text-foreground">
           {result.text}
         </p>
       )}

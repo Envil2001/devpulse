@@ -104,6 +104,7 @@
     "watch": "node esbuild.mjs --watch",
     "pretest": "pnpm run compile && pnpm run lint",
     "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
     "typecheck": "tsc --noEmit",
     "test": "vscode-test"
   },

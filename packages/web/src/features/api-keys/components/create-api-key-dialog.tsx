@@ -1,17 +1,17 @@
 'use client';
 
+import { Blocks, Key, Terminal } from 'lucide-react';
 import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { Key, Terminal, Blocks } from 'lucide-react';
+import { type JSX } from 'react/jsx-runtime';
+import { useForm, useWatch } from 'react-hook-form';
 
 import { Button } from '@/shared/components/ui/button';
-import { Input } from '@/shared/components/ui/input';
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from '@/shared/components/ui/dialog';
 import {
   Form,
@@ -21,7 +21,9 @@ import {
   FormLabel,
   FormMessage,
 } from '@/shared/components/ui/form';
+import { Input } from '@/shared/components/ui/input';
 import { RadioCards, RadioCardsItem } from '@/shared/components/ui/radio-cards';
+
 import { useCreateApiKey } from '../hooks';
 
 interface CreateApiKeyDialogProps {
@@ -36,7 +38,11 @@ interface CreateKeyFormValues {
   deviceLabel: string;
 }
 
-export function CreateApiKeyDialog({ open, onOpenChange, onKeyCreated }: CreateApiKeyDialogProps) {
+export function CreateApiKeyDialog({
+  open,
+  onOpenChange,
+  onKeyCreated,
+}: CreateApiKeyDialogProps): JSX.Element {
   const createKey = useCreateApiKey();
 
   const form = useForm<CreateKeyFormValues>({
@@ -48,7 +54,7 @@ export function CreateApiKeyDialog({ open, onOpenChange, onKeyCreated }: CreateA
     mode: 'onChange',
   });
 
-  const watchType = form.watch('type');
+  const watchType = useWatch({ control: form.control, name: 'type' });
 
   useEffect(() => {
     if (!open) {

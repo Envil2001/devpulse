@@ -1,28 +1,30 @@
 import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
-import { getQueryClient } from '@/shared/api/get-query-client';
+import { type JSX } from 'react/jsx-runtime';
+
+import { DashboardView } from '@/features/analytics/components/dashboard-view';
 import {
-  periodToDateRange,
   analyticsKeys,
   getHeatmapRange,
+  periodToDateRange,
   previousPeriod,
 } from '@/features/analytics/hooks';
 import {
-  getDashboardStatsServer,
-  getTimeseriesServer,
+  getAiRoiServer,
   getBranchesServer,
+  getCommandsServer,
+  getDashboardStatsServer,
   getLanguagesServer,
   getLiveStatusServer,
-  getAiRoiServer,
-  getCommandsServer,
   getPipelineHealthServer,
+  getTimeseriesServer,
 } from '@/features/analytics/server';
-import { DashboardView } from '@/features/analytics/components/dashboard-view';
-import { getProjectsServer } from '@/features/projects/server';
 import { projectsKeys } from '@/features/projects/hooks';
-import { getRecentSessionsServer } from '@/features/sessions/server';
+import { getProjectsServer } from '@/features/projects/server';
 import { RECENT_SESSIONS_LIMIT, sessionsKeys } from '@/features/sessions/hooks';
+import { getRecentSessionsServer } from '@/features/sessions/server';
+import { getQueryClient } from '@/shared/api/get-query-client';
 
-export default async function DashboardPage() {
+export default async function DashboardPage(): Promise<JSX.Element> {
   const queryClient = getQueryClient();
 
   const defaultRange = periodToDateRange('7d');

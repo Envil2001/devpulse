@@ -1,9 +1,11 @@
 'use client';
 
-import { useMemo } from 'react';
-import { Clock, Zap, Layers, FolderGit2 } from 'lucide-react';
 import { formatDuration } from '@devpulse/lib';
-import { WorkSessionSummary } from '@/shared/types';
+import { Clock, FolderGit2, Layers, Zap } from 'lucide-react';
+import { useMemo } from 'react';
+import { type JSX } from 'react/jsx-runtime';
+
+import { type WorkSessionSummary } from '@/shared/types';
 
 interface SessionsSummaryCardsProps {
   sessions: WorkSessionSummary[];
@@ -15,7 +17,7 @@ export function SessionsSummaryCards({
   sessions,
   isLoading,
   uniqueProjectsCount,
-}: SessionsSummaryCardsProps) {
+}: SessionsSummaryCardsProps): JSX.Element {
   const totalSeconds = useMemo(() => {
     return sessions.reduce((acc, session) => acc + session.durationSeconds, 0);
   }, [sessions]);
@@ -34,7 +36,7 @@ export function SessionsSummaryCards({
           <Clock className="h-3.5 w-3.5" strokeWidth={1.5} aria-hidden="true" />
           Total Time
         </span>
-        <span className="mt-1 font-mono text-lg font-semibold tabular-nums text-foreground">
+        <span className="mt-1 font-mono text-lg font-semibold text-foreground tabular-nums">
           {isLoading ? '—' : formatDuration(totalSeconds)}
         </span>
       </div>
@@ -44,7 +46,7 @@ export function SessionsSummaryCards({
           <Zap className="h-3.5 w-3.5" strokeWidth={1.5} aria-hidden="true" />
           Avg Focus
         </span>
-        <span className="mt-1 font-mono text-lg font-semibold tabular-nums text-brand">
+        <span className="mt-1 font-mono text-lg font-semibold text-brand tabular-nums">
           {isLoading ? '—' : `${avgFocus}%`}
         </span>
       </div>
@@ -54,7 +56,7 @@ export function SessionsSummaryCards({
           <Layers className="h-3.5 w-3.5" strokeWidth={1.5} aria-hidden="true" />
           Total Sessions
         </span>
-        <span className="mt-1 font-mono text-lg font-semibold tabular-nums text-foreground">
+        <span className="mt-1 font-mono text-lg font-semibold text-foreground tabular-nums">
           {isLoading ? '—' : sessions.length}
         </span>
       </div>
@@ -64,7 +66,7 @@ export function SessionsSummaryCards({
           <FolderGit2 className="h-3.5 w-3.5" strokeWidth={1.5} aria-hidden="true" />
           Active Projects
         </span>
-        <span className="mt-1 font-mono text-lg font-semibold tabular-nums text-foreground">
+        <span className="mt-1 font-mono text-lg font-semibold text-foreground tabular-nums">
           {isLoading ? '—' : uniqueProjectsCount}
         </span>
       </div>

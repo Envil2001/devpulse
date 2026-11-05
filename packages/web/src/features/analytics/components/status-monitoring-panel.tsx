@@ -1,12 +1,13 @@
 'use client';
 
+import { formatMinutes } from '@devpulse/lib';
 import { Activity, AlertCircle, CheckCircle2, Cpu, Database, Radio } from 'lucide-react';
+import { type JSX } from 'react/jsx-runtime';
 
 import { Panel } from '@/shared/components/layout/panel';
 import { cn } from '@/shared/lib/cn';
 
 import { usePipelineHealth } from '../hooks';
-import { formatMinutes } from '@devpulse/lib';
 
 const PROVIDER_LABELS: Record<'openrouter' | 'openai' | 'custom', string> = {
   openrouter: 'OpenRouter',
@@ -14,7 +15,7 @@ const PROVIDER_LABELS: Record<'openrouter' | 'openai' | 'custom', string> = {
   custom: 'Custom',
 };
 
-export function StatusMonitoringPanel() {
+export function StatusMonitoringPanel(): JSX.Element | null {
   const { data: health, isLoading } = usePipelineHealth();
 
   if (isLoading) {

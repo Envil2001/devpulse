@@ -1,13 +1,15 @@
 'use client';
 
-import * as React from 'react';
-import { DayPicker, type DayPickerProps } from 'react-day-picker';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import * as React from 'react';
+import { type JSX } from 'react/jsx-runtime';
+import { DayPicker, type DayPickerProps } from 'react-day-picker';
+
 import { cn } from '@/shared/lib/cn';
 
 export type CalendarProps = DayPickerProps;
 
-function Calendar({ className, showOutsideDays = true, ...props }: CalendarProps) {
+function Calendar({ className, showOutsideDays = true, ...props }: CalendarProps): JSX.Element {
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
@@ -38,12 +40,12 @@ function Calendar({ className, showOutsideDays = true, ...props }: CalendarProps
         ),
         range_start: cn(
           'rounded-l-[10px]',
-          '[&_button]:bg-brand [&_button]:text-background [&_button]:font-medium',
+          '[&_button]:bg-brand [&_button]:font-medium [&_button]:text-background',
           '[&_button]:hover:bg-brand',
         ),
         range_end: cn(
           'rounded-r-[10px]',
-          '[&_button]:bg-brand [&_button]:text-background [&_button]:font-medium',
+          '[&_button]:bg-brand [&_button]:font-medium [&_button]:text-background',
           '[&_button]:hover:bg-brand',
         ),
         range_middle: cn(

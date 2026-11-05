@@ -1,7 +1,6 @@
 'use client';
 
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { formatDuration, formatMilliseconds } from '@devpulse/lib';
 import {
   ArrowLeft,
   CheckCircle2,
@@ -15,25 +14,27 @@ import {
   XCircle,
   Zap,
 } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { type JSX } from 'react/jsx-runtime';
 
-import { cn } from '@/shared/lib/cn';
-import { formatDuration, formatMilliseconds } from '@devpulse/lib';
-import { formatDateTimeLabel, formatTimeRange } from '@/shared/lib/date';
 import { useRequireAuth } from '@/features/auth/context';
 import {
-  Panel,
-  PanelHeader,
-  PanelTitle,
-  PanelDescription,
-  PanelContent,
-} from '@/shared/components/layout/panel';
-import {
   Page,
+  PageDescription,
   PageHeader,
   PageHeaderHeading,
   PageTitle,
-  PageDescription,
 } from '@/shared/components/layout/page';
+import {
+  Panel,
+  PanelContent,
+  PanelDescription,
+  PanelHeader,
+  PanelTitle,
+} from '@/shared/components/layout/panel';
+import { cn } from '@/shared/lib/cn';
+import { formatDateTimeLabel, formatTimeRange } from '@/shared/lib/date';
 
 import { useSessionDetail } from '../hooks';
 
@@ -66,7 +67,7 @@ function focusColorClass(score: number): string {
   return 'text-red-coral';
 }
 
-export function SessionDetailView({ id }: SessionDetailViewProps) {
+export function SessionDetailView({ id }: SessionDetailViewProps): JSX.Element {
   const { user } = useRequireAuth();
   const router = useRouter();
   const { data, isLoading, error } = useSessionDetail(id);
@@ -250,7 +251,7 @@ export function SessionDetailView({ id }: SessionDetailViewProps) {
                 return (
                   <div key={language} className="flex flex-col gap-1">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="capitalize text-foreground">{language}</span>
+                      <span className="text-foreground capitalize">{language}</span>
                       <span className="font-mono text-xs text-secondary">
                         {formatDuration(seconds)} · {percent.toFixed(1)}%
                       </span>
@@ -285,7 +286,7 @@ export function SessionDetailView({ id }: SessionDetailViewProps) {
             <div className="py-6 text-center text-sm text-secondary">No commands recorded</div>
           ) : (
             <div className="flex flex-col">
-              <div className="mb-2 grid grid-cols-12 gap-4 border-b border-border pb-2 text-xs font-medium uppercase tracking-wider text-subtle">
+              <div className="mb-2 grid grid-cols-12 gap-4 border-b border-border pb-2 text-xs font-medium tracking-wider text-subtle uppercase">
                 <div className="col-span-7">Command</div>
                 <div className="col-span-2 text-right">Duration</div>
                 <div className="col-span-3 text-right">Exit</div>

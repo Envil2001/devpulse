@@ -1,8 +1,11 @@
 'use client';
 
+import { type JSX } from 'react/jsx-runtime';
+
 import { cn } from '@/shared/lib/cn';
-import { CodeTabs } from './code-tabs';
 import { METHOD_STYLES } from '@/shared/lib/docs-constants';
+
+import { CodeTabs } from './code-tabs';
 
 interface Parameter {
   name: string;
@@ -40,7 +43,7 @@ export function EndpointCard({
   parameters,
   responseExample,
   id,
-}: EndpointCardProps) {
+}: EndpointCardProps): JSX.Element {
   const hasParameters = parameters && parameters.length > 0;
   const methodStyle = METHOD_STYLES[method as keyof typeof METHOD_STYLES] || METHOD_STYLES.GET;
 
@@ -83,7 +86,7 @@ export function EndpointCard({
         {hasParameters && (
           <div className="overflow-hidden rounded-xl border border-border bg-surface">
             <div className="border-b border-border bg-gray-alpha-50 px-4 py-2.5">
-              <span className="text-xs font-medium uppercase tracking-wider text-subtle">
+              <span className="text-xs font-medium tracking-wider text-subtle uppercase">
                 Parameters
               </span>
             </div>
@@ -104,7 +107,7 @@ export function EndpointCard({
                       {param.required && <span className="ml-1.5 text-xs text-red-coral">*</span>}
                     </td>
                     <td className="px-4 py-2.5">
-                      <span className="font-mono text-xs capitalize text-subtle">{param.in}</span>
+                      <span className="font-mono text-xs text-subtle capitalize">{param.in}</span>
                     </td>
                     <td className="px-4 py-2.5">
                       <span className="font-mono text-xs text-subtle">

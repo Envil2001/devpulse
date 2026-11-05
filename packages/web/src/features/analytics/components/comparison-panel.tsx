@@ -1,18 +1,19 @@
 'use client';
 
-import { ArrowDown, ArrowRight, ArrowUp } from 'lucide-react';
-
-import { cn } from '@/shared/lib/cn';
 import { formatDuration } from '@devpulse/lib';
+import { ArrowDown, ArrowRight, ArrowUp } from 'lucide-react';
+import { type JSX } from 'react/jsx-runtime';
+
 import {
   Panel,
+  PanelContent,
+  PanelDescription,
   PanelHeader,
   PanelTitle,
-  PanelDescription,
-  PanelContent,
 } from '@/shared/components/layout/panel';
+import { cn } from '@/shared/lib/cn';
 
-import { useDashboardComparison, type DateRange } from '../hooks';
+import { type DateRange, useDashboardComparison } from '../hooks';
 
 interface ComparisonPanelProps {
   range: DateRange;
@@ -38,7 +39,7 @@ function DeltaIcon({ diff }: { diff: number }) {
   return <ArrowRight className="h-3 w-3" strokeWidth={1.5} />;
 }
 
-export function ComparisonPanel({ range, projectId }: ComparisonPanelProps) {
+export function ComparisonPanel({ range, projectId }: ComparisonPanelProps): JSX.Element | null {
   const { current, previous, isLoading } = useDashboardComparison(range, projectId);
 
   if (isLoading || !current || !previous) {
@@ -89,7 +90,7 @@ export function ComparisonPanel({ range, projectId }: ComparisonPanelProps) {
           {metrics.map((m) => (
             <div key={m.label} className="flex flex-col gap-1">
               <span className="text-xs text-subtle">{m.label}</span>
-              <span className="font-mono text-lg font-semibold tracking-tight tabular-nums text-foreground">
+              <span className="font-mono text-lg font-semibold tracking-tight text-foreground tabular-nums">
                 {m.current}
               </span>
               {m.label === 'Top language' ? (

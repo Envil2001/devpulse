@@ -1,5 +1,8 @@
 'use client';
 
+import { type JSX } from 'react/jsx-runtime';
+
+import { useProjects } from '@/features/projects/hooks';
 import {
   Select,
   SelectContent,
@@ -7,19 +10,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/shared/components/ui/select';
-import { useProjects } from '@/features/projects/hooks';
 
 interface ProjectSelectorProps {
   value?: string;
   onChange: (projectId?: string) => void;
 }
 
-export function ProjectSelector({ value, onChange }: ProjectSelectorProps) {
+export function ProjectSelector({ value, onChange }: ProjectSelectorProps): JSX.Element {
   const { data: projects = [] } = useProjects();
 
   return (
     <Select value={value ?? 'all'} onValueChange={(v) => onChange(v === 'all' ? undefined : v)}>
-      <SelectTrigger className="w-40 h-9">
+      <SelectTrigger className="h-9 w-40">
         <SelectValue placeholder="All projects" />
       </SelectTrigger>
       <SelectContent>

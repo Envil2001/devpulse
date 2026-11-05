@@ -1,9 +1,12 @@
 'use client';
 
-import { Clock, Zap, Layers, Code2 } from 'lucide-react';
-import { Panel } from '@/shared/components/layout/panel';
-import { useDashboardStats, type DateRange } from '../hooks';
 import { formatDuration } from '@devpulse/lib';
+import { Clock, Code2, Layers, Zap } from 'lucide-react';
+import { type JSX } from 'react/jsx-runtime';
+
+import { Panel } from '@/shared/components/layout/panel';
+
+import { type DateRange, useDashboardStats } from '../hooks';
 
 export function DashboardSummaryCards({
   range,
@@ -11,7 +14,7 @@ export function DashboardSummaryCards({
 }: {
   range: DateRange;
   projectId?: string;
-}) {
+}): JSX.Element {
   const { data: stats, isLoading } = useDashboardStats(range, projectId);
 
   const cards = [
@@ -53,7 +56,7 @@ export function DashboardSummaryCards({
                 <Icon className="h-4 w-4 text-subtle" strokeWidth={1.5} aria-hidden="true" />
               </div>
               <div className="mt-2 flex items-baseline gap-2">
-                <span className="font-mono text-2xl font-semibold tracking-tight tabular-nums text-foreground">
+                <span className="font-mono text-2xl font-semibold tracking-tight text-foreground tabular-nums">
                   {card.value}
                 </span>
               </div>

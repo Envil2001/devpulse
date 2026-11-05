@@ -1,17 +1,15 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { type JSX } from 'react/jsx-runtime';
+import { useForm } from 'react-hook-form';
+import * as z from 'zod';
 
-import { buildLoginCryptoPayload, generateKeyPair } from '../crypto';
-import { getErrorMessage } from '@/shared/lib/error';
-import { useAuth } from '../context';
 import { authService } from '@/shared/api/services';
-
+import { Button } from '@/shared/components/ui/button';
 import {
   Form,
   FormControl,
@@ -21,14 +19,17 @@ import {
   FormMessage,
 } from '@/shared/components/ui/form';
 import { Input } from '@/shared/components/ui/input';
-import { Button } from '@/shared/components/ui/button';
+import { getErrorMessage } from '@/shared/lib/error';
+
+import { useAuth } from '../context';
+import { buildLoginCryptoPayload, generateKeyPair } from '../crypto';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email'),
   password: z.string().min(1, 'Password is required'),
 });
 
-export function LoginForm() {
+export function LoginForm(): JSX.Element {
   const router = useRouter();
   const { login } = useAuth();
   const [isLoading, setIsLoading] = useState(false);

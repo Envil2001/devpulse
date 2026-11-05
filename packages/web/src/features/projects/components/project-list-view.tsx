@@ -1,23 +1,25 @@
 'use client';
 
-import { useState, useMemo } from 'react';
 import { FolderGit2, Search } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { type JSX } from 'react/jsx-runtime';
 
-import { Button } from '@/shared/components/ui/button';
-import { Input } from '@/shared/components/ui/input';
-import { useProjects } from '../hooks';
 import { useRequireAuth } from '@/features/auth/context';
 import {
+  Page,
+  PageDescription,
   PageHeader,
   PageHeaderHeading,
   PageTitle,
-  PageDescription,
-  Page,
 } from '@/shared/components/layout/page';
-import { Panel, PanelHeader, PanelContent } from '@/shared/components/layout/panel';
+import { Panel, PanelContent, PanelHeader } from '@/shared/components/layout/panel';
+import { Button } from '@/shared/components/ui/button';
+import { Input } from '@/shared/components/ui/input';
+
+import { useProjects } from '../hooks';
 import { ProjectCard } from './project-card';
 
-export function ProjectListView() {
+export function ProjectListView(): JSX.Element {
   const { data: projects = [], isLoading, error } = useProjects();
   const [searchQuery, setSearchQuery] = useState('');
   const { user } = useRequireAuth();
@@ -50,7 +52,7 @@ export function ProjectListView() {
         <PanelHeader>
           <div data-tour="projects-search" className="relative w-full sm:w-72">
             <Search
-              className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-subtle"
+              className="absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2 text-subtle"
               strokeWidth={1.5}
               aria-hidden="true"
             />

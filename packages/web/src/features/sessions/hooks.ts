@@ -1,6 +1,7 @@
+import { useQuery, type UseQueryResult } from '@tanstack/react-query';
+
 import { sessionsService } from '@/shared/api/services';
-import { WorkSessionSummary, WorkSessionDetail } from '@/shared/types';
-import { useQuery } from '@tanstack/react-query';
+import { type WorkSessionDetail, type WorkSessionSummary } from '@/shared/types';
 
 export const sessionsKeys = {
   all: ['sessions'] as const,
@@ -11,14 +12,17 @@ export const sessionsKeys = {
 
 export const RECENT_SESSIONS_LIMIT = 5;
 
-export function useSessions() {
+export function useSessions(): UseQueryResult<NoInfer<Array<WorkSessionSummary>>> {
   return useQuery<Array<WorkSessionSummary>>({
     queryKey: sessionsKeys.list(),
     queryFn: () => sessionsService.list(),
   });
 }
 
-export function useRecentSessions(limit: number, projectId?: string) {
+export function useRecentSessions(
+  limit: number,
+  projectId?: string,
+): UseQueryResult<NoInfer<Array<WorkSessionSummary>>> {
   return useQuery<Array<WorkSessionSummary>>({
     queryKey: sessionsKeys.recent(limit, projectId),
     queryFn: () => sessionsService.list(limit, projectId),
@@ -26,7 +30,7 @@ export function useRecentSessions(limit: number, projectId?: string) {
   });
 }
 
-export function useSessionDetail(id: string) {
+export function useSessionDetail(id: string): UseQueryResult<WorkSessionDetail> {
   return useQuery<WorkSessionDetail>({
     queryKey: sessionsKeys.detail(id),
     queryFn: () => sessionsService.getById(id),

@@ -1,8 +1,9 @@
 'use client';
 
-import * as React from 'react';
 import * as SelectPrimitive from '@radix-ui/react-select';
 import { Check, ChevronDown, ChevronUp } from 'lucide-react';
+import * as React from 'react';
+
 import { cn } from '@/shared/lib/cn';
 
 const Select = SelectPrimitive.Root;
@@ -19,7 +20,7 @@ const SelectTrigger = React.forwardRef<
       'flex h-8 w-full items-center justify-between gap-2 rounded-[10px] border border-gray-alpha-200 bg-background px-2.5 text-[13px] text-foreground',
       'transition-colors',
       'hover:border-gray-alpha-300',
-      'focus:outline-none focus-visible:ring-2 focus-visible:ring-white/15 focus-visible:border-gray-alpha-300',
+      'focus:outline-none focus-visible:border-gray-alpha-300 focus-visible:ring-2 focus-visible:ring-white/15',
       'disabled:cursor-not-allowed disabled:opacity-50',
       'data-placeholder:text-subtle',
       '[&>span]:line-clamp-1',
@@ -78,7 +79,7 @@ const SelectContent = React.forwardRef<
         'data-[side=top]:data-[state=open]:slide-in-from-bottom-1',
         'data-[side=left]:data-[state=open]:slide-in-from-right-1',
         'data-[side=right]:data-[state=open]:slide-in-from-left-1',
-        'data-[state=open]:animation-duration-[150ms] data-[state=closed]:animation-duration-[120ms]',
+        'data-[state=closed]:animation-duration-[120ms] data-[state=open]:animation-duration-[150ms]',
         position === 'popper' &&
           'data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1',
         className,
@@ -120,7 +121,7 @@ const SelectItem = React.forwardRef<
   <SelectPrimitive.Item
     ref={ref}
     className={cn(
-      'relative flex w-full cursor-pointer select-none items-center rounded-[10px] py-1.5 pl-2 pr-8 text-[13px] text-secondary outline-none transition-colors',
+      'relative flex w-full cursor-pointer items-center rounded-[10px] py-1.5 pr-8 pl-2 text-[13px] text-secondary transition-colors outline-none select-none',
       'hover:bg-gray-alpha-100 hover:text-foreground',
       'focus:bg-gray-alpha-100 focus:text-foreground',
       'data-disabled:pointer-events-none data-disabled:opacity-50',
@@ -153,13 +154,13 @@ SelectSeparator.displayName = SelectPrimitive.Separator.displayName;
 
 export {
   Select,
-  SelectGroup,
-  SelectValue,
-  SelectTrigger,
   SelectContent,
-  SelectLabel,
+  SelectGroup,
   SelectItem,
-  SelectSeparator,
-  SelectScrollUpButton,
+  SelectLabel,
   SelectScrollDownButton,
+  SelectScrollUpButton,
+  SelectSeparator,
+  SelectTrigger,
+  SelectValue,
 };

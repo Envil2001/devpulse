@@ -1,3 +1,4 @@
+import { type JSX } from 'react/jsx-runtime';
 interface ActivityChartTooltipProps {
   active?: boolean;
   payload?: Array<{
@@ -7,7 +8,11 @@ interface ActivityChartTooltipProps {
   label?: string;
 }
 
-export function ActivityChartTooltip({ active, payload, label }: ActivityChartTooltipProps) {
+export function ActivityChartTooltip({
+  active,
+  payload,
+  label,
+}: ActivityChartTooltipProps): JSX.Element | null {
   if (!active || !payload?.length || payload[0].value === undefined) {
     return null;
   }
@@ -17,7 +22,7 @@ export function ActivityChartTooltip({ active, payload, label }: ActivityChartTo
       <p className="text-xs font-medium text-subtle">{label}</p>
       <div className="mt-1.5 flex items-center gap-2">
         <div className="h-2 w-2 rounded-full bg-brand" aria-hidden="true" />
-        <span className="font-mono text-sm font-semibold tabular-nums text-foreground">
+        <span className="font-mono text-sm font-semibold text-foreground tabular-nums">
           {payload[0].value}h
         </span>
         <span className="text-xs text-subtle">active time</span>

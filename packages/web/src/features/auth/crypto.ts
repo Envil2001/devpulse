@@ -1,10 +1,9 @@
+import { computeLoginProof, fromBase64, toBase64 } from '@devpulse/lib';
 import { argon2idAsync } from '@noble/hashes/argon2.js';
 import { hkdf } from '@noble/hashes/hkdf.js';
 import { sha256 } from '@noble/hashes/sha2.js';
 import { utf8ToBytes } from '@noble/hashes/utils.js';
 import nacl from 'tweetnacl';
-
-import { computeLoginProof, fromBase64, toBase64 } from '@devpulse/lib';
 
 const ARGON_PARAMS = { m: 65_536, t: 3, p: 1, dkLen: 32 };
 
@@ -25,12 +24,33 @@ export interface EncryptedData {
   tag: string;
 }
 
+export interface GeneratedKeyPair {
+  publicKey: string;
+  privateKey: string;
+}
+
+export interface SignupCryptoPayload {
+  salt: string;
+  verifier: string;
+  publicKey: string;
+  encryptedPrivateKey: string;
+  iv: string;
+  tag: string;
+  protectedKey: string;
+  protectedKeyIV: string;
+  protectedKeyTag: string;
+}
+
+export interface LoginCryptoPayload {
+  clientProof: string;
+}
+
 interface KeyMaterial {
   authKey: Uint8Array;
   wrapKey: Uint8Array;
 }
 
-export const generateKeyPair = () => {
+export const generateKeyPair = (): GeneratedKeyPair => {
   const pair = nacl.box.keyPair();
   return {
     publicKey: toBase64(pair.publicKey),
@@ -101,7 +121,9 @@ export class SymmetricCrypto {
   }
 }
 
-export const buildSignupCryptoPayload = async (password: string) => {
+export const buildSignupCryptoPayload = async (
+  password: string,
+): Promise<SignupCryptoPayload> => {
   const salt = toBase64(
     globalThis.crypto.getRandomValues(new Uint8Array(SIGNUP_SALT_LENGTH_BYTES)),
   );
@@ -134,7 +156,7 @@ export const buildLoginCryptoPayload = async (
   saltBase64: string,
   serverPublicKey: string,
   clientPublicKey: string,
-) => {
+): Promise<LoginCryptoPayload> => {
   const { authKey } = await deriveKeyMaterial(password, saltBase64);
 
   const proof = computeLoginProof({ authKey, clientPublicKey, serverPublicKey });

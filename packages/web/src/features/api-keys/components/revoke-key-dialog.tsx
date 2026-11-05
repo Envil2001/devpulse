@@ -1,5 +1,7 @@
 'use client';
 
+import { type JSX } from 'react/jsx-runtime';
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,7 +20,12 @@ interface RevokeKeyDialogProps {
   isPending: boolean;
 }
 
-export function RevokeKeyDialog({ keyId, onClose, onConfirm, isPending }: RevokeKeyDialogProps) {
+export function RevokeKeyDialog({
+  keyId,
+  onClose,
+  onConfirm,
+  isPending,
+}: RevokeKeyDialogProps): JSX.Element {
   return (
     <AlertDialog open={keyId !== null} onOpenChange={(open) => !open && onClose()}>
       <AlertDialogContent>

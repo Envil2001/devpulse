@@ -1,6 +1,9 @@
 'use client';
 
+import { type JSX } from 'react/jsx-runtime';
+
 import { cn } from '@/shared/lib/cn';
+
 import { SidebarHeader } from './sidebar-header';
 import { SidebarNav } from './sidebar-nav';
 
@@ -10,7 +13,7 @@ interface SidebarProps {
   isCollapsed?: boolean;
 }
 
-export function Sidebar({ isOpen, onClose, isCollapsed }: SidebarProps) {
+export function Sidebar({ isOpen, onClose, isCollapsed }: SidebarProps): JSX.Element {
   const handleNavClick = () => {
     if (typeof window !== 'undefined' && window.innerWidth < 1024) {
       onClose?.();
@@ -32,9 +35,9 @@ export function Sidebar({ isOpen, onClose, isCollapsed }: SidebarProps) {
         aria-label="Main Navigation"
         className={cn(
           'fixed inset-y-0 left-0 z-50 flex flex-col',
-          'bg-surface border-r border-border',
+          'border-r border-border bg-surface',
           'transition-[width,transform] duration-200 ease-out',
-          'lg:translate-x-0 w-[var(--sidebar-width)]',
+          'w-[var(--sidebar-width)] lg:translate-x-0',
           isOpen ? 'translate-x-0' : '-translate-x-full',
         )}
       >

@@ -1,14 +1,16 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
-import { Search, Menu, X, PanelLeft } from 'lucide-react';
-import { useState } from 'react';
+import { Menu, PanelLeft, Search, X } from 'lucide-react';
 import Link from 'next/link'; // <--- Добавили Link
+import { usePathname } from 'next/navigation';
+import { useState } from 'react';
+import { type JSX } from 'react/jsx-runtime';
 
 import { Button } from '@/shared/components/ui/button';
 import { inputVariants } from '@/shared/components/ui/input'; // <--- Импортируем варианты
 import { UserMenu } from '@/shared/components/ui/user-menu';
 import { cn } from '@/shared/lib/cn';
+
 import { CommandMenu } from '../ui/command-menu';
 
 interface HeaderProps {
@@ -23,7 +25,7 @@ export function Header({
   isMenuOpen,
   isSidebarCollapsed,
   onToggleSidebar,
-}: HeaderProps) {
+}: HeaderProps): JSX.Element {
   const pathname = usePathname();
   const [isCommandOpen, setIsCommandOpen] = useState(false);
 
@@ -61,23 +63,23 @@ export function Header({
             variant="ghost"
             size="icon"
             onClick={onToggleSidebar}
-            className="hidden lg:flex h-8 w-8 text-secondary hover:text-foreground transition-colors"
+            className="hidden h-8 w-8 text-secondary transition-colors hover:text-foreground lg:flex"
             title={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             <PanelLeft className="h-4 w-4" strokeWidth={1.5} />
           </Button>
 
-          <h1 className="text-sm font-medium truncate text-foreground ml-1">{getPageTitle()}</h1>
+          <h1 className="ml-1 truncate text-sm font-medium text-foreground">{getPageTitle()}</h1>
         </div>
 
         {/* Центральная часть (Поиск) */}
-        <div className="flex justify-center w-full max-w-md">
+        <div className="flex w-full max-w-md justify-center">
           <button
             type="button"
             onClick={() => setIsCommandOpen(true)}
             className={cn(
               inputVariants({ size: 'default' }),
-              'flex items-center justify-between gap-3 text-subtle cursor-pointer hover:bg-gray-alpha-50',
+              'flex cursor-pointer items-center justify-between gap-3 text-subtle hover:bg-gray-alpha-50',
             )}
           >
             <div className="flex min-w-0 items-center gap-2">
@@ -95,7 +97,7 @@ export function Header({
           </button>
         </div>
 
-        <div className="flex items-center justify-end gap-3 shrink-0">
+        <div className="flex shrink-0 items-center justify-end gap-3">
           <Button variant="ghost" size="sm" className="hidden md:inline-flex" asChild>
             <Link href="/docs" target="_blank" rel="noreferrer">
               Docs

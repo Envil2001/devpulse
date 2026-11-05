@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+
 import { type AiRoiMetrics } from '@devpulse/lib';
 
 export class GetIntegrationAiRoiResponseDto implements AiRoiMetrics {

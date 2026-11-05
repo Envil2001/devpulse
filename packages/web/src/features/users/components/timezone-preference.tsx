@@ -1,7 +1,9 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { type JSX } from 'react/jsx-runtime';
+import { useForm, useWatch } from 'react-hook-form';
+
 import { Button } from '@/shared/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/shared/components/ui/form';
 import {
@@ -19,7 +21,10 @@ interface TimezonePreferenceProps {
   onSave: (timezone: string) => Promise<void>;
 }
 
-export function TimezonePreference({ initialTimezone, onSave }: TimezonePreferenceProps) {
+export function TimezonePreference({
+  initialTimezone,
+  onSave,
+}: TimezonePreferenceProps): JSX.Element {
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,7 +37,7 @@ export function TimezonePreference({ initialTimezone, onSave }: TimezonePreferen
   );
 
   const form = useForm({ defaultValues: { timezone: initialTimezone } });
-  const currentValue = form.watch('timezone');
+  const currentValue = useWatch({ control: form.control, name: 'timezone' });
 
   const onSubmit = async (values: { timezone: string }) => {
     setIsPending(true);

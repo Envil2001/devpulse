@@ -1,8 +1,10 @@
 'use client';
 
-import * as React from 'react';
 import { addDays, differenceInCalendarDays } from 'date-fns';
 import { CalendarDays } from 'lucide-react';
+import * as React from 'react';
+import { useMemo, useState } from 'react';
+import { type JSX } from 'react/jsx-runtime';
 import { type DateRange as DayPickerRange } from 'react-day-picker';
 
 import { Button } from '@/shared/components/ui/button';
@@ -10,7 +12,6 @@ import { Calendar } from '@/shared/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/shared/components/ui/popover';
 import { cn } from '@/shared/lib/cn';
 import { formatDateLabel, parseDateInput, toDateInput } from '@/shared/lib/date';
-import { useMemo, useState } from 'react';
 
 interface DateRangePickerProps {
   startDate: string;
@@ -26,7 +27,7 @@ export function DateRangePicker({
   onChange,
   active = false,
   maxDays,
-}: DateRangePickerProps) {
+}: DateRangePickerProps): JSX.Element {
   const [open, setOpen] = useState(false);
 
   const selected: DayPickerRange = useMemo(

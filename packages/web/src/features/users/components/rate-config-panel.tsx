@@ -1,11 +1,13 @@
 'use client';
 
 import { useState } from 'react';
+import { type JSX } from 'react/jsx-runtime';
 
+import { useRequireAuth } from '@/features/auth/context';
+import { Panel, PanelContent, PanelHeader, PanelTitle } from '@/shared/components/layout/panel';
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
 import { Label } from '@/shared/components/ui/label';
-import { Tabs, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
 import {
   Select,
   SelectContent,
@@ -13,10 +15,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/shared/components/ui/select';
-import { Panel, PanelHeader, PanelTitle, PanelContent } from '@/shared/components/layout/panel';
-import { useRequireAuth } from '@/features/auth/context';
+import { Tabs, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
 
-export function RateConfigPanel() {
+export function RateConfigPanel(): JSX.Element {
   const { user, updateProfile } = useRequireAuth();
 
   const [rateType, setRateType] = useState<'hourly' | 'monthly'>('hourly');

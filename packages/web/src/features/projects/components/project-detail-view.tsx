@@ -1,9 +1,9 @@
 'use client';
 
+import { formatDuration } from '@devpulse/lib';
 import { formatDistanceToNow } from 'date-fns';
 import { AlertCircle, Clock, GitBranch, GitCommit, Layers, Terminal, Zap } from 'lucide-react';
-
-import { formatDuration } from '@devpulse/lib';
+import { type JSX } from 'react/jsx-runtime';
 
 import { useRequireAuth } from '@/features/auth/context';
 import {
@@ -22,7 +22,7 @@ interface ProjectDetailViewProps {
   projectId: string;
 }
 
-export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
+export function ProjectDetailView({ projectId }: ProjectDetailViewProps): JSX.Element {
   const { data: project, isLoading, error } = useProject(projectId);
   const { user } = useRequireAuth();
 
@@ -58,7 +58,7 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
           <span className="flex items-center gap-1.5 text-xs text-subtle">
             <Clock className="h-4 w-4" strokeWidth={1.5} /> Active Time
           </span>
-          <span className="mt-2 font-mono text-2xl font-semibold tabular-nums text-foreground">
+          <span className="mt-2 font-mono text-2xl font-semibold text-foreground tabular-nums">
             {project.activeTime}
           </span>
         </Panel>
@@ -66,7 +66,7 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
           <span className="flex items-center gap-1.5 text-xs text-subtle">
             <Zap className="h-4 w-4" strokeWidth={1.5} /> Focus Score
           </span>
-          <span className="mt-2 font-mono text-2xl font-semibold tabular-nums text-brand">
+          <span className="mt-2 font-mono text-2xl font-semibold text-brand tabular-nums">
             {project.focusScore}%
           </span>
         </Panel>
@@ -74,7 +74,7 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
           <span className="flex items-center gap-1.5 text-xs text-subtle">
             <Layers className="h-4 w-4" strokeWidth={1.5} /> Sessions
           </span>
-          <span className="mt-2 font-mono text-2xl font-semibold tabular-nums text-foreground">
+          <span className="mt-2 font-mono text-2xl font-semibold text-foreground tabular-nums">
             {project.sessions}
           </span>
         </Panel>
@@ -82,7 +82,7 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
           <span className="flex items-center gap-1.5 text-xs text-subtle">
             <GitCommit className="h-4 w-4" strokeWidth={1.5} /> Commits
           </span>
-          <span className="mt-2 font-mono text-2xl font-semibold tabular-nums text-foreground">
+          <span className="mt-2 font-mono text-2xl font-semibold text-foreground tabular-nums">
             {project.totalCommits}
           </span>
         </Panel>
@@ -90,7 +90,7 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
           <span className="flex items-center gap-1.5 text-xs text-subtle">
             <Terminal className="h-4 w-4" strokeWidth={1.5} /> Commands
           </span>
-          <span className="mt-2 font-mono text-2xl font-semibold tabular-nums text-foreground">
+          <span className="mt-2 font-mono text-2xl font-semibold text-foreground tabular-nums">
             {project.totalCommands}
           </span>
         </Panel>
@@ -108,7 +108,7 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
             {project.languages.map((lang) => (
               <div key={lang.name} className="flex flex-col gap-1">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="capitalize text-foreground">{lang.name}</span>
+                  <span className="text-foreground capitalize">{lang.name}</span>
                   <span className="font-mono text-xs text-secondary">
                     {formatDuration(lang.seconds)} · {lang.percentage}%
                   </span>
@@ -179,7 +179,7 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
               <div className="col-span-2 font-mono text-xs text-foreground">
                 {formatDuration(session.durationSeconds)}
               </div>
-              <div className="col-span-2 text-right text-xs capitalize text-secondary">
+              <div className="col-span-2 text-right text-xs text-secondary capitalize">
                 {session.primaryLanguage ?? '—'}
               </div>
             </div>

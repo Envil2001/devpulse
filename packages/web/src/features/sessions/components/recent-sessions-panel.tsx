@@ -1,22 +1,24 @@
 'use client';
 
+import { formatDuration } from '@devpulse/lib';
+import { formatInTimeZone } from 'date-fns-tz';
 import { ChevronRight, Clock, GitBranch, TerminalSquare } from 'lucide-react';
 import Link from 'next/link';
-import { formatInTimeZone } from 'date-fns-tz';
-import { cn } from '@/shared/lib/cn';
-import { formatTimeRange } from '@/shared/lib/date';
+import { type JSX } from 'react/jsx-runtime';
+
+import { useRequireAuth } from '@/features/auth/context';
 import {
   Panel,
+  PanelContent,
+  PanelDescription,
   PanelHeader,
   PanelTitle,
-  PanelDescription,
-  PanelContent,
 } from '@/shared/components/layout/panel';
+import { cn } from '@/shared/lib/cn';
+import { formatTimeRange } from '@/shared/lib/date';
 import type { WorkSessionSummary } from '@/shared/types';
-import { useRequireAuth } from '@/features/auth/context';
 
 import { RECENT_SESSIONS_LIMIT, useRecentSessions } from '../hooks';
-import { formatDuration } from '@devpulse/lib';
 
 /** A focus score of a session shorter than this says nothing: 6 seconds of typing is "100%". */
 const MIN_SECONDS_FOR_FOCUS = 5 * 60;
@@ -40,7 +42,7 @@ function focusColorClass(score: number): string {
   return 'text-red-coral';
 }
 
-export function RecentSessionsPanel({ projectId }: { projectId?: string }) {
+export function RecentSessionsPanel({ projectId }: { projectId?: string }): JSX.Element {
   const { user } = useRequireAuth();
   const {
     data: sessions = [],
@@ -58,7 +60,7 @@ export function RecentSessionsPanel({ projectId }: { projectId?: string }) {
       </PanelHeader>
 
       <PanelContent className="flex flex-col">
-        <div className="mb-2 grid grid-cols-12 gap-4 border-b border-border pb-2 text-xs font-medium uppercase tracking-wider text-subtle">
+        <div className="mb-2 grid grid-cols-12 gap-4 border-b border-border pb-2 text-xs font-medium tracking-wider text-subtle uppercase">
           <div className="col-span-3">Time</div>
           <div className="col-span-4">Branch</div>
           <div className="col-span-3">Language</div>
@@ -122,7 +124,7 @@ export function RecentSessionsPanel({ projectId }: { projectId?: string }) {
                     strokeWidth={1.5}
                     aria-hidden="true"
                   />
-                  <span className="truncate text-sm font-medium capitalize text-foreground">
+                  <span className="truncate text-sm font-medium text-foreground capitalize">
                     {session.primaryLanguage}
                   </span>
                 </>
@@ -155,7 +157,7 @@ export function RecentSessionsPanel({ projectId }: { projectId?: string }) {
             </div>
 
             <ChevronRight
-              className="absolute right-1 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-subtle opacity-0 transition-opacity group-hover:opacity-100"
+              className="absolute top-1/2 right-1 h-3.5 w-3.5 -translate-y-1/2 text-subtle opacity-0 transition-opacity group-hover:opacity-100"
               strokeWidth={1.5}
               aria-hidden="true"
             />

@@ -1,9 +1,9 @@
-import { AuthService } from '@/features/auth/api';
 import { AnalyticsService } from '@/features/analytics/api';
+import { ApiKeysService } from '@/features/api-keys/api';
+import { AuthService } from '@/features/auth/api';
 import { ProjectsService } from '@/features/projects/api';
 import { SessionsService } from '@/features/sessions/api';
 import { UsersService } from '@/features/users/api';
-import { ApiKeysService } from '@/features/api-keys/api';
 import { WorklogService } from '@/features/worklog/api';
 
 export const authService = new AuthService();

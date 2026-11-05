@@ -1,6 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
+import { type RefObject, useEffect, useRef, useState } from 'react';
 
-export function useIntersectionObserver() {
+interface IntersectionObserverState {
+  activeId: string;
+  mainRef: RefObject<HTMLElement | null>;
+}
+
+export function useIntersectionObserver(): IntersectionObserverState {
   const [activeId, setActiveId] = useState<string>('introduction');
   const mainRef = useRef<HTMLElement>(null);
 

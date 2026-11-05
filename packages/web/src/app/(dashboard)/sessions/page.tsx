@@ -1,10 +1,12 @@
 import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
-import { getQueryClient } from '@/shared/api/get-query-client';
+import { type JSX } from 'react/jsx-runtime';
+
+import { SessionsListView } from '@/features/sessions/components/sessions-list-view';
 import { sessionsKeys } from '@/features/sessions/hooks';
 import { getSessionsServer } from '@/features/sessions/server';
-import { SessionsListView } from '@/features/sessions/components/sessions-list-view';
+import { getQueryClient } from '@/shared/api/get-query-client';
 
-export default async function SessionsPage() {
+export default async function SessionsPage(): Promise<JSX.Element> {
   const queryClient = getQueryClient();
 
   await queryClient.prefetchQuery({

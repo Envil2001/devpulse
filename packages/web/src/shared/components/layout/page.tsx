@@ -1,4 +1,5 @@
 import * as React from 'react';
+
 import { cn } from '@/shared/lib/cn';
 
 const Page = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
@@ -56,4 +57,4 @@ const PageActions = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDi
 );
 PageActions.displayName = 'PageActions';
 
-export { Page, PageHeader, PageHeaderHeading, PageTitle, PageDescription, PageActions };
+export { Page, PageActions, PageDescription, PageHeader, PageHeaderHeading, PageTitle };

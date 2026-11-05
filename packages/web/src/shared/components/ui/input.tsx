@@ -1,15 +1,16 @@
 'use client';
 
-import * as React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
+import * as React from 'react';
+
 import { cn } from '@/shared/lib/cn';
 
 const inputVariants = cva(
   [
-    'block w-full bg-background border shadow-none transition-colors text-foreground',
-    'file:border-0 file:bg-transparent file:font-medium file:text-sm file:text-foreground',
+    'block w-full border bg-background text-foreground shadow-none transition-colors',
+    'file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground',
     'placeholder:text-subtle',
-    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/15',
+    'focus-visible:ring-2 focus-visible:ring-white/15 focus-visible:outline-none',
     'disabled:cursor-not-allowed disabled:opacity-50',
   ].join(' '),
   {
@@ -22,9 +23,9 @@ const inputVariants = cva(
         ].join(' '),
       },
       size: {
-        sm: 'h-7 px-2 rounded-lg text-xs',
-        default: 'h-8 px-2.5 rounded-[10px] text-[13px]',
-        lg: 'h-10 px-3 rounded-xl text-sm',
+        sm: 'h-7 rounded-lg px-2 text-xs',
+        default: 'h-8 rounded-[10px] px-2.5 text-[13px]',
+        lg: 'h-10 rounded-xl px-3 text-sm',
       },
     },
     defaultVariants: {

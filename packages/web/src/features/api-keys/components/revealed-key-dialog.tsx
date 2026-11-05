@@ -1,7 +1,9 @@
 'use client';
 
+import { Check, Copy } from 'lucide-react';
 import { useState } from 'react';
-import { Copy, Check } from 'lucide-react';
+import { type JSX } from 'react/jsx-runtime';
+
 import { Button } from '@/shared/components/ui/button';
 import {
   Dialog,
@@ -17,7 +19,7 @@ interface RevealedKeyDialogProps {
   onClose: () => void;
 }
 
-export function RevealedKeyDialog({ apiKey, onClose }: RevealedKeyDialogProps) {
+export function RevealedKeyDialog({ apiKey, onClose }: RevealedKeyDialogProps): JSX.Element {
   const [hasCopied, setHasCopied] = useState(false);
 
   const handleCopy = () => {
@@ -37,7 +39,7 @@ export function RevealedKeyDialog({ apiKey, onClose }: RevealedKeyDialogProps) {
         </DialogHeader>
 
         <div className="mt-4 flex items-center gap-2 rounded-xl border border-border bg-gray-alpha-50 px-3 py-2.5">
-          <code className="flex-1 break-all font-mono text-xs text-foreground">{apiKey}</code>
+          <code className="flex-1 font-mono text-xs break-all text-foreground">{apiKey}</code>
           <Button size="sm" onClick={handleCopy}>
             {hasCopied ? (
               <>
