@@ -72,8 +72,9 @@ describe('TelemetryController (Integration)', () => {
   });
 
   const mockTelemetryQueue = {
-    addEventsJob: jest.fn((_userId: TypeId<'users'>, _events: Array<TelemetryEventItemDto>) =>
-      Promise.resolve(),
+    addEventsJob: jest.fn(
+      (_userId: TypeId<'users'>, _events: Array<TelemetryEventItemDto>, _batchId?: string) =>
+        Promise.resolve(),
     ),
   };
 
@@ -204,7 +205,11 @@ describe('TelemetryController (Integration)', () => {
     expect(response.status).toBe(200);
     expect(body.success).toBe(true);
     expect(body.processedCount).toBe(1);
-    expect(mockTelemetryQueue.addEventsJob).toHaveBeenCalledWith('u_user123', batchPayload.events);
+    expect(mockTelemetryQueue.addEventsJob).toHaveBeenCalledWith(
+      'u_user123',
+      batchPayload.events,
+      batchPayload.batchId,
+    );
   });
 
   it('should return today metrics for VS Code extension', async () => {
