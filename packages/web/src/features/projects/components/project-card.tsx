@@ -19,12 +19,16 @@ export function ProjectCard({ project, timezone }: ProjectCardProps): JSX.Elemen
       href={`/projects/${project.id}`}
       aria-label={`View details for project ${project.name}`}
       className={cn(
-        'group relative flex flex-col justify-between rounded-xl border border-border bg-surface p-5',
-        'transition-colors duration-200 outline-none',
-        'hover:border-gray-alpha-300 hover:bg-gray-alpha-50',
+        'interactive-surface group relative flex min-h-64 flex-col justify-between overflow-hidden rounded-2xl border border-white/[0.07] bg-surface/90 p-5',
+        'shadow-[inset_0_1px_0_rgba(255,255,255,0.025),0_18px_50px_rgba(0,0,0,0.12)] outline-none',
+        'hover:border-brand/20 hover:bg-surface-hover/70 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_22px_60px_rgba(0,0,0,0.2)]',
         'focus-visible:ring-2 focus-visible:ring-white/15',
       )}
     >
+      <span
+        aria-hidden="true"
+        className="absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-brand/45 to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+      />
       <div>
         <div className="flex items-start justify-between gap-2">
           <div className="flex min-w-0 items-center gap-3">
@@ -45,7 +49,7 @@ export function ProjectCard({ project, timezone }: ProjectCardProps): JSX.Elemen
 
           <ArrowUpRight
             className={cn(
-              'h-4 w-4 shrink-0 translate-x-1 -translate-y-1 text-subtle opacity-0 transition-all duration-200',
+              'h-4 w-4 shrink-0 translate-x-1 -translate-y-1 text-subtle opacity-0 transition-[transform,opacity] duration-200',
               'group-hover:translate-x-0 group-hover:translate-y-0 group-hover:opacity-100',
             )}
             strokeWidth={1.5}
@@ -54,7 +58,7 @@ export function ProjectCard({ project, timezone }: ProjectCardProps): JSX.Elemen
         </div>
       </div>
 
-      <div className="mt-5 grid grid-cols-3 gap-2 rounded-lg border border-border bg-gray-alpha-50 p-3">
+      <div className="mt-6 grid grid-cols-3 gap-3 border-y border-white/[0.06] py-4">
         <div className="flex flex-col">
           <span className="flex items-center gap-1 text-xs text-subtle">
             <Clock className="h-3.5 w-3.5" strokeWidth={1.5} aria-hidden="true" />

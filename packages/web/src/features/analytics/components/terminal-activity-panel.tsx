@@ -17,6 +17,7 @@ import { cn } from '@/shared/lib/cn';
 import { type DateRange, useCommandsBreakdown } from '../hooks';
 
 type KindFilter = 'all' | 'test' | 'build' | 'lint' | 'install' | 'git';
+const DASHBOARD_COMMAND_LIMIT = 8;
 
 const KIND_LABELS: Record<KindFilter, string> = {
   all: 'All',
@@ -61,12 +62,14 @@ export function TerminalActivityPanel({
   const [filter, setFilter] = useState<KindFilter>('all');
 
   const allCommands = data?.commands ?? [];
-  const commands = filter === 'all' ? allCommands : allCommands.filter((c) => c.kind === filter);
+  const filteredCommands =
+    filter === 'all' ? allCommands : allCommands.filter((c) => c.kind === filter);
+  const commands = filteredCommands.slice(0, DASHBOARD_COMMAND_LIMIT);
 
   const availableKinds = new Set(allCommands.map((c) => c.kind));
 
   return (
-    <Panel>
+    <Panel className="h-full">
       <PanelHeader>
         <div>
           <PanelTitle>Terminal activity</PanelTitle>
@@ -160,6 +163,13 @@ export function TerminalActivityPanel({
             </div>
           </div>
         ))}
+
+        {filteredCommands.length > DASHBOARD_COMMAND_LIMIT && (
+          <p className="border-t border-border pt-3 text-xs text-subtle">
+            Showing the top {String(DASHBOARD_COMMAND_LIMIT)} of {String(filteredCommands.length)}{' '}
+            commands for this view.
+          </p>
+        )}
       </PanelContent>
     </Panel>
   );

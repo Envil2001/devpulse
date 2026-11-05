@@ -5,6 +5,8 @@ import { Clock, FolderGit2, Layers, Zap } from 'lucide-react';
 import { useMemo } from 'react';
 import { type JSX } from 'react/jsx-runtime';
 
+import { Panel } from '@/shared/components/layout/panel';
+import { cn } from '@/shared/lib/cn';
 import { type WorkSessionSummary } from '@/shared/types';
 
 interface SessionsSummaryCardsProps {
@@ -29,47 +31,66 @@ export function SessionsSummaryCards({
     );
   }, [sessions]);
 
+  const metrics = [
+    {
+      label: 'Total time',
+      icon: Clock,
+      value: isLoading ? '—' : formatDuration(totalSeconds),
+      accent: true,
+    },
+    {
+      label: 'Avg focus',
+      icon: Zap,
+      value: isLoading ? '—' : `${String(avgFocus)}%`,
+      accent: false,
+    },
+    {
+      label: 'Total sessions',
+      icon: Layers,
+      value: isLoading ? '—' : String(sessions.length),
+      accent: false,
+    },
+    {
+      label: 'Active projects',
+      icon: FolderGit2,
+      value: isLoading ? '—' : String(uniqueProjectsCount),
+      accent: false,
+    },
+  ];
+
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-      <div className="flex flex-col rounded-xl border border-border bg-surface p-4">
-        <span className="flex items-center gap-1.5 text-xs text-subtle">
-          <Clock className="h-3.5 w-3.5" strokeWidth={1.5} aria-hidden="true" />
-          Total Time
-        </span>
-        <span className="mt-1 font-mono text-lg font-semibold text-foreground tabular-nums">
-          {isLoading ? '—' : formatDuration(totalSeconds)}
-        </span>
-      </div>
+    <Panel className="overflow-hidden p-0 lg:p-0">
+      <div className="grid grid-cols-2 sm:grid-cols-4">
+        {metrics.map((metric, index) => {
+          const Icon = metric.icon;
 
-      <div className="flex flex-col rounded-xl border border-border bg-surface p-4">
-        <span className="flex items-center gap-1.5 text-xs text-subtle">
-          <Zap className="h-3.5 w-3.5" strokeWidth={1.5} aria-hidden="true" />
-          Avg Focus
-        </span>
-        <span className="mt-1 font-mono text-lg font-semibold text-brand tabular-nums">
-          {isLoading ? '—' : `${avgFocus}%`}
-        </span>
+          return (
+            <div
+              key={metric.label}
+              className={cn(
+                'min-h-28 p-4 sm:p-5',
+                index < 2 && 'border-b border-white/[0.06] sm:border-b-0',
+                index % 2 === 0 && 'border-r border-white/[0.06]',
+                index === 1 && 'sm:border-r',
+                index === 2 && 'sm:border-r',
+              )}
+            >
+              <span className="flex items-center gap-1.5 text-xs text-subtle">
+                <Icon className="h-3.5 w-3.5" strokeWidth={1.5} aria-hidden="true" />
+                {metric.label}
+              </span>
+              <span
+                className={cn(
+                  'mt-3 block font-mono text-xl font-semibold tracking-tight tabular-nums',
+                  metric.accent ? 'text-brand' : 'text-foreground',
+                )}
+              >
+                {metric.value}
+              </span>
+            </div>
+          );
+        })}
       </div>
-
-      <div className="flex flex-col rounded-xl border border-border bg-surface p-4">
-        <span className="flex items-center gap-1.5 text-xs text-subtle">
-          <Layers className="h-3.5 w-3.5" strokeWidth={1.5} aria-hidden="true" />
-          Total Sessions
-        </span>
-        <span className="mt-1 font-mono text-lg font-semibold text-foreground tabular-nums">
-          {isLoading ? '—' : sessions.length}
-        </span>
-      </div>
-
-      <div className="flex flex-col rounded-xl border border-border bg-surface p-4">
-        <span className="flex items-center gap-1.5 text-xs text-subtle">
-          <FolderGit2 className="h-3.5 w-3.5" strokeWidth={1.5} aria-hidden="true" />
-          Active Projects
-        </span>
-        <span className="mt-1 font-mono text-lg font-semibold text-foreground tabular-nums">
-          {isLoading ? '—' : uniqueProjectsCount}
-        </span>
-      </div>
-    </div>
+    </Panel>
   );
 }

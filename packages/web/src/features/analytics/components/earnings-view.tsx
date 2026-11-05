@@ -6,6 +6,7 @@ import { RateConfigPanel } from '@/features/users/components/rate-config-panel';
 import {
   Page,
   PageDescription,
+  PageEyebrow,
   PageHeader,
   PageHeaderHeading,
   PageTitle,
@@ -24,6 +25,7 @@ export function EarningsView({ range30d, range7d }: EarningsViewProps): JSX.Elem
     <Page>
       <PageHeader>
         <div>
+          <PageEyebrow>Value of focus</PageEyebrow>
           <PageHeaderHeading>
             <PageTitle>Earnings</PageTitle>
           </PageHeaderHeading>
@@ -31,11 +33,13 @@ export function EarningsView({ range30d, range7d }: EarningsViewProps): JSX.Elem
         </div>
       </PageHeader>
 
-      <div data-tour="earnings-rate">
-        <RateConfigPanel />
-      </div>
-      <div data-tour="earnings-summary">
-        <EarningsSummaryCards range30d={range30d} range7d={range7d} />
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-12 lg:gap-5">
+        <div data-tour="earnings-rate" className="lg:col-span-5">
+          <RateConfigPanel />
+        </div>
+        <div data-tour="earnings-summary" className="lg:col-span-7">
+          <EarningsSummaryCards range30d={range30d} range7d={range7d} />
+        </div>
       </div>
     </Page>
   );

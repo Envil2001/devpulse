@@ -84,9 +84,9 @@ export function StatusMonitoringPanel(): JSX.Element | null {
       : 'border-yellow-amber/30 bg-yellow-amber/10 text-yellow-amber';
 
   return (
-    <Panel className="p-6">
-      <div className="flex flex-col gap-6">
-        <div className="flex items-center justify-between">
+    <Panel className="h-full p-5">
+      <div className="flex h-full flex-col gap-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-surface-hover text-brand">
               <Activity className="h-4 w-4" />
@@ -102,15 +102,12 @@ export function StatusMonitoringPanel(): JSX.Element | null {
           <div
             className={cn('flex items-center gap-2 rounded-full border px-3 py-1', overallClass)}
           >
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-current opacity-75" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-current" />
-            </span>
+            <span className="h-2 w-2 rounded-full bg-current shadow-[0_0_8px_currentColor]" />
             <span className="font-mono text-xs font-medium">{overallLabel}</span>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid flex-1 grid-cols-1 gap-2.5 sm:grid-cols-2">
           {services.map((srv) => {
             const Icon = srv.icon;
             const dotColor =
@@ -122,7 +119,7 @@ export function StatusMonitoringPanel(): JSX.Element | null {
             return (
               <div
                 key={srv.name}
-                className="flex flex-col justify-between rounded-lg border border-border bg-surface-hover/50 p-3"
+                className="flex min-h-24 flex-col justify-between rounded-xl border border-border bg-white/[0.02] p-3.5"
               >
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-subtle">{srv.name}</span>

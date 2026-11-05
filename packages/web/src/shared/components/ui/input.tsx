@@ -7,7 +7,7 @@ import { cn } from '@/shared/lib/cn';
 
 const inputVariants = cva(
   [
-    'block w-full border bg-background text-foreground shadow-none transition-colors',
+    'block w-full border bg-background text-foreground shadow-none transition-colors duration-150 ease-out',
     'file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground',
     'placeholder:text-subtle',
     'focus-visible:ring-2 focus-visible:ring-white/15 focus-visible:outline-none',

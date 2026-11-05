@@ -34,6 +34,7 @@ export function DocsLayoutWrapper({ children, endpoints }: DocsLayoutWrapperProp
       <aside
         className={cn(
           'fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-border bg-surface transition-transform duration-200 lg:static lg:translate-x-0',
+          'ease-out motion-reduce:transition-none',
           isOpen ? 'translate-x-0' : '-translate-x-full',
         )}
       >
@@ -106,7 +107,10 @@ export function DocsLayoutWrapper({ children, endpoints }: DocsLayoutWrapperProp
           <span className="text-sm font-medium text-foreground">API Reference</span>
         </header>
 
-        <main ref={mainRef} className="flex-1 overflow-y-auto scroll-smooth">
+        <main
+          ref={mainRef}
+          className="flex-1 overflow-y-auto scroll-smooth motion-reduce:scroll-auto"
+        >
           {children}
         </main>
       </div>

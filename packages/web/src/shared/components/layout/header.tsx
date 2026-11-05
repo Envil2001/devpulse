@@ -1,13 +1,13 @@
 'use client';
 
 import { Menu, PanelLeft, Search, X } from 'lucide-react';
-import Link from 'next/link'; // <--- Добавили Link
+import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { type JSX } from 'react/jsx-runtime';
 
 import { Button } from '@/shared/components/ui/button';
-import { inputVariants } from '@/shared/components/ui/input'; // <--- Импортируем варианты
+import { inputVariants } from '@/shared/components/ui/input';
 import { UserMenu } from '@/shared/components/ui/user-menu';
 import { cn } from '@/shared/lib/cn';
 
@@ -48,7 +48,6 @@ export function Header({
       )}
     >
       <div className="grid h-full w-full grid-cols-[1fr_auto_1fr] items-center gap-2 px-3">
-        {/* Левая часть */}
         <div className="flex min-w-0 items-center gap-2">
           <Button
             variant="ghost"
@@ -72,7 +71,6 @@ export function Header({
           <h1 className="ml-1 truncate text-sm font-medium text-foreground">{getPageTitle()}</h1>
         </div>
 
-        {/* Центральная часть (Поиск) */}
         <div className="flex w-full max-w-md justify-center">
           <button
             type="button"

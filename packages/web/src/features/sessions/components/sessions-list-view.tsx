@@ -2,6 +2,7 @@
 
 import { formatDuration } from '@devpulse/lib';
 import { Calendar, FolderGit2, GitBranch, Search } from 'lucide-react';
+import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { type JSX } from 'react/jsx-runtime';
 
@@ -9,6 +10,7 @@ import { useRequireAuth } from '@/features/auth/context';
 import {
   Page,
   PageDescription,
+  PageEyebrow,
   PageHeader,
   PageHeaderHeading,
   PageTitle,
@@ -55,6 +57,7 @@ export function SessionsListView(): JSX.Element {
     <Page>
       <PageHeader>
         <div>
+          <PageEyebrow>Activity timeline</PageEyebrow>
           <PageHeaderHeading>
             <PageTitle>Sessions</PageTitle>
           </PageHeaderHeading>
@@ -171,11 +174,13 @@ export function SessionsListView(): JSX.Element {
         {!isLoading && !error && filteredSessions.length > 0 && (
           <div className="flex flex-col">
             {filteredSessions.map((session, i) => (
-              <div
+              <Link
                 key={session.id}
+                href={`/sessions/${session.id}`}
                 className={cn(
-                  'relative grid grid-cols-12 items-center gap-4 py-3.5 text-sm transition-colors',
+                  'relative grid grid-cols-12 items-center gap-4 py-3.5 text-sm transition-colors duration-150 outline-none',
                   '-mx-2 rounded-lg px-2 hover:bg-gray-alpha-50',
+                  'focus-visible:ring-2 focus-visible:ring-white/15',
                   i !== filteredSessions.length - 1 &&
                     'after:pointer-events-none after:absolute after:inset-x-2 after:bottom-0 after:h-px after:bg-border',
                 )}
@@ -218,7 +223,7 @@ export function SessionsListView(): JSX.Element {
                 <div className="col-span-2 text-right font-mono text-xs text-brand tabular-nums sm:col-span-1">
                   {session.focusScore}%
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         )}

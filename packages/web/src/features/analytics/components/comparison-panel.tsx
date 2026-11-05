@@ -39,15 +39,49 @@ function DeltaIcon({ diff }: { diff: number }) {
   return <ArrowRight className="h-3 w-3" strokeWidth={1.5} />;
 }
 
-export function ComparisonPanel({ range, projectId }: ComparisonPanelProps): JSX.Element | null {
+export function ComparisonPanel({ range, projectId }: ComparisonPanelProps): JSX.Element {
   const { current, previous, isLoading } = useDashboardComparison(range, projectId);
 
   if (isLoading || !current || !previous) {
-    return null;
+    return (
+      <Panel className="h-full">
+        <PanelHeader>
+          <div>
+            <PanelTitle>Comparison</PanelTitle>
+            <PanelDescription>vs previous period of the same length</PanelDescription>
+          </div>
+        </PanelHeader>
+        <PanelContent className="grid grid-cols-2 gap-2.5" aria-busy={isLoading}>
+          {['active-time', 'focus-score', 'sessions', 'top-language'].map((metric) => (
+            <div
+              key={metric}
+              className="min-h-24 animate-pulse rounded-xl border border-border bg-white/[0.02]"
+            />
+          ))}
+        </PanelContent>
+      </Panel>
+    );
   }
 
   if (previous.totalActiveSeconds === 0 && previous.totalSessionsCount === 0) {
-    return null;
+    return (
+      <Panel className="flex h-full flex-col">
+        <PanelHeader>
+          <div>
+            <PanelTitle>Comparison</PanelTitle>
+            <PanelDescription>vs previous period of the same length</PanelDescription>
+          </div>
+        </PanelHeader>
+        <PanelContent className="flex flex-1 items-center justify-center py-10 text-center">
+          <div>
+            <p className="text-sm font-medium text-foreground">A baseline is taking shape</p>
+            <p className="mt-1 max-w-60 text-xs leading-5 text-subtle">
+              Keep tracking activity and this space will compare your next complete period.
+            </p>
+          </div>
+        </PanelContent>
+      </Panel>
+    );
   }
 
   const metrics: Array<MetricDelta> = [
@@ -78,7 +112,7 @@ export function ComparisonPanel({ range, projectId }: ComparisonPanelProps): JSX
   ];
 
   return (
-    <Panel>
+    <Panel className="h-full">
       <PanelHeader>
         <div>
           <PanelTitle>Comparison</PanelTitle>
@@ -86,9 +120,12 @@ export function ComparisonPanel({ range, projectId }: ComparisonPanelProps): JSX
         </div>
       </PanelHeader>
       <PanelContent>
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-2.5">
           {metrics.map((m) => (
-            <div key={m.label} className="flex flex-col gap-1">
+            <div
+              key={m.label}
+              className="flex min-h-24 flex-col justify-between rounded-xl border border-border bg-white/[0.02] p-3.5"
+            >
               <span className="text-xs text-subtle">{m.label}</span>
               <span className="font-mono text-lg font-semibold tracking-tight text-foreground tabular-nums">
                 {m.current}
