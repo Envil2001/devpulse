@@ -1,13 +1,16 @@
+import path from 'node:path';
+
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { formatInTimeZone, fromZonedTime } from 'date-fns-tz';
 import { Repository, SelectQueryBuilder } from 'typeorm';
 
-import { formatDuration, type TypeId } from '@devpulse/lib';
+import { formatDuration, type HotPathMetric, type TypeId } from '@devpulse/lib';
 
 import { WorkSession, WorkSessionStatus } from '../../telemetry/entities/work-session.entity';
 import { User } from '../../users/entities/user.entity';
 import { GetAnalyticsRangeRequestDto } from '../dto/request/get-analytics-range-request.dto';
+import { GetAnalyticsHotFilesResponseDto } from '../dto/response/get-analytics-hot-files-response.dto';
 import { GetIntegrationAiRoiResponseDto } from '../dto/response/get-integration-ai-roi-response.dto';
 import { GetIntegrationLanguagesResponseDto } from '../dto/response/get-integration-languages-response.dto';
 import { GetIntegrationSessionItemDto } from '../dto/response/get-integration-sessions-response.dto';
@@ -19,6 +22,7 @@ const SECONDS_PER_HOUR = 3600;
 const MIN_COMPARISON_SECONDS = SECONDS_PER_HOUR;
 const DAY_KEY_FORMAT = 'yyyy-MM-dd';
 const OTHER_LANGUAGE_LABEL = 'Other';
+const HOT_PATHS_LIMIT = 5;
 
 const OFFLINE_STATUS: GetIntegrationStatusResponseDto = {
   isCodingNow: false,
@@ -31,6 +35,11 @@ const OFFLINE_STATUS: GetIntegrationStatusResponseDto = {
 
 interface LanguageRow {
   language: string;
+  totalSeconds: string;
+}
+
+interface FileActivityRow {
+  path: string;
   totalSeconds: string;
 }
 
@@ -204,6 +213,74 @@ export class IntegrationsAnalyticsService {
           ((totalActiveSeconds > 0 ? seconds / totalActiveSeconds : 0) * 100).toFixed(1),
         ),
       })),
+    };
+  }
+
+  public async getHotFiles(
+    userId: TypeId<'users'>,
+    query: GetAnalyticsRangeRequestDto = {},
+  ): Promise<GetAnalyticsHotFilesResponseDto> {
+    const conditions = ['ws.user_id = $1'];
+    const params: Array<string> = [userId];
+
+    const addCondition = (column: string, operator: string, value: string): void => {
+      params.push(value);
+      conditions.push(`${column} ${operator} $${String(params.length)}`);
+    };
+
+    if (query.projectId) addCondition('ws.project_id', '=', query.projectId);
+    if (query.startDate) addCondition('ws.started_at', '>=', query.startDate);
+    if (query.endDate) addCondition('ws.started_at', '<=', query.endDate);
+
+    const rows = await this.sessionRepo.manager.query<Array<FileActivityRow>>(
+      `
+      SELECT file.key AS path,
+             SUM((file.value)::int) AS "totalSeconds"
+      FROM work_sessions ws,
+           LATERAL jsonb_each_text(COALESCE(ws.file_seconds, '{}'::jsonb)) AS file(key, value)
+      WHERE ${conditions.join(' AND ')}
+      GROUP BY file.key
+      ORDER BY "totalSeconds" DESC
+      `,
+      params,
+    );
+
+    const files = rows
+      .map((row) => ({ path: row.path, activeSeconds: Number.parseInt(row.totalSeconds, 10) }))
+      .filter((row) => !Number.isNaN(row.activeSeconds) && row.activeSeconds > 0);
+    const totalAttributedSeconds = files.reduce((sum, file) => sum + file.activeSeconds, 0);
+    const folderSeconds = new Map<string, number>();
+
+    for (const file of files) {
+      const folder = path.posix.dirname(file.path);
+      folderSeconds.set(folder, (folderSeconds.get(folder) ?? 0) + file.activeSeconds);
+    }
+
+    const toMetric = ({
+      path: metricPath,
+      activeSeconds,
+    }: {
+      path: string;
+      activeSeconds: number;
+    }): HotPathMetric => ({
+      path: metricPath,
+      activeSeconds,
+      percentage: Number(
+        ((totalAttributedSeconds > 0 ? activeSeconds / totalAttributedSeconds : 0) * 100).toFixed(
+          1,
+        ),
+      ),
+    });
+
+    const folders = Array.from(folderSeconds, ([folderPath, activeSeconds]) => ({
+      path: folderPath,
+      activeSeconds,
+    })).sort((first, second) => second.activeSeconds - first.activeSeconds);
+
+    return {
+      totalAttributedSeconds,
+      files: files.slice(0, HOT_PATHS_LIMIT).map((file) => toMetric(file)),
+      folders: folders.slice(0, HOT_PATHS_LIMIT).map((folder) => toMetric(folder)),
     };
   }
 

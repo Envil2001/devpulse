@@ -7,7 +7,8 @@ export interface CommandKindFacts {
 
 /**
  * Everything the model is allowed to know about one working day.
- * Raw terminal commands and file paths are deliberately absent: only counts and outcomes leave the server.
+ * Raw terminal commands remain private. File activity is limited to five sanitised,
+ * workspace-relative paths and is sent only when the user requests an AI worklog.
  */
 export interface DayFacts {
   /** Local date of the user, yyyy-MM-dd. */
@@ -16,6 +17,7 @@ export interface DayFacts {
   focusScore: number;
   projects: Array<{ name: string; minutes: number; branches: Array<string> }>;
   languages: Array<{ name: string; percent: number }>;
+  hotFiles: Array<{ path: string; minutes: number; percent: number }>;
   terminal: {
     totalRuns: number;
     failedRuns: number;

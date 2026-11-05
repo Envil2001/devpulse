@@ -11,6 +11,7 @@ const NOTIFICATION_DEBOUNCE_MS = 5 * 60 * 1000;
 export class StatsPoller implements vscode.Disposable {
   private timer: ReturnType<typeof setInterval> | undefined;
   private lastNotificationAt = 0;
+  private isPolling = false;
 
   constructor(
     private readonly client: TelemetryApiClient,
@@ -34,6 +35,9 @@ export class StatsPoller implements vscode.Disposable {
   }
 
   private async poll(): Promise<void> {
+    if (this.isPolling) return;
+    this.isPolling = true;
+
     try {
       const stats = await this.client.getTodayStats();
       this.state.setTodayStats(stats);
@@ -49,6 +53,8 @@ export class StatsPoller implements vscode.Disposable {
       }
 
       this.state.setHealth('offline');
+    } finally {
+      this.isPolling = false;
     }
   }
 

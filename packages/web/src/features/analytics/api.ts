@@ -1,4 +1,9 @@
-import type { AiRoiMetrics, DashboardStats, PipelineHealth } from '@devpulse/lib';
+import type {
+  AiRoiMetrics,
+  DashboardStats,
+  HotFilesAnalytics,
+  PipelineHealth,
+} from '@devpulse/lib';
 
 import { type QueryParams } from '@/shared/api/api-client';
 import { BaseService } from '@/shared/api/base.service';
@@ -50,6 +55,10 @@ export class AnalyticsService extends BaseService {
 
   async getCommands(params: AnalyticsRangeParams = {}): Promise<CommandsBreakdown> {
     return this.get<CommandsBreakdown>('/analytics/commands', { params });
+  }
+
+  async getHotFiles(params: AnalyticsRangeParams = {}): Promise<HotFilesAnalytics> {
+    return this.get<HotFilesAnalytics>('/analytics/hot-files', { params });
   }
 
   async getAiRoi(params: AnalyticsRangeParams = {}): Promise<AiRoiMetrics> {

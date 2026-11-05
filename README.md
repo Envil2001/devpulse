@@ -1,4 +1,5 @@
 # devpulse
+
 An automated time-tracking and workflow analytics platform for developers, built with NestJS, Next.js, and VS Code Extension API.
 
 ## Analytics and AI ROI
@@ -31,11 +32,11 @@ GET /api/v1/analytics/ai-roi
 
 Optional query parameters:
 
-| Parameter | Format | Description |
-| --- | --- | --- |
-| `startDate` | ISO 8601 datetime | Include sessions starting at or after this date |
-| `endDate` | ISO 8601 datetime | Include sessions starting at or before this date |
-| `projectId` | string | Restrict metrics to one project |
+| Parameter   | Format            | Description                                      |
+| ----------- | ----------------- | ------------------------------------------------ |
+| `startDate` | ISO 8601 datetime | Include sessions starting at or after this date  |
+| `endDate`   | ISO 8601 datetime | Include sessions starting at or before this date |
+| `projectId` | string            | Restrict metrics to one project                  |
 
 The endpoint returns `aiSessionsCount`, `manualSessionsCount`,
 `totalAiInteractions`, `aiVelocityLinesPerHour`, `manualVelocityLinesPerHour`,
@@ -56,6 +57,7 @@ The worklog generator includes:
 - automatic aggregation of work sessions, projects, branches, and languages;
 - focus score and terminal command analysis;
 - commit message integration;
+- up to five sanitised workspace-relative hot-file paths per day;
 - AI usage detection and contextual mention in summaries;
 - natural, non-robotic tone suitable for professional reports.
 

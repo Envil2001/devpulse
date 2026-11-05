@@ -49,3 +49,16 @@ export interface PipelineHealth {
     model: string | null;
   };
 }
+
+export interface HotPathMetric {
+  path: string;
+  activeSeconds: number;
+  percentage: number;
+}
+
+export interface HotFilesAnalytics {
+  /** Time that could be attributed to an active editor file. */
+  totalAttributedSeconds: number;
+  files: Array<HotPathMetric>;
+  folders: Array<HotPathMetric>;
+}

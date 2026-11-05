@@ -16,6 +16,8 @@ import { type ProjectSummaryDto } from '../../projects/dto/response/project-summ
 import { ProjectsService } from '../../projects/services/projects.service';
 import { getHttpServer } from '../../test/get-http-server';
 import { User } from '../../users/entities/user.entity';
+import { type GetAnalyticsRangeRequestDto } from '../dto/request/get-analytics-range-request.dto';
+import { type GetAnalyticsHotFilesResponseDto } from '../dto/response/get-analytics-hot-files-response.dto';
 import { type GetIntegrationSessionItemDto } from '../dto/response/get-integration-sessions-response.dto';
 import { IntegrationsAnalyticsService } from '../services/integrations-analytics.service';
 
@@ -59,6 +61,13 @@ describe('IntegrationsAnalyticsController (Integration)', () => {
   const mockIntegrationsService = {
     getRecentSessions: jest.fn((_userId: TypeId<'users'>, _limit: number) =>
       Promise.resolve([mockSessionItem]),
+    ),
+    getHotFiles: jest.fn((_userId: TypeId<'users'>, _query: GetAnalyticsRangeRequestDto) =>
+      Promise.resolve({
+        totalAttributedSeconds: 3600,
+        files: [{ path: 'src/main.ts', activeSeconds: 3600, percentage: 100 }],
+        folders: [{ path: 'src', activeSeconds: 3600, percentage: 100 }],
+      } satisfies GetAnalyticsHotFilesResponseDto),
     ),
   };
 
@@ -157,5 +166,20 @@ describe('IntegrationsAnalyticsController (Integration)', () => {
     expect(body).toHaveLength(1);
     expect(body[0]?.id).toBe('p_123');
     expect(mockProjectsService.getUserProjects).toHaveBeenCalledWith('u_user123');
+  });
+
+  it('should expose file activity to integrations with analytics scope', async () => {
+    const response = await request(getHttpServer(app))
+      .get('/integrations/analytics/hot-files?projectId=p_123')
+      .set('x-api-key', 'valid-api-key');
+
+    const body = response.body as GetAnalyticsHotFilesResponseDto;
+
+    expect(response.status).toBe(200);
+    expect(body.totalAttributedSeconds).toBe(3600);
+    expect(mockIntegrationsService.getHotFiles).toHaveBeenCalledWith(
+      'u_user123',
+      expect.objectContaining({ projectId: 'p_123' }),
+    );
   });
 });

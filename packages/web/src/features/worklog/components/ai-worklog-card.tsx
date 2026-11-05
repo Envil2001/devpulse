@@ -77,6 +77,11 @@ export function AiWorklogCard(): JSX.Element {
               <p className="mt-0.5 text-xs text-subtle">
                 Day-by-day summary for up to {String(MAX_RANGE_DAYS)} days
               </p>
+              <p className="mt-1 max-w-xl text-xs leading-relaxed text-subtle">
+                When you generate a report, telemetry facts—including up to five sanitised relative
+                file paths per day—are sent to your configured AI provider. File contents are never
+                included.
+              </p>
             </div>
           </div>
 

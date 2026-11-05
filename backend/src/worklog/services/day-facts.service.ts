@@ -9,6 +9,8 @@ import {
   MAX_BRANCHES_PER_PROJECT,
   MAX_COMMIT_MESSAGE_LENGTH,
   MAX_COMMITS_PER_DAY,
+  MAX_FILE_PATH_LENGTH,
+  MAX_HOT_FILES_PER_DAY,
   MAX_LANGUAGES_PER_DAY,
   MAX_NAME_LENGTH,
   MAX_PROJECTS_PER_DAY,
@@ -68,6 +70,7 @@ export class DayFactsService {
 
     const projects = new Map<string, ProjectAccumulator>();
     const languages = new Map<string, number>();
+    const files = new Map<string, number>();
     const commits = new Map<string, DayFacts['commits'][number]>();
     const commands: Array<TerminalCommand> = [];
 
@@ -83,6 +86,7 @@ export class DayFactsService {
 
       this.addProject(projects, session, active);
       this.addLanguages(languages, session, active);
+      this.addFiles(files, session);
 
       for (const commit of session.commits) {
         commits.set(commit.hash, {
@@ -105,6 +109,7 @@ export class DayFactsService {
       focusScore: Math.round(weightedFocus / activeSeconds),
       projects: this.formatProjects(projects),
       languages: this.formatLanguages(languages),
+      hotFiles: this.formatHotFiles(files),
       terminal: {
         totalRuns: commands.length,
         failedRuns: commands.filter((command) => this.isFailed(command)).length,
@@ -162,6 +167,16 @@ export class DayFactsService {
     target.set(key, (target.get(key) ?? 0) + seconds);
   }
 
+  private addFiles(files: Map<string, number>, session: WorkSession): void {
+    for (const [filePath, seconds] of Object.entries(session.fileSeconds)) {
+      const safePath = sanitizeText(filePath, MAX_FILE_PATH_LENGTH);
+
+      if (safePath !== '' && seconds > 0) {
+        this.addSeconds(files, safePath, seconds);
+      }
+    }
+  }
+
   private formatProjects(projects: Map<string, ProjectAccumulator>): DayFacts['projects'] {
     return [...projects.entries()]
       .sort(([, first], [, second]) => second.seconds - first.seconds)
@@ -184,6 +199,23 @@ export class DayFactsService {
       .sort(([, first], [, second]) => second - first)
       .slice(0, MAX_LANGUAGES_PER_DAY)
       .map(([name, seconds]) => ({ name, percent: Math.round((seconds / total) * 100) }));
+  }
+
+  private formatHotFiles(files: Map<string, number>): DayFacts['hotFiles'] {
+    const total = [...files.values()].reduce((sum, seconds) => sum + seconds, 0);
+
+    if (total === 0) {
+      return [];
+    }
+
+    return [...files.entries()]
+      .sort(([, first], [, second]) => second - first)
+      .slice(0, MAX_HOT_FILES_PER_DAY)
+      .map(([filePath, seconds]) => ({
+        path: filePath,
+        minutes: Math.max(1, Math.round(seconds / 60)),
+        percent: Math.round((seconds / total) * 100),
+      }));
   }
 
   private isFailed(command: TerminalCommand): boolean {

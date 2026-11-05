@@ -16,6 +16,11 @@ import { TelemetryEvent } from './entities/telemetry-event.entity';
 import { WorkSession, WorkSessionStatus } from './entities/work-session.entity';
 import { TelemetryJobData } from './queue/telemetry.queue';
 import { classifyCommand } from './utils/command-classifier';
+import {
+  addFileActivity,
+  getFileActivityDeltaSeconds,
+  normalizeWorkspaceFilePath,
+} from './utils/file-activity';
 
 const QUEUE_NAME = 'telemetry-ingestion';
 const MAX_IDLE_CREDIT_MS = 30 * 60 * 1000;
@@ -206,6 +211,7 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
     if (event.type === 'session_end') {
       if (active) {
         this.accumulateLanguage(active, time);
+        this.accumulateFileActivity(active, time);
         this.extendSession(active, time);
         active.status = WorkSessionStatus.CLOSED;
         this.recomputeDerived(active, user);
@@ -226,6 +232,7 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
     if (active !== null && gapMs <= SESSION_GAP_MS) {
       if (event.type !== 'idle_end') {
         this.accumulateLanguage(active, time);
+        this.accumulateFileActivity(active, time);
       }
 
       this.applyEventToSession(active, event, time);
@@ -286,6 +293,8 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
       primaryLanguage: null,
       currentLanguage: null,
       languageSeconds: {},
+      currentFilePath: null,
+      fileSeconds: {},
       commandsRun: 0,
       failedCommands: 0,
       terminalCommands: [],
@@ -379,6 +388,7 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
     time: Date,
   ): void {
     this.applyEventLanguage(session, event);
+    this.applyEventFile(session, event);
     this.applyCommandTracking(session, event, time);
     this.applyAiInteractionTracking(session, event);
     this.applyCommitTracking(session, event, time);
@@ -416,6 +426,25 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
     if (!NOISY_LANGUAGES.has(language)) {
       session.currentLanguage = language;
     }
+  }
+
+  private accumulateFileActivity(session: WorkSession, time: Date): void {
+    const lastAt = session.endedAt ?? session.startedAt;
+    const deltaSec = getFileActivityDeltaSeconds(lastAt, time);
+
+    if (deltaSec <= 0 || !session.currentFilePath) {
+      return;
+    }
+
+    session.fileSeconds = addFileActivity(session.fileSeconds, session.currentFilePath, deltaSec);
+  }
+
+  private applyEventFile(session: WorkSession, event: TelemetryEventItemDto): void {
+    if (event.filePath === undefined) {
+      return;
+    }
+
+    session.currentFilePath = normalizeWorkspaceFilePath(event.filePath);
   }
 
   private applyCommandTracking(
@@ -565,12 +594,15 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
     const { event, branch, time } = item;
     const repo = manager.getRepository(TelemetryEvent);
 
-    const filesChanged: Array<string> =
+    const rawFiles: Array<string> =
       event.filesList && event.filesList.length > 0
         ? event.filesList
         : event.filePath
           ? [event.filePath]
           : [];
+    const filesChanged = rawFiles
+      .map((filePath) => normalizeWorkspaceFilePath(filePath))
+      .filter((filePath): filePath is string => filePath !== null);
 
     const rawEvent = repo.create({
       user,

@@ -13,6 +13,7 @@ import {
   getBranchesServer,
   getCommandsServer,
   getDashboardStatsServer,
+  getHotFilesServer,
   getLanguagesServer,
   getLiveStatusServer,
   getPipelineHealthServer,
@@ -59,6 +60,10 @@ export default async function DashboardPage(): Promise<JSX.Element> {
     queryClient.prefetchQuery({
       queryKey: analyticsKeys.commands(defaultRange),
       queryFn: () => getCommandsServer(defaultRange),
+    }),
+    queryClient.prefetchQuery({
+      queryKey: analyticsKeys.hotFiles(defaultRange),
+      queryFn: () => getHotFilesServer(defaultRange),
     }),
     queryClient.prefetchQuery({
       queryKey: analyticsKeys.pipelineHealth(),

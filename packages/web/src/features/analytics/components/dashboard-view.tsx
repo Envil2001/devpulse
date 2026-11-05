@@ -29,6 +29,7 @@ import { BranchesPanel } from './branches-panel';
 import { ComparisonPanel } from './comparison-panel';
 import { DashboardSummaryCards } from './dashboard-summary-cards';
 import { HeatmapPanel } from './heatmap-panel';
+import { HotFilesPanel } from './hot-files-panel';
 import { LanguagesPanel } from './languages-panel';
 import { ProjectSelector } from './project-selector';
 import { StatusMonitoringPanel } from './status-monitoring-panel';
@@ -122,6 +123,10 @@ export function DashboardView({
 
       <div data-tour="heatmap">
         <HeatmapPanel range={initialHeatmapRange} projectId={projectId} />
+      </div>
+
+      <div data-tour="hot-files">
+        <HotFilesPanel range={range} projectId={projectId} />
       </div>
 
       <div data-tour="recent-sessions">

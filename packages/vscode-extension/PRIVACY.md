@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**Last updated:** October 18, 2026
+**Last updated:** November 5, 2026
 
 DevPulse is a VS Code extension that tracks your coding activity locally and
 sends it to the DevPulse backend you choose. This document explains exactly
@@ -13,16 +13,16 @@ of your work.
 
 ### Events sent to the backend
 
-| Event                     | What is sent                                                                                         |
-| ------------------------- | ---------------------------------------------------------------------------------------------------- |
-| `heartbeat`               | Timestamp, current branch, machine ID, VS Code session ID                                            |
-| `file_save`               | Relative file path, language ID                                                                      |
-| `file_switch`             | Relative file path, language ID                                                                      |
-| `idle_start` / `idle_end` | Timestamp, idle duration in milliseconds                                                             |
-| `session_end`             | Timestamp, branch                                                                                    |
-| `terminal_command`        | Sanitized command text, working directory, exit code, duration                                       |
-| `task_run`                | Task name, task source, exit code, duration                                                          |
-| `git_commit`              | Commit SHA, commit message, files changed count, lines added/deleted, list of changed files (max 10) |
+| Event                     | What is sent                                                                                                       |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `heartbeat`               | Timestamp, current branch, active relative file path and language (when available), machine ID, VS Code session ID |
+| `file_save`               | Relative file path, language ID                                                                                    |
+| `file_switch`             | Relative file path, language ID                                                                                    |
+| `idle_start` / `idle_end` | Timestamp, idle duration in milliseconds                                                                           |
+| `session_end`             | Timestamp, branch                                                                                                  |
+| `terminal_command`        | Sanitized command text, working directory, exit code, duration                                                     |
+| `task_run`                | Task name, task source, exit code, duration                                                                        |
+| `git_commit`              | Commit SHA, commit message, files changed count, lines added/deleted, list of changed files (max 10)               |
 
 ### Environment fields attached to every event
 
@@ -40,6 +40,19 @@ of your work.
   - Flags like `--password=`, `--token=`, `--api-key=` are masked
 - **Screen or clipboard content.**
 - **Your personal identity.** No email, name, or IP is sent by the extension.
+
+## File activity analytics
+
+The backend can use consecutive active events to estimate how much active
+editor time was spent in each file. Only workspace-relative paths are sent;
+absolute filesystem paths and file contents are never collected. Idle periods
+are excluded, and a single uninterrupted interval is capped at five minutes.
+Folder totals are derived from the relative file paths.
+
+When you explicitly generate an AI worklog, the DevPulse backend may send up
+to five sanitised workspace-relative file paths for each day to the AI provider
+you configured. This is not sent to an AI provider during normal telemetry
+collection. File contents are never included.
 
 ## Where data goes
 

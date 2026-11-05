@@ -1,4 +1,3 @@
-/* eslint-disable unicorn/numeric-separators-style */
 import { Module, type Provider } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core/constants';
@@ -38,7 +37,7 @@ const throttlerProvider: Provider = {
     ThrottlerModule.forRoot([
       {
         name: 'burst',
-        ttl: 1_000,
+        ttl: 1000,
         limit: 10,
       },
       {

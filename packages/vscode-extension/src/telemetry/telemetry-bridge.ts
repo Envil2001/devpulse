@@ -90,7 +90,12 @@ export class TelemetryBridge implements vscode.Disposable {
   }
 
   public async start(): Promise<void> {
-    this.queue = this.bufferStore.load(this.context);
+    try {
+      this.queue = this.bufferStore.load(this.context);
+    } catch (error) {
+      this.log?.error(`buffer load failed: ${String(error)}`);
+      this.queue = [];
+    }
 
     const initialContext = this.gitContextProvider.currentContext;
     this.lastActivityState = this.activityMonitor.currentState;
@@ -103,7 +108,10 @@ export class TelemetryBridge implements vscode.Disposable {
     }
 
     if (initialContext.gitBranch) {
-      this.enqueue(this.create('heartbeat', { durationMs: null }));
+      this.enqueue(this.createHeartbeat());
+    }
+
+    if (this.queue.length > 0) {
       await this.flush();
     }
 
@@ -113,10 +121,22 @@ export class TelemetryBridge implements vscode.Disposable {
 
   public async shutdown(signal: AbortSignal): Promise<void> {
     this.stop();
-
     await this.savePromise;
 
-    await this.flush(signal, true);
+    const deadline = Date.now() + 5000;
+    while (this.flushing && Date.now() < deadline) {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+
+    const flushDeadline = Date.now() + 10_000;
+    while (
+      !signal.aborted &&
+      Date.now() < flushDeadline &&
+      (this.inflight !== null || this.queue.length > 0)
+    ) {
+      await this.flush(signal, true);
+      if (this.inflight !== null) break;
+    }
   }
 
   private registerListeners(): void {
@@ -162,8 +182,10 @@ export class TelemetryBridge implements vscode.Disposable {
       }),
 
       vscode.window.onDidChangeActiveTextEditor((editor) => {
-        if (editor === undefined) return;
-        if (!this.shouldTrack(editor.document.uri)) return;
+        if (editor === undefined || !this.shouldTrack(editor.document.uri)) {
+          this.enqueue(this.create('file_switch', { filePath: null }));
+          return;
+        }
         this.log?.info(`file_switch: ${this.toRelativePath(editor.document.uri)}`);
         this.enqueue(
           this.create('file_switch', {
@@ -255,7 +277,7 @@ export class TelemetryBridge implements vscode.Disposable {
       return;
     }
 
-    const event = this.create('heartbeat', { durationMs: null });
+    const event = this.createHeartbeat();
 
     if (event.gitBranch === null) {
       this.log?.info('heartbeat skipped: no git branch');
@@ -267,7 +289,20 @@ export class TelemetryBridge implements vscode.Disposable {
   }
 
   private toRelativePath(uri: vscode.Uri): string {
-    return vscode.workspace.asRelativePath(uri, false);
+    return vscode.workspace.asRelativePath(uri, false).split(path.sep).join('/');
+  }
+
+  private createHeartbeat(partial: EventPartial = {}): TelemetryEventDto {
+    const editor = vscode.window.activeTextEditor;
+    const activeFile =
+      editor !== undefined && this.shouldTrack(editor.document.uri)
+        ? {
+            filePath: this.toRelativePath(editor.document.uri),
+            language: editor.document.languageId,
+          }
+        : { filePath: null };
+
+    return this.create('heartbeat', { durationMs: null, ...activeFile, ...partial });
   }
 
   private onActivityTransition(next: ActivityState, changedAt: number): void {
@@ -322,7 +357,7 @@ export class TelemetryBridge implements vscode.Disposable {
     }
 
     this.enqueue(
-      this.create('heartbeat', {
+      this.createHeartbeat({
         durationMs: null,
         gitBranch: nextContext.gitBranch ?? undefined,
         gitRemoteUrl: nextContext.gitRemoteUrl,
@@ -447,6 +482,15 @@ export class TelemetryBridge implements vscode.Disposable {
       this.consecutiveFailures = 0;
       this.nextAttemptAt = 0;
       this.persistQueue();
+
+      this.statusBarState.setHealth('ok');
+      this.log?.info(`flushed ${String(sent)} events`);
+
+      if (this.queue.length > 0) {
+        queueMicrotask(() => {
+          void this.flush();
+        });
+      }
 
       this.statusBarState.setHealth('ok');
       this.log?.info(`flushed ${String(sent)} events`);

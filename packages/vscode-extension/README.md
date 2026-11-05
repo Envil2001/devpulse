@@ -68,7 +68,7 @@ being sent.
 
 ## Privacy
 
-DevPulse never reads file contents. It tracks metadata — file paths,
+DevPulse never reads file contents. It tracks metadata — workspace-relative file paths,
 language IDs, git branches, terminal command text (sanitized), commit
 messages — and sends it to the backend you choose.
 
