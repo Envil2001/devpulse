@@ -9,7 +9,7 @@ export class WorkSessionSummaryDto {
   @ApiProperty({ description: 'Session start time' })
   public startedAt!: string;
 
-  @ApiProperty({ description: 'Session end time' })
+  @ApiProperty({ description: 'Time of the last event of the session' })
   public endedAt!: string;
 
   @ApiProperty({ description: 'Project name' })
@@ -41,4 +41,10 @@ export class WorkSessionSummaryDto {
     enum: ['active', 'closed'],
   })
   public status!: 'active' | 'closed';
+
+  @ApiProperty({
+    description:
+      'The session is running right now: it is active and its last event is recent. A session stays "active" in the database until the next event closes it.',
+  })
+  public isLive!: boolean;
 }

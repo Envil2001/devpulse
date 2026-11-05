@@ -2,7 +2,9 @@
 
 import { ChevronRight, Clock, GitBranch, TerminalSquare } from 'lucide-react';
 import Link from 'next/link';
+import { formatInTimeZone } from 'date-fns-tz';
 import { cn } from '@/shared/lib/cn';
+import { formatTimeRange } from '@/shared/lib/date';
 import {
   Panel,
   PanelHeader,
@@ -10,28 +12,26 @@ import {
   PanelDescription,
   PanelContent,
 } from '@/shared/components/layout/panel';
+import type { WorkSessionSummary } from '@/shared/types';
 import { useRequireAuth } from '@/features/auth/context';
 
 import { RECENT_SESSIONS_LIMIT, useRecentSessions } from '../hooks';
 import { formatDuration } from '@devpulse/lib';
 
-function formatTimeRange(
-  startedAt: string,
-  endedAt: string,
-  timezone: string,
-  isActive: boolean,
-): string {
-  const fmt = new Intl.DateTimeFormat('en-GB', {
-    hour: '2-digit',
-    minute: '2-digit',
-    timeZone: timezone,
-    hour12: false,
-  });
+/** A focus score of a session shorter than this says nothing: 6 seconds of typing is "100%". */
+const MIN_SECONDS_FOR_FOCUS = 5 * 60;
 
-  const start = fmt.format(new Date(startedAt));
-  const end = isActive ? 'now' : fmt.format(new Date(endedAt));
+const SHORT_DAY_LABEL_FORMAT = 'EEE, MMM d';
 
-  return `${start} → ${end}`;
+function formatSessionTime(session: WorkSessionSummary, timezone: string): string {
+  const startedAt = new Date(session.startedAt);
+  const range = formatTimeRange(
+    session.startedAt,
+    session.isLive ? null : session.endedAt,
+    timezone,
+  );
+
+  return `${formatInTimeZone(startedAt, timezone, SHORT_DAY_LABEL_FORMAT)} · ${range}`;
 }
 
 function focusColorClass(score: number): string {
@@ -42,7 +42,11 @@ function focusColorClass(score: number): string {
 
 export function RecentSessionsPanel({ projectId }: { projectId?: string }) {
   const { user } = useRequireAuth();
-  const { data: sessions = [], isLoading } = useRecentSessions(RECENT_SESSIONS_LIMIT, projectId);
+  const {
+    data: sessions = [],
+    isLoading,
+    isError,
+  } = useRecentSessions(RECENT_SESSIONS_LIMIT, projectId);
 
   return (
     <Panel>
@@ -58,7 +62,7 @@ export function RecentSessionsPanel({ projectId }: { projectId?: string }) {
           <div className="col-span-3">Time</div>
           <div className="col-span-4">Branch</div>
           <div className="col-span-3">Language</div>
-          <div className="col-span-2 text-right">Focus</div>
+          <div className="col-span-2 text-right">Active / focus</div>
         </div>
 
         {isLoading && (
@@ -67,7 +71,13 @@ export function RecentSessionsPanel({ projectId }: { projectId?: string }) {
           </div>
         )}
 
-        {!isLoading && sessions.length === 0 && (
+        {isError && (
+          <div className="py-8 text-center">
+            <span className="text-sm text-red-coral">Could not load sessions</span>
+          </div>
+        )}
+
+        {!isLoading && !isError && sessions.length === 0 && (
           <div className="py-8 text-center">
             <span className="text-sm text-secondary">No sessions yet</span>
           </div>
@@ -90,14 +100,7 @@ export function RecentSessionsPanel({ projectId }: { projectId?: string }) {
                 strokeWidth={1.5}
                 aria-hidden="true"
               />
-              <span className="truncate">
-                {formatTimeRange(
-                  session.startedAt,
-                  session.endedAt,
-                  user.timezone,
-                  session.status === 'active',
-                )}
-              </span>
+              <span className="truncate">{formatSessionTime(session, user.timezone)}</span>
             </div>
 
             <div className="col-span-4 flex min-w-0 items-center">
@@ -107,7 +110,7 @@ export function RecentSessionsPanel({ projectId }: { projectId?: string }) {
                   strokeWidth={1.5}
                   aria-hidden="true"
                 />
-                <span className="truncate">{session.gitBranch ?? 'main'}</span>
+                <span className="truncate">{session.gitBranch ?? '—'}</span>
               </span>
             </div>
 
@@ -129,17 +132,26 @@ export function RecentSessionsPanel({ projectId }: { projectId?: string }) {
             </div>
 
             <div className="col-span-2 flex flex-col items-end justify-center text-right">
-              <span className="font-mono text-xs text-foreground tabular-nums">
-                {formatDuration(session.durationSeconds)}
-              </span>
               <span
                 className={cn(
-                  'font-mono text-xs font-medium tabular-nums',
-                  focusColorClass(session.focusScore),
+                  'font-mono text-xs tabular-nums',
+                  session.durationSeconds === 0 ? 'text-subtle' : 'text-foreground',
                 )}
               >
-                {session.focusScore}%
+                {session.durationSeconds === 0 ? 'idle' : formatDuration(session.durationSeconds)}
               </span>
+              {session.durationSeconds >= MIN_SECONDS_FOR_FOCUS ? (
+                <span
+                  className={cn(
+                    'font-mono text-xs font-medium tabular-nums',
+                    focusColorClass(session.focusScore),
+                  )}
+                >
+                  {session.focusScore}%
+                </span>
+              ) : (
+                <span className="font-mono text-xs text-subtle">—</span>
+              )}
             </div>
 
             <ChevronRight

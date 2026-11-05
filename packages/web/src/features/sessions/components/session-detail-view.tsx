@@ -18,7 +18,7 @@ import {
 
 import { cn } from '@/shared/lib/cn';
 import { formatDuration, formatMilliseconds } from '@devpulse/lib';
-import { formatDateTimeLabel } from '@/shared/lib/date';
+import { formatDateTimeLabel, formatTimeRange } from '@/shared/lib/date';
 import { useRequireAuth } from '@/features/auth/context';
 import {
   Panel,
@@ -39,18 +39,6 @@ import { useSessionDetail } from '../hooks';
 
 interface SessionDetailViewProps {
   id: string;
-}
-
-function formatTimeRange(startedAt: string, endedAt: string | null, timezone: string): string {
-  const fmt = new Intl.DateTimeFormat('en-GB', {
-    hour: '2-digit',
-    minute: '2-digit',
-    timeZone: timezone,
-    hour12: false,
-  });
-  const start = fmt.format(new Date(startedAt));
-  const end = endedAt ? fmt.format(new Date(endedAt)) : 'now';
-  return `${start} → ${end}`;
 }
 
 function kindIcon(kind: string) {

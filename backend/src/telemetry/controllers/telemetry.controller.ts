@@ -1,12 +1,14 @@
 import {
   Body,
   Controller,
+  DefaultValuePipe,
   Get,
   HttpCode,
   HttpStatus,
   Logger,
   NotFoundException,
   Param,
+  ParseIntPipe,
   Post,
   Query,
   UseGuards,
@@ -33,11 +35,16 @@ import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { type AuthenticatedUser } from '../../auth/interfaces/jwt-payload.interface';
 import { TelemetryThrottle } from '../../common/decorators/throtte.decorators';
 import { User } from '../../users/entities/user.entity';
+import {
+  SESSION_GAP_MS,
+  SESSIONS_DEFAULT_LIMIT,
+  SESSIONS_MAX_LIMIT,
+} from '../constants/telemetry.constants';
 import { IngestTelemetryBatchRequestDto } from '../dto/request/ingest-telemetry-batch-request.dto';
 import { IngestTelemetryBatchResponseDto } from '../dto/response/ingest-telemetry-batch-response.dto';
 import { WorkSessionDetailDto } from '../dto/response/work-session-detail.dto';
 import { WorkSessionSummaryDto } from '../dto/response/work-session-summary.dto';
-import { WorkSession } from '../entities/work-session.entity';
+import { WorkSession, WorkSessionStatus } from '../entities/work-session.entity';
 import { TelemetryQueue } from '../queue/telemetry.queue';
 
 @ApiTags('Telemetry')
@@ -64,11 +71,9 @@ export class TelemetryController {
     @CurrentUser() user: User,
     @Body() dto: IngestTelemetryBatchRequestDto,
   ): Promise<IngestTelemetryBatchResponseDto> {
-    this.logger.log(`Received ${String(dto.events.length)} events from user ${user.id}`);
+    this.logger.debug(`Received ${String(dto.events.length)} events from user ${user.id}`);
 
-    await (dto.batchId
-      ? this.telemetryQueue.addEventsJob(user.id, dto.events, dto.batchId)
-      : this.telemetryQueue.addEventsJob(user.id, dto.events));
+    await this.telemetryQueue.addEventsJob(user.id, dto.events, dto.batchId);
 
     return {
       success: true,
@@ -81,44 +86,41 @@ export class TelemetryController {
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get user work sessions' })
+  @ApiOperation({ summary: 'Get user work sessions, newest first' })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'projectId', required: false, type: String })
+  @ApiQuery({
+    name: 'minActiveSeconds',
+    required: false,
+    type: Number,
+    description: 'Leave out sessions with less active time than this',
+  })
   @ApiResponse({ status: HttpStatus.OK, type: [WorkSessionSummaryDto] })
   public async getSessions(
     @CurrentUser() user: AuthenticatedUser,
-    @Query('limit') limit?: string,
+    @Query('limit', new DefaultValuePipe(SESSIONS_DEFAULT_LIMIT), ParseIntPipe) limit: number,
+    @Query('minActiveSeconds', new DefaultValuePipe(0), ParseIntPipe) minActiveSeconds: number,
     @Query('projectId') projectId?: string,
   ): Promise<Array<WorkSessionSummaryDto>> {
-    const parsedLimit = limit ? Number.parseInt(limit, 10) : 50;
-    const safeLimit = Math.min(Math.max(Number.isNaN(parsedLimit) ? 50 : parsedLimit, 1), 100);
+    const query = this.sessionRepo
+      .createQueryBuilder('session')
+      .leftJoinAndSelect('session.project', 'project')
+      .where('session.userId = :userId', { userId: user.id })
+      .orderBy('session.startedAt', 'DESC')
+      .take(Math.min(Math.max(limit, 1), SESSIONS_MAX_LIMIT));
 
-    const where: Record<string, unknown> = { userId: user.id };
     if (projectId) {
-      where.projectId = projectId;
+      query.andWhere('session.projectId = :projectId', { projectId });
     }
 
-    const sessions = await this.sessionRepo.find({
-      where,
-      relations: ['project'],
-      order: { startedAt: 'DESC' },
-      take: safeLimit,
-    });
+    if (minActiveSeconds > 0) {
+      query.andWhere('session.activeSeconds >= :minActiveSeconds', { minActiveSeconds });
+    }
 
-    return sessions.map((session): WorkSessionSummaryDto => {
-      return {
-        id: session.id,
-        startedAt: session.startedAt.toISOString(),
-        endedAt: session.endedAt?.toISOString() ?? session.startedAt.toISOString(),
-        projectName: session.project?.name ?? 'Unknown Project',
-        gitBranch: session.gitBranch,
-        durationSeconds: session.activeSeconds,
-        focusScore: Math.round(session.focusScore),
-        earnedMoney: session.earnedMoney,
-        primaryLanguage: session.primaryLanguage,
-        status: session.status,
-      };
-    });
+    const sessions = await query.getMany();
+    const now = Date.now();
+
+    return sessions.map((session) => this.toSummary(session, now));
   }
 
   @Get('sessions/:id')
@@ -157,14 +159,7 @@ export class TelemetryController {
       languageSeconds: session.languageSeconds,
       commandsRun: session.commandsRun,
       failedCommands: session.failedCommands,
-      terminalCommands: session.terminalCommands.map((cmd) => ({
-        command: cmd.command,
-        cwd: cmd.cwd,
-        exitCode: cmd.exitCode,
-        durationMs: cmd.durationMs,
-        kind: cmd.kind,
-        timestamp: cmd.timestamp,
-      })),
+      terminalCommands: session.terminalCommands,
       status: session.status,
       commitsCount: session.commitsCount,
       commits: session.commits,
@@ -180,5 +175,24 @@ export class TelemetryController {
   @ApiResponse({ status: HttpStatus.OK, type: GetIntegrationTodayResponseDto })
   public async getToday(@CurrentUser() user: User): Promise<GetIntegrationTodayResponseDto> {
     return this.integrationsService.getTodaySummary(user);
+  }
+
+  private toSummary(session: WorkSession, now: number): WorkSessionSummaryDto {
+    const lastEventAt = session.endedAt ?? session.startedAt;
+
+    return {
+      id: session.id,
+      startedAt: session.startedAt.toISOString(),
+      endedAt: lastEventAt.toISOString(),
+      projectName: session.project?.name ?? 'Unknown Project',
+      gitBranch: session.gitBranch,
+      durationSeconds: session.activeSeconds,
+      focusScore: Math.round(session.focusScore),
+      earnedMoney: session.earnedMoney,
+      primaryLanguage: session.primaryLanguage,
+      status: session.status,
+      isLive:
+        session.status === WorkSessionStatus.ACTIVE && now - lastEventAt.getTime() < SESSION_GAP_MS,
+    };
   }
 }

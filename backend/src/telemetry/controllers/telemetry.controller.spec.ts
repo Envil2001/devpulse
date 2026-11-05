@@ -72,8 +72,9 @@ describe('TelemetryController (Integration)', () => {
   });
 
   const mockTelemetryQueue = {
-    addEventsJob: jest.fn((_userId: TypeId<'users'>, _events: Array<TelemetryEventItemDto>) =>
-      Promise.resolve(),
+    addEventsJob: jest.fn(
+      (_userId: TypeId<'users'>, _events: Array<TelemetryEventItemDto>, _batchId?: string) =>
+        Promise.resolve(),
     ),
   };
 
@@ -92,8 +93,23 @@ describe('TelemetryController (Integration)', () => {
     getTodaySummary: jest.fn(() => Promise.resolve(mockTodaySummary)),
   };
 
+  const mockSessionsQuery = {
+    leftJoinAndSelect: jest.fn(),
+    where: jest.fn(),
+    orderBy: jest.fn(),
+    take: jest.fn(),
+    andWhere: jest.fn(),
+    getMany: jest.fn(() => Promise.resolve([mockSession])),
+  };
+
+  mockSessionsQuery.leftJoinAndSelect.mockReturnValue(mockSessionsQuery);
+  mockSessionsQuery.where.mockReturnValue(mockSessionsQuery);
+  mockSessionsQuery.orderBy.mockReturnValue(mockSessionsQuery);
+  mockSessionsQuery.take.mockReturnValue(mockSessionsQuery);
+  mockSessionsQuery.andWhere.mockReturnValue(mockSessionsQuery);
+
   const mockSessionRepo = {
-    find: jest.fn(() => Promise.resolve([mockSession])),
+    createQueryBuilder: jest.fn(() => mockSessionsQuery),
   };
 
   beforeAll(async () => {
@@ -167,6 +183,7 @@ describe('TelemetryController (Integration)', () => {
 
   it('should ingest telemetry batch and enqueue background job', async () => {
     const batchPayload = {
+      batchId: 'batch_test123',
       events: [
         {
           type: 'heartbeat' as const,
@@ -188,7 +205,11 @@ describe('TelemetryController (Integration)', () => {
     expect(response.status).toBe(200);
     expect(body.success).toBe(true);
     expect(body.processedCount).toBe(1);
-    expect(mockTelemetryQueue.addEventsJob).toHaveBeenCalledWith('u_user123', batchPayload.events);
+    expect(mockTelemetryQueue.addEventsJob).toHaveBeenCalledWith(
+      'u_user123',
+      batchPayload.events,
+      batchPayload.batchId,
+    );
   });
 
   it('should return today metrics for VS Code extension', async () => {
@@ -217,6 +238,7 @@ describe('TelemetryController (Integration)', () => {
     expect(body[0]?.id).toBe('ws_test123');
     expect(body[0]?.projectName).toBe('DevPulse Core');
     expect(body[0]?.durationSeconds).toBe(3600);
+    expect(body[0]?.isLive).toBe(false);
     expect(body[0]).not.toHaveProperty('durationMs');
   });
 });

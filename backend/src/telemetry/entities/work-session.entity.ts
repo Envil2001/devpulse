@@ -1,4 +1,4 @@
-import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
+import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany, ValueTransformer } from 'typeorm';
 
 import { type TypeId } from '@devpulse/lib/ids';
 
@@ -7,6 +7,11 @@ import { Project } from '../../projects/entities/project.entity';
 import { User } from '../../users/entities/user.entity';
 
 import { TelemetryEvent } from './telemetry-event.entity';
+
+const decimalTransformer: ValueTransformer = {
+  to: (value: number): number => value,
+  from: (value: string | null): number | null => (value === null ? null : Number.parseFloat(value)),
+};
 
 export enum WorkSessionStatus {
   ACTIVE = 'active',
@@ -40,10 +45,24 @@ export class WorkSession extends AppBaseEntity<'workSessions'> {
   @Column({ name: 'idle_seconds', type: 'int', default: 0 })
   public idleSeconds!: number;
 
-  @Column({ name: 'focus_score', type: 'decimal', precision: 5, scale: 2, default: 0 })
+  @Column({
+    name: 'focus_score',
+    type: 'decimal',
+    precision: 5,
+    scale: 2,
+    default: 0,
+    transformer: decimalTransformer,
+  })
   public focusScore!: number;
 
-  @Column({ name: 'earned_money', type: 'decimal', precision: 10, scale: 2, default: 0 })
+  @Column({
+    name: 'earned_money',
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    default: 0,
+    transformer: decimalTransformer,
+  })
   public earnedMoney!: number;
 
   @Column({ type: 'varchar', name: 'primary_language', length: 50, nullable: true })

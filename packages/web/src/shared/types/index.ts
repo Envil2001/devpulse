@@ -55,6 +55,7 @@ export interface WorkSessionSummary {
   earnedMoney: number;
   primaryLanguage: string | null;
   status: 'active' | 'closed';
+  isLive: boolean;
 }
 
 export interface SessionCommit {
