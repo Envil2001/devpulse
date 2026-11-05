@@ -92,8 +92,23 @@ describe('TelemetryController (Integration)', () => {
     getTodaySummary: jest.fn(() => Promise.resolve(mockTodaySummary)),
   };
 
+  const mockSessionsQuery = {
+    leftJoinAndSelect: jest.fn(),
+    where: jest.fn(),
+    orderBy: jest.fn(),
+    take: jest.fn(),
+    andWhere: jest.fn(),
+    getMany: jest.fn(() => Promise.resolve([mockSession])),
+  };
+
+  mockSessionsQuery.leftJoinAndSelect.mockReturnValue(mockSessionsQuery);
+  mockSessionsQuery.where.mockReturnValue(mockSessionsQuery);
+  mockSessionsQuery.orderBy.mockReturnValue(mockSessionsQuery);
+  mockSessionsQuery.take.mockReturnValue(mockSessionsQuery);
+  mockSessionsQuery.andWhere.mockReturnValue(mockSessionsQuery);
+
   const mockSessionRepo = {
-    find: jest.fn(() => Promise.resolve([mockSession])),
+    createQueryBuilder: jest.fn(() => mockSessionsQuery),
   };
 
   beforeAll(async () => {
@@ -167,6 +182,7 @@ describe('TelemetryController (Integration)', () => {
 
   it('should ingest telemetry batch and enqueue background job', async () => {
     const batchPayload = {
+      batchId: 'batch_test123',
       events: [
         {
           type: 'heartbeat' as const,
@@ -217,6 +233,7 @@ describe('TelemetryController (Integration)', () => {
     expect(body[0]?.id).toBe('ws_test123');
     expect(body[0]?.projectName).toBe('DevPulse Core');
     expect(body[0]?.durationSeconds).toBe(3600);
+    expect(body[0]?.isLive).toBe(false);
     expect(body[0]).not.toHaveProperty('durationMs');
   });
 });
