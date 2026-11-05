@@ -10,6 +10,7 @@ import { BULL_REDIS_CLIENT } from '../redis/redis.module';
 import { User } from '../users/entities/user.entity';
 import { UserRepository } from '../users/repositories/users.repository';
 
+import { SESSION_GAP_MS } from './constants/telemetry.constants';
 import { TelemetryEventItemDto } from './dto/request/ingest-telemetry-batch-request.dto';
 import { TelemetryEvent } from './entities/telemetry-event.entity';
 import { WorkSession, WorkSessionStatus } from './entities/work-session.entity';
@@ -17,7 +18,6 @@ import { TelemetryJobData } from './queue/telemetry.queue';
 import { classifyCommand } from './utils/command-classifier';
 
 const QUEUE_NAME = 'telemetry-ingestion';
-const SESSION_GAP_MS = 15 * 60 * 1000;
 const MAX_IDLE_CREDIT_MS = 30 * 60 * 1000;
 const MAX_FUTURE_SKEW_MS = 5 * 60 * 1000;
 const MAX_EVENT_AGE_MS = 7 * 24 * 60 * 60 * 1000;
