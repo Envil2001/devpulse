@@ -61,7 +61,7 @@ export function createEvent(
     gitRemoteUrl: resolvedRemoteUrl ?? undefined,
     clientTimestamp: partial.clientTimestamp ?? new Date().toISOString(),
     durationMs: partial.durationMs,
-    filePath: partial.filePath ?? undefined,
+    filePath: partial.filePath,
     language: partial.language ?? undefined,
     machineId: vscode.env.machineId,
     sessionId: vscode.env.sessionId,

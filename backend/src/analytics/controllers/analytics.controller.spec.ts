@@ -8,10 +8,14 @@ import {
 import { Test, type TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 
+import { type TypeId } from '@devpulse/lib';
+
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { type AuthenticatedUser } from '../../auth/interfaces/jwt-payload.interface';
 import { getHttpServer } from '../../test/get-http-server';
+import { type GetAnalyticsRangeRequestDto } from '../dto/request/get-analytics-range-request.dto';
 import { GetAnalyticsDashboardResponseDto } from '../dto/response/get-analytics-dashboard-response.dto';
+import { GetAnalyticsHotFilesResponseDto } from '../dto/response/get-analytics-hot-files-response.dto';
 import { GetIntegrationAiRoiResponseDto } from '../dto/response/get-integration-ai-roi-response.dto';
 import { GetIntegrationStatusResponseDto } from '../dto/response/get-integration-status-response.dto';
 import { AnalyticsService } from '../services/analytics.service';
@@ -47,6 +51,12 @@ describe('AnalyticsController (Integration)', () => {
     costSavings: 750,
   });
 
+  const mockHotFiles = Object.assign(new GetAnalyticsHotFilesResponseDto(), {
+    totalAttributedSeconds: 7200,
+    files: [{ path: 'src/main.ts', activeSeconds: 7200, percentage: 100 }],
+    folders: [{ path: 'src', activeSeconds: 7200, percentage: 100 }],
+  });
+
   const mockExportResult = {
     content: 'Session ID,Started At,Duration\nws_1,2026-03-30,3600',
     filename: 'sessions-export.csv',
@@ -64,6 +74,9 @@ describe('AnalyticsController (Integration)', () => {
   const mockIntegrationsService = {
     getLiveStatus: jest.fn(() => Promise.resolve(mockLiveStatus)),
     getAiRoiMetrics: jest.fn(() => Promise.resolve(mockAiRoi)),
+    getHotFiles: jest.fn((_userId: TypeId<'users'>, _query: GetAnalyticsRangeRequestDto) =>
+      Promise.resolve(mockHotFiles),
+    ),
   };
 
   beforeAll(async () => {
@@ -163,5 +176,20 @@ describe('AnalyticsController (Integration)', () => {
     expect(response.status).toBe(200);
     expect(body).toBeDefined();
     expect(mockIntegrationsService.getAiRoiMetrics).toHaveBeenCalled();
+  });
+
+  it('should return hot files for authenticated user', async () => {
+    const response = await request(getHttpServer(app))
+      .get('/analytics/hot-files?startDate=2026-11-01T00:00:00.000Z')
+      .set('Authorization', 'Bearer valid-jwt');
+
+    const body = response.body as GetAnalyticsHotFilesResponseDto;
+
+    expect(response.status).toBe(200);
+    expect(body.files[0]?.path).toBe('src/main.ts');
+    expect(mockIntegrationsService.getHotFiles).toHaveBeenCalledWith(
+      mockAuthUser.id,
+      expect.objectContaining({ startDate: '2026-11-01T00:00:00.000Z' }),
+    );
   });
 });

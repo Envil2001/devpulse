@@ -1,4 +1,9 @@
-import { type AiRoiMetrics, type DashboardStats, type PipelineHealth } from '@devpulse/lib';
+import {
+  type AiRoiMetrics,
+  type DashboardStats,
+  type HotFilesAnalytics,
+  type PipelineHealth,
+} from '@devpulse/lib';
 import {
   useMutation,
   type UseMutationResult,
@@ -34,6 +39,8 @@ export const analyticsKeys = {
   languages: (projectId?: string) => [...analyticsKeys.all, 'languages', projectId] as const,
   commands: (range: DateRange, projectId?: string) =>
     [...analyticsKeys.all, 'commands', range.startDate, range.endDate, projectId] as const,
+  hotFiles: (range: DateRange, projectId?: string) =>
+    [...analyticsKeys.all, 'hot-files', range.startDate, range.endDate, projectId] as const,
   dashboard: (range: DateRange, projectId?: string) =>
     [...analyticsKeys.all, 'dashboard', range.startDate, range.endDate, projectId] as const,
   timeseries: (range: DateRange, projectId?: string) =>
@@ -149,6 +156,16 @@ export function useCommandsBreakdown(
   });
 }
 
+export function useHotFiles(
+  range: DateRange,
+  projectId?: string,
+): UseQueryResult<HotFilesAnalytics, Error> {
+  return useQuery<HotFilesAnalytics>({
+    queryKey: analyticsKeys.hotFiles(range, projectId),
+    queryFn: () => analyticsService.getHotFiles({ ...range, projectId }),
+  });
+}
+
 export function useExportSessions(): UseMutationResult<Blob, Error, AnalyticsRangeParams, unknown> {
   return useMutation({
     mutationFn: (params: AnalyticsRangeParams) => analyticsService.exportSessions(params),
@@ -180,10 +197,7 @@ interface DashboardComparison {
   isLoading: boolean;
 }
 
-export function useDashboardComparison(
-  range: DateRange,
-  projectId?: string,
-): DashboardComparison {
+export function useDashboardComparison(range: DateRange, projectId?: string): DashboardComparison {
   const current = useDashboardStats(range, projectId);
   const prevRange = useMemo(() => previousPeriod(range), [range]);
   const previous = useDashboardStats(prevRange, projectId);

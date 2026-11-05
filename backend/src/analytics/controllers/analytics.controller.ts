@@ -20,6 +20,7 @@ import { GetAnalyticsRangeRequestDto } from '../dto/request/get-analytics-range-
 import { GetAnalyticsBranchesResponseDto } from '../dto/response/get-analytics-branches-response.dto';
 import { GetAnalyticsCommandsResponseDto } from '../dto/response/get-analytics-commands-response.dto';
 import { GetAnalyticsDashboardResponseDto } from '../dto/response/get-analytics-dashboard-response.dto';
+import { GetAnalyticsHotFilesResponseDto } from '../dto/response/get-analytics-hot-files-response.dto';
 import { GetAnalyticsTimeseriesResponseDto } from '../dto/response/get-analytics-timeseries-response.dto';
 import { GetIntegrationAiRoiResponseDto } from '../dto/response/get-integration-ai-roi-response.dto';
 import { GetIntegrationLanguagesResponseDto } from '../dto/response/get-integration-languages-response.dto';
@@ -102,6 +103,21 @@ export class AnalyticsController {
     @Query() query: GetAnalyticsRangeRequestDto,
   ): Promise<GetAnalyticsCommandsResponseDto> {
     return this.analyticsService.getCommandsBreakdown(user.id, query);
+  }
+
+  @Get('hot-files')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Get files and folders with the most active editor time',
+    description:
+      'Returns the top five workspace-relative file paths and immediate parent folders. Percentages use only time attributable to an active editor; idle time and file contents are never included.',
+  })
+  @ApiResponse({ status: HttpStatus.OK, type: GetAnalyticsHotFilesResponseDto })
+  public async getHotFiles(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query() query: GetAnalyticsRangeRequestDto,
+  ): Promise<GetAnalyticsHotFilesResponseDto> {
+    return this.integrationsService.getHotFiles(user.id, query);
   }
 
   @Get('export')

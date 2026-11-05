@@ -9,7 +9,9 @@ import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { ProjectSummaryDto } from '../../projects/dto/response/project-summary.dto';
 import { ProjectsService } from '../../projects/services/projects.service';
 import { User } from '../../users/entities/user.entity';
+import { GetAnalyticsRangeRequestDto } from '../dto/request/get-analytics-range-request.dto';
 import { GetIntegrationSessionsRequestDto } from '../dto/request/get-integration-sessions-request.dto';
+import { GetAnalyticsHotFilesResponseDto } from '../dto/response/get-analytics-hot-files-response.dto';
 import { GetIntegrationLanguagesResponseDto } from '../dto/response/get-integration-languages-response.dto';
 import { GetIntegrationSessionItemDto } from '../dto/response/get-integration-sessions-response.dto';
 import { GetIntegrationStatusResponseDto } from '../dto/response/get-integration-status-response.dto';
@@ -78,6 +80,23 @@ export class IntegrationsAnalyticsController {
     @CurrentUser() user: User,
   ): Promise<GetIntegrationLanguagesResponseDto> {
     return this.analyticsService.getLanguagesBreakdown(user.id);
+  }
+
+  @Get('hot-files')
+  @RequireScopes(ApiKeyScope.ANALYTICS_READ)
+  @ApiSecurity('ApiKeyAuth', [ApiKeyScope.ANALYTICS_READ])
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Get the most active files and folders',
+    description:
+      'Returns up to five workspace-relative file paths and immediate parent folders for the requested period. Time is estimated between active editor events, capped at five minutes per interval, and excludes idle periods. Percentages are based on file-attributed time, which can be lower than total session time. File contents and absolute paths are never collected.',
+  })
+  @ApiResponse({ status: HttpStatus.OK, type: GetAnalyticsHotFilesResponseDto })
+  public async getHotFiles(
+    @CurrentUser() user: User,
+    @Query() query: GetAnalyticsRangeRequestDto,
+  ): Promise<GetAnalyticsHotFilesResponseDto> {
+    return await this.analyticsService.getHotFiles(user.id, query);
   }
 
   @Get('projects')

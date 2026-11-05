@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
+  ArrayMaxSize,
   IsArray,
   IsBoolean,
   IsDateString,
@@ -8,6 +9,7 @@ import {
   IsInt,
   IsOptional,
   IsString,
+  MaxLength,
   Min,
   ValidateNested,
 } from 'class-validator';
@@ -64,10 +66,15 @@ export class TelemetryEventItemDto implements TelemetryEventDto {
   @IsOptional()
   public gitRemoteUrl?: string;
 
-  @ApiProperty({ description: 'File path' })
+  @ApiProperty({
+    description: 'Workspace-relative file path; null clears the active editor',
+    nullable: true,
+    required: false,
+  })
   @IsString()
+  @MaxLength(512)
   @IsOptional()
-  public filePath?: string;
+  public filePath?: string | null;
 
   @ApiProperty({ description: 'Programming language' })
   @IsString()
@@ -147,7 +154,9 @@ export class TelemetryEventItemDto implements TelemetryEventDto {
 
   @ApiProperty({ description: 'List of changed files', required: false })
   @IsArray()
+  @ArrayMaxSize(100)
   @IsString({ each: true })
+  @MaxLength(512, { each: true })
   @IsOptional()
   public filesList?: Array<string>;
 

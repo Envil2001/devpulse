@@ -13,7 +13,8 @@ export interface TelemetryEventDto {
 
   gitBranch: string | null;
   gitRemoteUrl?: string;
-  filePath?: string;
+  /** Workspace-relative path. Null means that no trackable editor is active. */
+  filePath?: string | null;
   language?: string;
   durationMs?: number | null;
   clientTimestamp?: string;

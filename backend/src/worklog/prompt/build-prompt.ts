@@ -28,6 +28,7 @@ export function buildSystemPrompt(format: WorklogFormat, language: WorklogLangua
     '6. "terminal" holds counts only. If tests or builds failed and "lastRunPassed" is true, describe it as debugging that ended well. Do not list attempts.',
     '7. If "focusScore" is 80 or higher, mention that the focus was high.',
     '8. If "aiAssistedPercent" is null, do not mention AI and do not call the work manual. Otherwise mention an AI assistant at most once, without naming tools, and never claim it wrote specific code.',
+    '9. "hotFiles" contains up to five workspace-relative files ranked by attributed editor time. Use a filename only when it makes the summary more concrete. Never infer an implementation, outcome or task from a path alone, and never mechanically list every path.',
   ].join('\n');
 }
 

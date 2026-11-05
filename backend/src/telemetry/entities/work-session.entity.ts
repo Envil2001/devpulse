@@ -74,6 +74,12 @@ export class WorkSession extends AppBaseEntity<'workSessions'> {
   @Column({ name: 'current_language', type: 'varchar', length: 50, nullable: true })
   public currentLanguage!: string | null;
 
+  @Column({ name: 'file_seconds', type: 'jsonb', default: () => "'{}'::jsonb" })
+  public fileSeconds!: Record<string, number>;
+
+  @Column({ name: 'current_file_path', type: 'varchar', length: 512, nullable: true })
+  public currentFilePath!: string | null;
+
   @Column({ name: 'machine_id', type: 'varchar', length: 64, nullable: true })
   public machineId!: string | null;
 

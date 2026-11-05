@@ -1,5 +1,9 @@
-import { type DashboardStats } from '@devpulse/lib';
-import { type AiRoiMetrics, type PipelineHealth } from '@devpulse/lib';
+import {
+  type AiRoiMetrics,
+  type DashboardStats,
+  type HotFilesAnalytics,
+  type PipelineHealth,
+} from '@devpulse/lib';
 
 import { serverGet } from '@/shared/api/server-client';
 import {
@@ -40,6 +44,9 @@ export const getLanguagesServer = (): Promise<LanguagesBreakdown> =>
 
 export const getCommandsServer = (params: AnalyticsRangeParams = {}): Promise<CommandsBreakdown> =>
   serverGet<CommandsBreakdown>('/analytics/commands', { params });
+
+export const getHotFilesServer = (params: AnalyticsRangeParams = {}): Promise<HotFilesAnalytics> =>
+  serverGet<HotFilesAnalytics>('/analytics/hot-files', { params });
 
 export const getLiveStatusServer = (): Promise<LiveStatus> =>
   serverGet<LiveStatus>('/analytics/status');
