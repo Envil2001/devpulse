@@ -6,7 +6,7 @@ import { Panel } from '@/shared/components/layout/panel';
 import { cn } from '@/shared/lib/cn';
 
 import { usePipelineHealth } from '../hooks';
-import { formatDuration } from '@devpulse/lib';
+import { formatMinutes } from '@devpulse/lib';
 
 const PROVIDER_LABELS: Record<'openrouter' | 'openai' | 'custom', string> = {
   openrouter: 'OpenRouter',
@@ -36,7 +36,9 @@ export function StatusMonitoringPanel() {
           ? 'No events yet'
           : health.telemetryBridge.status === 'operational'
             ? 'Receiving signals'
-            : `Last seen ${formatDuration(health.telemetryBridge.minutesSinceLastEvent ?? 0)} ago`,
+            : health.telemetryBridge.minutesSinceLastEvent === null
+              ? 'Last event time unavailable'
+              : `Last seen ${formatMinutes(health.telemetryBridge.minutesSinceLastEvent)} ago`,
       icon: Radio,
     },
     {
@@ -51,7 +53,7 @@ export function StatusMonitoringPanel() {
     {
       name: 'PostgreSQL & Cache',
       status: health.postgres.status,
-      metric: `${formatDuration(health.postgres.latencyMs)} query latency`,
+      metric: `${String(health.postgres.latencyMs)}ms query latency`,
       icon: Database,
     },
     {

@@ -438,7 +438,7 @@ export function HeatmapPanel({ range, projectId }: HeatmapPanelProps) {
         typeof document !== 'undefined' &&
         createPortal(
           <div
-            className="pointer-events-none fixed z-[100] -translate-x-1/2 -translate-y-full rounded-md border border-border bg-surface px-2.5 py-1.5 text-xs shadow-lg"
+            className="pointer-events-none fixed z-100 -translate-x-1/2 -translate-y-full rounded-md border border-border bg-surface px-2.5 py-1.5 text-xs shadow-lg"
             style={{
               left: hoveredCell.rect.left + hoveredCell.rect.width / 2,
               top: hoveredCell.rect.top - 6,

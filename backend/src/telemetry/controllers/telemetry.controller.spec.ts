@@ -216,5 +216,7 @@ describe('TelemetryController (Integration)', () => {
     expect(body).toHaveLength(1);
     expect(body[0]?.id).toBe('ws_test123');
     expect(body[0]?.projectName).toBe('DevPulse Core');
+    expect(body[0]?.durationSeconds).toBe(3600);
+    expect(body[0]).not.toHaveProperty('durationMs');
   });
 });

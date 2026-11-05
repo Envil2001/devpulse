@@ -185,10 +185,13 @@ export class IntegrationsAnalyticsService {
       params,
     );
 
-    const parsed = rows.map((row) => ({
-      language: row.language,
-      seconds: Number.parseInt(row.totalSeconds, 10) || 0,
-    }));
+    const parsed = rows.map((row) => {
+      const seconds = Number.parseInt(row.totalSeconds, 10);
+      return {
+        language: row.language,
+        seconds: Number.isNaN(seconds) ? 0 : seconds,
+      };
+    });
     const totalActiveSeconds = parsed.reduce((sum, row) => sum + row.seconds, 0);
 
     return {

@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder } from 'typeorm';
 
-import { TypeId } from '@devpulse/lib';
+import { type PipelineHealth, TypeId } from '@devpulse/lib';
 
 import { WorkSession } from '../../telemetry/entities/work-session.entity';
 import { TelemetryQueue } from '../../telemetry/queue/telemetry.queue';
@@ -21,7 +21,6 @@ import {
   TimeseriesRaw,
   TopLanguageRaw,
 } from '../interfaces/analytics-raw.interfaces';
-import { PipelineHealth } from '../interfaces/pipeline-health.interface';
 
 @Injectable()
 export class AnalyticsService {
@@ -258,7 +257,7 @@ export class AnalyticsService {
       telemetryBridge: {
         status:
           minutesSinceLastEvent !== null && minutesSinceLastEvent < 10 ? 'operational' : 'idle',
-        lastEventAt: lastEvent?.startedAt ?? null,
+        lastEventAt: lastEvent?.startedAt.toISOString() ?? null,
         minutesSinceLastEvent,
       },
       bullmq: {

@@ -23,25 +23,29 @@ export function RateConfigPanel() {
   const [rateInput, setRateInput] = useState<string>(user.hourlyRate.toString());
   const [currencyInput, setCurrencyInput] = useState<string>(user.currency);
   const [isSaving, setIsSaving] = useState(false);
+  const parsedRate = Number(rateInput);
+  const isRateValid = rateInput.trim().length > 0 && Number.isFinite(parsedRate) && parsedRate >= 0;
 
   const handleRateTypeChange = (newType: string) => {
     if (newType === rateType) return;
     const type = newType as 'hourly' | 'monthly';
     setRateType(type);
 
-    const numericRate = parseFloat(rateInput) || 0;
+    if (!isRateValid) return;
+
     if (type === 'monthly') {
-      setRateInput(Math.round(numericRate * 160).toString());
+      setRateInput(Math.round(parsedRate * 160).toString());
     } else {
-      setRateInput(Number((numericRate / 160).toFixed(2)).toString());
+      setRateInput(Number((parsedRate / 160).toFixed(2)).toString());
     }
   };
 
   const handleSave = async () => {
+    if (!isRateValid) return;
+
     setIsSaving(true);
     try {
-      const numericRate = parseFloat(rateInput) || 0;
-      const hourlyRate = rateType === 'hourly' ? numericRate : numericRate / 160;
+      const hourlyRate = rateType === 'hourly' ? parsedRate : parsedRate / 160;
       await updateProfile({ hourlyRate, currency: currencyInput });
     } finally {
       setIsSaving(false);
@@ -101,7 +105,7 @@ export function RateConfigPanel() {
                 className="w-32 font-mono"
               />
 
-              <Button onClick={handleSave} loading={isSaving} disabled={isSaving}>
+              <Button onClick={handleSave} loading={isSaving} disabled={isSaving || !isRateValid}>
                 Save
               </Button>
             </div>

@@ -11,6 +11,8 @@ import {
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
 
+import { type PipelineHealth } from '@devpulse/lib';
+
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { type AuthenticatedUser } from '../../auth/interfaces/jwt-payload.interface';
@@ -22,7 +24,6 @@ import { GetAnalyticsTimeseriesResponseDto } from '../dto/response/get-analytics
 import { GetIntegrationAiRoiResponseDto } from '../dto/response/get-integration-ai-roi-response.dto';
 import { GetIntegrationLanguagesResponseDto } from '../dto/response/get-integration-languages-response.dto';
 import { GetIntegrationStatusResponseDto } from '../dto/response/get-integration-status-response.dto';
-import { PipelineHealth } from '../interfaces/pipeline-health.interface';
 import { AnalyticsService } from '../services/analytics.service';
 import { AnalyticsExportService } from '../services/analytics-export.service';
 import { IntegrationsAnalyticsService } from '../services/integrations-analytics.service';

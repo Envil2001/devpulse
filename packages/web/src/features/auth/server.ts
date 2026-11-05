@@ -1,33 +1,19 @@
-import { cookies } from 'next/headers';
 import type { User } from '@/shared/types';
 
-import { env } from '@devpulse/env/client';
+import { ApiClientError } from '@/shared/api/api-client';
+import { getServerAuthToken, serverGet } from '@/shared/api/server-client';
 
 export async function getServerUser(): Promise<User | null> {
-  const cookieStore = await cookies();
-  const token = cookieStore.get('access_token')?.value;
+  const token = await getServerAuthToken();
 
   if (!token) return null;
 
   try {
-    const baseUrl = env.NEXT_PUBLIC_API_URL;
-
-    const res = await fetch(`${baseUrl}/auth/me`, {
-      headers: {
-        Cookie: `access_token=${token}`,
-        Authorization: `Bearer ${token}`,
-      },
-      cache: 'no-store',
-    });
-
-    if (!res.ok) {
+    return await serverGet<User>('/auth/me', { authToken: token });
+  } catch (error) {
+    if (error instanceof ApiClientError && (error.status === 401 || error.status === 403)) {
       return null;
     }
-
-    const json = await res.json();
-
-    return (json.data ?? json) as User;
-  } catch (error) {
     console.error('Failed to fetch user on server:', error);
     return null;
   }

@@ -13,7 +13,7 @@ import {
 } from '@/shared/components/layout/panel';
 
 import { useCommandsBreakdown, type DateRange } from '../hooks';
-import { formatDuration } from '@devpulse/lib';
+import { formatMilliseconds } from '@devpulse/lib';
 
 type KindFilter = 'all' | 'test' | 'build' | 'lint' | 'install' | 'git';
 
@@ -146,7 +146,7 @@ export function TerminalActivityPanel({
             </div>
 
             <div className="col-span-2 text-right font-mono text-xs tabular-nums text-subtle">
-              {formatDuration(cmd.avgDurationMs)}
+              {formatMilliseconds(cmd.avgDurationMs)}
             </div>
 
             <div

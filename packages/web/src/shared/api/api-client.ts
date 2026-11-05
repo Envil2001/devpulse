@@ -3,6 +3,20 @@ import { env } from '@devpulse/env/client';
 
 export type QueryParams = Record<string, string | number | boolean | null | undefined>;
 
+export function buildApiUrl(path: string, params?: QueryParams): string {
+  const baseUrl = env.NEXT_PUBLIC_API_URL.replace(/\/$/, '');
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  const url = new URL(`${baseUrl}${normalizedPath}`);
+
+  for (const [key, value] of Object.entries(params ?? {})) {
+    if (value !== null && value !== undefined) {
+      url.searchParams.set(key, String(value));
+    }
+  }
+
+  return url.toString();
+}
+
 export class ApiClientError extends Error {
   public readonly status: number;
   public readonly details?: unknown;
@@ -23,10 +37,10 @@ interface GetOptions extends RequestOptions {
   params?: QueryParams;
 }
 
-async function readJson<TResponse>(response: Response): Promise<TResponse> {
+export async function readJson<TResponse>(response: Response): Promise<TResponse> {
   const body = (await response.json()) as ApiSuccessResponse<TResponse> | ApiErrorResponse;
 
-  if (!response.ok || body.success === false) {
+  if (!response.ok || body.success !== true) {
     const message =
       body.success === false ? body.error.message : `Request failed (${response.status})`;
     const details = body.success === false ? body.error.details : undefined;
@@ -41,7 +55,7 @@ export async function postJson<TResponse, TRequest>(
   payload: TRequest,
   options: RequestOptions = {},
 ): Promise<TResponse> {
-  const response = await fetch(`${env.NEXT_PUBLIC_API_URL}${path}`, {
+  const response = await fetch(buildApiUrl(path), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -58,22 +72,7 @@ export async function getJson<TResponse>(
   path: string,
   options: GetOptions = {},
 ): Promise<TResponse> {
-  let url = `${env.NEXT_PUBLIC_API_URL}${path}`;
-
-  if (options.params) {
-    const searchParams = new URLSearchParams();
-    Object.entries(options.params).forEach(([key, value]) => {
-      if (value != null) {
-        searchParams.append(key, String(value));
-      }
-    });
-    const queryString = searchParams.toString();
-    if (queryString) {
-      url += `?${queryString}`;
-    }
-  }
-
-  const response = await fetch(url, {
+  const response = await fetch(buildApiUrl(path, options.params), {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
@@ -89,7 +88,7 @@ export async function deleteJson<TResponse>(
   path: string,
   options: RequestOptions = {},
 ): Promise<TResponse> {
-  const response = await fetch(`${env.NEXT_PUBLIC_API_URL}${path}`, {
+  const response = await fetch(buildApiUrl(path), {
     method: 'DELETE',
     headers: {
       'Content-Type': 'application/json',
@@ -106,7 +105,7 @@ export async function patchJson<TResponse, TRequest>(
   payload: TRequest,
   options: RequestOptions = {},
 ): Promise<TResponse> {
-  const response = await fetch(`${env.NEXT_PUBLIC_API_URL}${path}`, {
+  const response = await fetch(buildApiUrl(path), {
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
@@ -120,22 +119,7 @@ export async function patchJson<TResponse, TRequest>(
 }
 
 export async function getBlob(path: string, options: GetOptions = {}): Promise<Blob> {
-  let url = `${env.NEXT_PUBLIC_API_URL}${path}`;
-
-  if (options.params) {
-    const searchParams = new URLSearchParams();
-    Object.entries(options.params).forEach(([key, value]) => {
-      if (value != null) {
-        searchParams.append(key, String(value));
-      }
-    });
-    const queryString = searchParams.toString();
-    if (queryString) {
-      url += `?${queryString}`;
-    }
-  }
-
-  const response = await fetch(url, {
+  const response = await fetch(buildApiUrl(path, options.params), {
     method: 'GET',
     headers: {
       ...(options.authToken ? { Authorization: `Bearer ${options.authToken}` } : {}),

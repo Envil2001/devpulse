@@ -102,10 +102,10 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
             <PanelTitle>Languages</PanelTitle>
           </PanelHeader>
           <PanelContent className="flex flex-col gap-3">
-            {(project.languages ?? []).length === 0 && (
+            {project.languages.length === 0 && (
               <span className="py-4 text-center text-sm text-secondary">No language data yet</span>
             )}
-            {(project.languages ?? []).map((lang) => (
+            {project.languages.map((lang) => (
               <div key={lang.name} className="flex flex-col gap-1">
                 <div className="flex items-center justify-between text-sm">
                   <span className="capitalize text-foreground">{lang.name}</span>
@@ -129,10 +129,10 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
             <PanelTitle>Branches</PanelTitle>
           </PanelHeader>
           <PanelContent className="flex flex-col">
-            {(project.branches ?? []).length === 0 && (
+            {project.branches.length === 0 && (
               <span className="py-4 text-center text-sm text-secondary">No branch data yet</span>
             )}
-            {(project.branches ?? []).map((branch, i) => (
+            {project.branches.map((branch, i) => (
               <div
                 key={branch.name}
                 className={`flex items-center justify-between py-3 text-sm ${
@@ -157,10 +157,10 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
           <PanelTitle>Recent Sessions</PanelTitle>
         </PanelHeader>
         <PanelContent className="flex flex-col">
-          {(project.recentSessions ?? []).length === 0 && (
+          {project.recentSessions.length === 0 && (
             <span className="py-4 text-center text-sm text-secondary">No sessions yet</span>
           )}
-          {(project.recentSessions ?? []).map((session, i) => (
+          {project.recentSessions.map((session, i) => (
             <div
               key={session.id}
               className={`grid grid-cols-12 items-center gap-4 py-3 text-sm ${

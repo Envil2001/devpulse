@@ -9,7 +9,7 @@ import Link from 'next/link';
 
 import { authService } from '@/shared/api/services';
 import { buildSignupCryptoPayload } from '@/features/auth/crypto';
-import { ApiClientError } from '@/shared/api/api-client';
+import { getErrorMessage } from '@/shared/lib/error';
 
 import {
   Form,
@@ -36,13 +36,6 @@ const registerSchema = z.object({
 const verifySchema = z.object({
   code: z.string().length(6, 'Verification code must be exactly 6 characters'),
 });
-
-function getErrorMessage(err: unknown): string {
-  if (err instanceof ApiClientError) return err.message;
-  if (err instanceof Error) return err.message;
-  if (typeof err === 'string') return err;
-  return 'An unknown error occurred';
-}
 
 export function RegisterForm() {
   const router = useRouter();

@@ -1,37 +1,23 @@
 import { cookies } from 'next/headers';
-import { env } from '@devpulse/env/client';
-import { QueryParams } from './api-client';
+import { buildApiUrl, readJson, type QueryParams } from './api-client';
 
 interface ServerRequestOptions {
   params?: QueryParams;
+  authToken?: string;
 }
 
-interface ApiResponse<T> {
-  success: boolean;
-  data: T;
+export async function getServerAuthToken(): Promise<string | undefined> {
+  const cookieStore = await cookies();
+  return cookieStore.get('access_token')?.value;
 }
 
 export async function serverGet<T>(
   endpoint: string,
   options: ServerRequestOptions = {},
 ): Promise<T> {
-  const cookieStore = await cookies();
-  const token = cookieStore.get('access_token')?.value;
+  const token = options.authToken ?? (await getServerAuthToken());
 
-  const baseUrl = env.NEXT_PUBLIC_API_URL;
-  const url = new URL(
-    endpoint.startsWith('/') ? `${baseUrl}${endpoint}` : `${baseUrl}/${endpoint}`,
-  );
-
-  if (options.params) {
-    Object.entries(options.params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null) {
-        url.searchParams.set(key, String(value));
-      }
-    });
-  }
-
-  const res = await fetch(url.toString(), {
+  const response = await fetch(buildApiUrl(endpoint, options.params), {
     headers: {
       ...(token && {
         Cookie: `access_token=${token}`,
@@ -41,10 +27,5 @@ export async function serverGet<T>(
     cache: 'no-store',
   });
 
-  if (!res.ok) {
-    throw new Error(`[Server API] GET ${endpoint} failed: ${res.status} ${res.statusText}`);
-  }
-
-  const json = (await res.json()) as ApiResponse<T>;
-  return (json.data ?? json) as T;
+  return readJson<T>(response);
 }

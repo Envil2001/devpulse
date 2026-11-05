@@ -1,12 +1,8 @@
 import { useCallback, useRef, useState } from 'react';
 
 import { worklogService } from '@/shared/api/services';
-import type {
-  WorklogDayResult,
-  WorklogFormat,
-  WorklogPlan,
-  WorklogPlanDay,
-} from '@/shared/types';
+import type { WorklogDayResult, WorklogFormat, WorklogPlan, WorklogPlanDay } from '@/shared/types';
+import { getErrorMessage } from '@/shared/lib/error';
 
 export type DayStatus = 'pending' | 'loading' | 'done' | 'failed';
 export type RunPhase = 'idle' | 'planning' | 'running' | 'finished';
@@ -22,12 +18,6 @@ export interface WorklogRunOptions {
   startDate: string;
   endDate: string;
   format: WorklogFormat;
-}
-
-export function getErrorMessage(err: unknown): string {
-  if (err instanceof Error) return err.message;
-  if (typeof err === 'string') return err;
-  return 'An unknown error occurred';
 }
 
 export function useWorklogRun() {

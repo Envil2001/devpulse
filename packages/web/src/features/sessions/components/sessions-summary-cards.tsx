@@ -17,12 +17,14 @@ export function SessionsSummaryCards({
   uniqueProjectsCount,
 }: SessionsSummaryCardsProps) {
   const totalSeconds = useMemo(() => {
-    return sessions.reduce((acc, s) => acc + (s.durationMs ?? 0), 0);
+    return sessions.reduce((acc, session) => acc + session.durationSeconds, 0);
   }, [sessions]);
 
   const avgFocus = useMemo(() => {
     if (!sessions.length) return 0;
-    return Math.round(sessions.reduce((acc, s) => acc + (s.focusScore ?? 0), 0) / sessions.length);
+    return Math.round(
+      sessions.reduce((acc, session) => acc + session.focusScore, 0) / sessions.length,
+    );
   }, [sessions]);
 
   return (

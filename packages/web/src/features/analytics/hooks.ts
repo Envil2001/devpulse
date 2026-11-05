@@ -11,8 +11,8 @@ import {
   BranchDataPoint,
   CommandsBreakdown,
 } from '@/shared/types';
-import { DashboardStats } from '@devpulse/lib';
-import { AiRoiMetrics, AnalyticsRangeParams, PipelineHealth } from './api';
+import { type AiRoiMetrics, type DashboardStats, type PipelineHealth } from '@devpulse/lib';
+import { AnalyticsRangeParams } from './api';
 
 export type AnalyticsPeriod = 'today' | '7d' | '30d' | 'custom';
 

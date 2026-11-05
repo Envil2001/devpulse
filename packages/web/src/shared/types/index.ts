@@ -50,7 +50,7 @@ export interface WorkSessionSummary {
   endedAt: string;
   projectName: string;
   gitBranch: string | null;
-  durationMs: number; // Active duration in seconds
+  durationSeconds: number;
   focusScore: number;
   earnedMoney: number;
   primaryLanguage: string | null;
@@ -94,14 +94,6 @@ export interface SessionCommand {
   durationMs: number;
   kind: string;
   timestamp: string;
-}
-
-export interface DashboardStats {
-  totalActiveSeconds: number;
-  totalEarnedMoney: number;
-  averageFocusScore: number;
-  totalSessionsCount: number;
-  topLanguage: string | null;
 }
 
 export interface TimeseriesPoint {
