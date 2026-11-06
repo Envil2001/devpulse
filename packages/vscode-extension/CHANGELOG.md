@@ -13,6 +13,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   the tooltip and diagnostics output.
 - **Dashboard status** — inactive live status now distinguishes no data, a
   closed tracker session, and a stale signal.
+- **Active-time boundaries** — idle transitions use the actual last-activity
+  timestamp, and pause, shutdown, and branch changes close the current session
+  without counting idle or paused time as active.
 
 ## [0.0.1] — 2026-10-18
 

@@ -19,6 +19,7 @@ export interface EventPartial {
   filePath?: string | null;
   language?: string | null;
   clientTimestamp?: string;
+  activityChangedAt?: string;
   gitBranch?: string;
   gitRemoteUrl?: string | null;
   command?: string;
@@ -60,6 +61,7 @@ export function createEvent(
     gitBranch,
     gitRemoteUrl: resolvedRemoteUrl ?? undefined,
     clientTimestamp: partial.clientTimestamp ?? new Date().toISOString(),
+    activityChangedAt: partial.activityChangedAt,
     durationMs: partial.durationMs,
     filePath: partial.filePath,
     language: partial.language ?? undefined,

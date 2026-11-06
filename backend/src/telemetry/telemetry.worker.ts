@@ -21,6 +21,7 @@ import {
   getFileActivityDeltaSeconds,
   normalizeWorkspaceFilePath,
 } from './utils/file-activity';
+import { calculateSessionTime, resolveIdleStartedAt } from './utils/session-time';
 
 const QUEUE_NAME = 'telemetry-ingestion';
 const MAX_IDLE_CREDIT_MS = 30 * 60 * 1000;
@@ -80,6 +81,26 @@ function resolveEventTime(raw: string | undefined, nowMs: number): Date | null {
   }
 
   return time;
+}
+
+function resolveActivityChangedAt(event: object, eventTime: Date): Date {
+  if (!('activityChangedAt' in event) || typeof event.activityChangedAt !== 'string') {
+    return eventTime;
+  }
+
+  const changedAt = new Date(event.activityChangedAt);
+  const changedAtMs = changedAt.getTime();
+  const eventTimeMs = eventTime.getTime();
+
+  if (
+    Number.isNaN(changedAtMs) ||
+    changedAtMs > eventTimeMs ||
+    changedAtMs < eventTimeMs - MAX_EVENT_AGE_MS
+  ) {
+    return eventTime;
+  }
+
+  return changedAt;
 }
 
 function deriveProjectName(gitRemoteUrl: string): string {
@@ -209,25 +230,34 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
     const active = await this.findActiveSession(sessionRepo, user, branch, project);
 
     if (event.type === 'session_end') {
+      let appliedIdleSeconds = 0;
+
       if (active) {
-        this.accumulateLanguage(active, time);
-        this.accumulateFileActivity(active, time);
+        const idleCreditSeconds = this.getIdleCreditSeconds(event);
+        const activeUntil = this.resolveActiveUntil(time, idleCreditSeconds);
+
+        this.accumulateLanguage(active, activeUntil);
+        this.accumulateFileActivity(active, activeUntil);
         this.extendSession(active, time);
+        appliedIdleSeconds = this.addIdleCredit(active, idleCreditSeconds);
         active.status = WorkSessionStatus.CLOSED;
         this.recomputeDerived(active, user);
         await sessionRepo.save(active);
       }
 
-      rawEventsBatch.push(this.buildRawEvent(manager, user, project, active, item, 0));
+      rawEventsBatch.push(
+        this.buildRawEvent(manager, user, project, active, item, appliedIdleSeconds),
+      );
       return;
     }
 
     const gapMs = active?.endedAt
       ? time.getTime() - active.endedAt.getTime()
       : Number.POSITIVE_INFINITY;
-    const idleCreditSec = this.getIdleCreditSeconds(event);
+    const requestedIdleSeconds = this.getIdleCreditSeconds(event);
 
     let session: WorkSession;
+    let appliedIdleSeconds = 0;
 
     if (active !== null && gapMs <= SESSION_GAP_MS) {
       if (event.type !== 'idle_end') {
@@ -236,8 +266,13 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
       }
 
       this.applyEventToSession(active, event, time);
-      this.extendSession(active, time);
-      active.idleSeconds += idleCreditSec;
+      if (event.type === 'idle_start') {
+        const idleStartedAt = resolveActivityChangedAt(event, time);
+        active.endedAt = resolveIdleStartedAt(active.startedAt, idleStartedAt);
+      } else {
+        this.extendSession(active, time);
+      }
+      appliedIdleSeconds = this.addIdleCredit(active, requestedIdleSeconds);
       this.recomputeDerived(active, user);
 
       session = await sessionRepo.save(active);
@@ -251,7 +286,9 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
       session = await sessionRepo.save(created);
     }
 
-    rawEventsBatch.push(this.buildRawEvent(manager, user, project, session, item, idleCreditSec));
+    rawEventsBatch.push(
+      this.buildRawEvent(manager, user, project, session, item, appliedIdleSeconds),
+    );
   }
 
   private findActiveSession(
@@ -554,24 +591,52 @@ export class TelemetryWorker implements OnModuleInit, OnModuleDestroy {
   }
 
   private getIdleCreditSeconds(event: TelemetryEventItemDto): number {
-    if (event.type !== 'idle_end' || !event.durationMs) {
+    if ((event.type !== 'idle_end' && event.type !== 'session_end') || !event.durationMs) {
       return 0;
     }
 
     const rawSec = Math.round(event.durationMs / 1000);
+
+    if (event.type === 'session_end') {
+      return rawSec;
+    }
+
     const capSec = Math.round(MAX_IDLE_CREDIT_MS / 1000);
 
     return Math.min(rawSec, capSec);
   }
 
-  private recomputeDerived(session: WorkSession, user: User): void {
+  private resolveActiveUntil(eventTime: Date, idleCreditSeconds: number): Date {
+    if (idleCreditSeconds <= 0) {
+      return eventTime;
+    }
+
+    return new Date(eventTime.getTime() - idleCreditSeconds * 1000);
+  }
+
+  private addIdleCredit(session: WorkSession, requestedIdleSeconds: number): number {
+    if (requestedIdleSeconds <= 0) {
+      return 0;
+    }
+
     const endedAt = session.endedAt ?? session.startedAt;
-    const wallSec = Math.max(
-      0,
-      Math.round((endedAt.getTime() - session.startedAt.getTime()) / 1000),
+    const before = calculateSessionTime(session.startedAt, endedAt, session.idleSeconds);
+    const after = calculateSessionTime(
+      session.startedAt,
+      endedAt,
+      before.idleSeconds + requestedIdleSeconds,
     );
 
-    session.activeSeconds = Math.max(0, wallSec - session.idleSeconds);
+    session.idleSeconds = after.idleSeconds;
+    return after.idleSeconds - before.idleSeconds;
+  }
+
+  private recomputeDerived(session: WorkSession, user: User): void {
+    const endedAt = session.endedAt ?? session.startedAt;
+    const time = calculateSessionTime(session.startedAt, endedAt, session.idleSeconds);
+
+    session.activeSeconds = time.activeSeconds;
+    session.idleSeconds = time.idleSeconds;
 
     session.focusScore = computeFocusScore(
       session.activeSeconds,
