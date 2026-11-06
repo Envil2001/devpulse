@@ -47,6 +47,14 @@ DevPulse starts tracking automatically. Events are batched and sent every
 minute. Watch the log in **Output → DevPulse** if you want to see what is
 being sent.
 
+Active time follows confirmed activity rather than the time VS Code stays
+open. After two minutes without editor, terminal, task, debug, or workspace
+activity, the whole idle interval is excluded. Losing window focus is confirmed
+after a ten-second grace period and then counted as idle from the moment the
+window lost focus; system sleep is detected separately. Pausing tracking closes
+the current session, and resuming starts a fresh boundary so paused time cannot
+leak into active time.
+
 The tracker reports clear local reasons when it cannot collect activity:
 workspace not trusted, VS Code telemetry disabled, no workspace, no Git
 branch, or startup failure. Missing/invalid API keys and server outages are

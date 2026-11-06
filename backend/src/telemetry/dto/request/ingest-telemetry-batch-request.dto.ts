@@ -92,6 +92,14 @@ export class TelemetryEventItemDto implements TelemetryEventDto {
   @IsOptional()
   public clientTimestamp?: string;
 
+  @ApiProperty({
+    description: 'Actual activity-state boundary when it differs from event delivery time',
+    required: false,
+  })
+  @IsDateString()
+  @IsOptional()
+  public activityChangedAt?: string;
+
   @ApiProperty({ description: 'VS Code machine identifier', required: false })
   @IsString()
   @IsOptional()

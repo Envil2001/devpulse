@@ -247,7 +247,7 @@ Git remotes per user (`git_remote_url`, `name`). Unique constraint on `[gitRemot
 
 ### `work_sessions`
 
-Aggregated work blocks: time (`active_seconds`, `idle_seconds`), `focus_score`, `earned_money`, git branch, languages (`JSONB`), terminal commands (`JSONB`), commits (`JSONB`), AI flags (`ai_assisted`, `ai_interactions_count`). Status enum: `active` | `closed`.
+Aggregated work blocks: time (`active_seconds`, `idle_seconds`), `focus_score`, `earned_money`, git branch, languages (`JSONB`), terminal commands (`JSONB`), commits (`JSONB`), AI flags (`ai_assisted`, `ai_interactions_count`). `active_seconds` is the observed session wall time minus confirmed idle intervals; idle is clamped to the session boundary so counters cannot become negative or exceed wall time. Status enum: `active` | `closed`.
 
 ### `telemetry_events`
 

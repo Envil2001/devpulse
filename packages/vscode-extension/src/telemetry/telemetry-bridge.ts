@@ -78,6 +78,12 @@ export class TelemetryBridge implements vscode.Disposable {
 
   public pause(): void {
     if (this.paused) return;
+
+    const branch = this.contextTracker.branch;
+    if (branch !== null) {
+      this.enqueue(this.createSessionEnd(branch, this.contextTracker.remoteUrl, Date.now()));
+    }
+
     this.paused = true;
     this.log?.info('telemetry paused');
     void this.flush();
@@ -87,6 +93,10 @@ export class TelemetryBridge implements vscode.Disposable {
     if (!this.paused) return;
     this.paused = false;
     this.log?.info('telemetry resumed');
+
+    if (this.activityMonitor.currentState === 'active') {
+      this.enqueue(this.createHeartbeat());
+    }
   }
 
   public async start(): Promise<void> {
@@ -306,6 +316,24 @@ export class TelemetryBridge implements vscode.Disposable {
     return this.create('heartbeat', { durationMs: null, ...activeFile, ...partial });
   }
 
+  private createSessionEnd(
+    gitBranch: string,
+    gitRemoteUrl: string | null,
+    boundaryAtMs: number,
+  ): TelemetryEventDto {
+    const idleDurationMs =
+      this.lastActivityState === 'idle' && this.lastActivityChangeAtMs !== null
+        ? Math.max(0, boundaryAtMs - this.lastActivityChangeAtMs)
+        : null;
+
+    return this.create('session_end', {
+      gitBranch,
+      gitRemoteUrl,
+      clientTimestamp: new Date(boundaryAtMs).toISOString(),
+      durationMs: idleDurationMs,
+    });
+  }
+
   private onActivityTransition(next: ActivityState, changedAt: number): void {
     const prev = this.lastActivityState;
     const prevAt = this.lastActivityChangeAtMs;
@@ -315,7 +343,12 @@ export class TelemetryBridge implements vscode.Disposable {
     if (prev !== null && prevAt !== null && prev !== next) {
       const durationMs = Math.max(0, changedAt - prevAt);
       const eventType: 'idle_start' | 'idle_end' = next === 'idle' ? 'idle_start' : 'idle_end';
-      this.enqueue(this.create(eventType, { durationMs }));
+      this.enqueue(
+        this.create(eventType, {
+          durationMs,
+          activityChangedAt: new Date(changedAt).toISOString(),
+        }),
+      );
     }
 
     this.lastActivityState = next;
@@ -347,25 +380,22 @@ export class TelemetryBridge implements vscode.Disposable {
     }
 
     const boundaryTimestamp = new Date().toISOString();
+    const boundaryAtMs = Date.parse(boundaryTimestamp);
 
     if (previousBranch !== null) {
+      this.enqueue(this.createSessionEnd(previousBranch, previousRemoteUrl, boundaryAtMs));
+    }
+
+    if (this.activityMonitor.currentState === 'active') {
       this.enqueue(
-        this.create('session_end', {
-          gitBranch: previousBranch,
-          gitRemoteUrl: previousRemoteUrl,
+        this.createHeartbeat({
+          durationMs: null,
+          gitBranch: nextContext.gitBranch ?? undefined,
+          gitRemoteUrl: nextContext.gitRemoteUrl,
           clientTimestamp: boundaryTimestamp,
         }),
       );
     }
-
-    this.enqueue(
-      this.createHeartbeat({
-        durationMs: null,
-        gitBranch: nextContext.gitBranch ?? undefined,
-        gitRemoteUrl: nextContext.gitRemoteUrl,
-        clientTimestamp: boundaryTimestamp,
-      }),
-    );
 
     this.flushPendingBuffer();
   }
@@ -442,20 +472,14 @@ export class TelemetryBridge implements vscode.Disposable {
 
   public stop(): void {
     if (this.stopped) return;
-    this.stopped = true;
-
-    this.flushScheduler.stop();
 
     const branch = this.contextTracker.branch;
-    if (branch !== null) {
-      this.enqueue(
-        this.create('session_end', {
-          gitBranch: branch,
-          gitRemoteUrl: this.contextTracker.remoteUrl,
-        }),
-      );
+    if (!this.paused && branch !== null) {
+      this.enqueue(this.createSessionEnd(branch, this.contextTracker.remoteUrl, Date.now()));
     }
 
+    this.stopped = true;
+    this.flushScheduler.stop();
     this.contextTracker.reset();
     this.pendingBuffer.clear();
   }

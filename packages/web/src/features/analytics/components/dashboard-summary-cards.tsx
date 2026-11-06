@@ -51,10 +51,12 @@ export function DashboardSummaryCards({
               </p>
               <Clock className="h-4 w-4 text-brand" strokeWidth={1.5} aria-hidden="true" />
             </div>
-            <div className="mt-5 font-mono text-4xl font-medium tracking-[-0.05em] text-foreground tabular-nums sm:text-5xl">
+            <div className="mt-5 font-mono text-4xl font-medium tracking-tighter text-foreground tabular-nums sm:text-5xl">
               {activeTime}
             </div>
-            <p className="mt-2 text-xs text-subtle">Measured focus across the selected period</p>
+            <p className="mt-2 text-xs text-subtle">
+              Confirmed idle periods are excluded automatically
+            </p>
           </div>
         </div>
 

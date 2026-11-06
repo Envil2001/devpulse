@@ -18,6 +18,8 @@ export interface TelemetryEventDto {
   language?: string;
   durationMs?: number | null;
   clientTimestamp?: string;
+  /** Actual activity-state boundary; may precede delivery after an idle grace period. */
+  activityChangedAt?: string;
   machineId?: string;
   sessionId?: string;
 
