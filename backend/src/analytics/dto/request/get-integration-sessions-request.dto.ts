@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsInt, IsOptional, Min } from 'class-validator';
+import { IsInt, IsOptional, IsString, Min } from 'class-validator';
 
 export class GetIntegrationSessionsRequestDto {
   @ApiPropertyOptional({
@@ -15,4 +15,12 @@ export class GetIntegrationSessionsRequestDto {
   @IsInt()
   @Min(1)
   public limit?: number;
+
+  @ApiPropertyOptional({
+    description: 'Return sessions for one project ID',
+    example: 'p_abc123def456',
+  })
+  @IsOptional()
+  @IsString()
+  public projectId?: string;
 }

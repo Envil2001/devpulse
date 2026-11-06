@@ -51,7 +51,7 @@ export function EndpointCard({
     <div id={id} className="scroll-mt-24">
       <div className="flex flex-col gap-6">
         <div className="flex flex-col gap-3">
-          <div className="flex items-center gap-3">
+          <div className="flex min-w-0 items-center gap-3">
             <span
               className={cn(
                 'rounded-md border px-2.5 py-1 font-mono text-xs font-medium uppercase',
@@ -60,7 +60,9 @@ export function EndpointCard({
             >
               {method}
             </span>
-            <code className="font-mono text-sm text-foreground">{path}</code>
+            <code className="min-w-0 overflow-x-auto py-1 font-mono text-sm whitespace-nowrap text-foreground">
+              {path}
+            </code>
           </div>
 
           <div>
@@ -84,13 +86,13 @@ export function EndpointCard({
         </div>
 
         {hasParameters && (
-          <div className="overflow-hidden rounded-xl border border-border bg-surface">
+          <div className="overflow-x-auto rounded-xl border border-border bg-surface">
             <div className="border-b border-border bg-gray-alpha-50 px-4 py-2.5">
               <span className="text-xs font-medium tracking-wider text-subtle uppercase">
                 Parameters
               </span>
             </div>
-            <table className="w-full text-sm">
+            <table className="w-full min-w-[680px] text-sm">
               <thead>
                 <tr className="border-b border-border bg-gray-alpha-50">
                   <th className="w-32 px-4 py-2 text-left font-medium text-subtle">Name</th>
@@ -105,6 +107,9 @@ export function EndpointCard({
                     <td className="px-4 py-2.5">
                       <code className="font-mono text-foreground">{param.name}</code>
                       {param.required && <span className="ml-1.5 text-xs text-red-coral">*</span>}
+                      {!param.required && (
+                        <span className="ml-1.5 text-[10px] text-subtle">optional</span>
+                      )}
                     </td>
                     <td className="px-4 py-2.5">
                       <span className="font-mono text-xs text-subtle capitalize">{param.in}</span>

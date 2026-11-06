@@ -14,8 +14,10 @@ interface ApiDocsOptions {
 
 export function setupApiDocs(app: INestApplication, options: ApiDocsOptions): void {
   const swaggerConfig = new DocumentBuilder()
-    .setTitle('DevPulse API')
-    .setDescription('DevPulse API documentation')
+    .setTitle('DevPulse Public Integration API')
+    .setDescription(
+      'Read-only, API-first access to developer workflow analytics collected by DevPulse. This public contract exposes aggregated sessions, projects, files, branches, commands, and AI-assisted activity without source-code contents. VS Code telemetry ingestion and dashboard-only endpoints are intentionally excluded.',
+    )
     .setVersion('1.0')
     .addApiKey(
       {

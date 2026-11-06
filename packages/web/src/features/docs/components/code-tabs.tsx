@@ -13,6 +13,7 @@ interface CodeTabsProps {
   parameters?: Array<{
     name: string;
     in: 'header' | 'query' | 'path';
+    required?: boolean;
     example?: unknown;
     schema?: { example?: unknown; default?: unknown; type?: string };
   }>;
@@ -25,9 +26,10 @@ function getExampleUrl(url: string, parameters: CodeTabsProps['parameters']): st
   for (const parameter of parameters ?? []) {
     if (parameter.in !== 'query') continue;
     const value = parameter.example ?? parameter.schema?.example ?? parameter.schema?.default;
+    if (value === undefined && !parameter.required) continue;
     query.set(
       parameter.name,
-      String(value ?? (parameter.schema?.type === 'number' ? 10 : 'value')),
+      String(value ?? (parameter.schema?.type === 'number' ? 10 : 'required-value')),
     );
   }
 

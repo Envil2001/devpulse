@@ -13,6 +13,7 @@ export interface EndpointData {
   method: string;
   path: string;
   summary: string;
+  group?: string;
   description?: string;
   scopes?: Array<string>;
   parameters?: Array<{
@@ -34,7 +35,10 @@ export function groupEndpointsByPath(endpoints: Array<EndpointData>): Array<Navi
       category: 'Overview',
       items: [
         { title: 'Introduction', href: '#introduction' },
+        { title: 'Quick start', href: '#quick-start' },
+        { title: 'API surfaces', href: '#api-surfaces' },
         { title: 'Authentication', href: '#authentication' },
+        { title: 'Data semantics', href: '#data-semantics' },
         { title: 'Responses', href: '#responses' },
       ],
     },
@@ -43,8 +47,7 @@ export function groupEndpointsByPath(endpoints: Array<EndpointData>): Array<Navi
   const endpointGroups = new Map<string, Array<NavigationItem>>();
 
   for (const endpoint of endpoints) {
-    const pathParts = endpoint.path.split('/').filter(Boolean);
-    const category = pathParts.length > 0 ? pathParts[0] : 'Endpoints';
+    const category = endpoint.group ?? 'Analytics';
 
     if (!endpointGroups.has(category)) {
       endpointGroups.set(category, []);
@@ -67,7 +70,15 @@ export function groupEndpointsByPath(endpoints: Array<EndpointData>): Array<Navi
 }
 
 export function generateIdFromTitle(title: string): string {
-  return title.toLowerCase().replace(/\s+/g, '-');
+  return title
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+export function generateEndpointId(method: string, path: string): string {
+  return generateIdFromTitle(`${method}-${path}`);
 }
 
 export function generateIdFromPath(path: string): string {
