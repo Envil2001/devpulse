@@ -18,7 +18,7 @@ import { ContextTracker } from './bridge/context-tracker.js';
 import { createEvent, type EventPartial, type TelemetryEventType } from './bridge/event-factory.js';
 import { FlushScheduler } from './bridge/flush-scheduler.js';
 import { PendingBuffer } from './bridge/pending-buffer.js';
-import { TelemetryApiClient } from './api-client.js';
+import { MissingApiKeyError, TelemetryApiClient } from './api-client.js';
 import { TelemetryBufferStore } from './buffer-store.js';
 import { TelemetryRequestError } from './telemetry-request-error.js';
 
@@ -100,6 +100,7 @@ export class TelemetryBridge implements vscode.Disposable {
     const initialContext = this.gitContextProvider.currentContext;
     this.lastActivityState = this.activityMonitor.currentState;
     this.lastActivityChangeAtMs = Date.now();
+    this.statusBarState.setActivity(this.activityMonitor.currentState);
 
     this.contextTracker.update(initialContext);
 
@@ -319,6 +320,7 @@ export class TelemetryBridge implements vscode.Disposable {
 
     this.lastActivityState = next;
     this.lastActivityChangeAtMs = changedAt;
+    this.statusBarState.setActivity(next);
   }
 
   private onGitContextTransition(nextContext: GitContext): void {
@@ -491,11 +493,10 @@ export class TelemetryBridge implements vscode.Disposable {
           void this.flush();
         });
       }
-
-      this.statusBarState.setHealth('ok');
-      this.log?.info(`flushed ${String(sent)} events`);
     } catch (error: unknown) {
-      if (error instanceof TelemetryRequestError) {
+      if (error instanceof MissingApiKeyError) {
+        this.statusBarState.setHealth('missing-key');
+      } else if (error instanceof TelemetryRequestError) {
         if (error.isAuthError) {
           this.statusBarState.setHealth('invalid-key'); // 401, 403
         } else if (error.retryable) {

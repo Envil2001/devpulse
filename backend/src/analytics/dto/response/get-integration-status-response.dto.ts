@@ -1,5 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
+export type TrackerInactiveReason = 'no-data' | 'session-closed' | 'signal-stale';
+
 export class GetIntegrationStatusResponseDto {
   @ApiProperty({
     example: true,
@@ -21,4 +23,19 @@ export class GetIntegrationStatusResponseDto {
 
   @ApiPropertyOptional({ example: '2026-09-18T20:00:00.000Z' })
   public sessionStartedAt!: Date | null;
+
+  @ApiPropertyOptional({
+    enum: ['no-data', 'session-closed', 'signal-stale'],
+    nullable: true,
+    description:
+      'Server-observable reason why no live activity is shown. Exact local blockers remain in the VS Code extension.',
+  })
+  public inactiveReason!: TrackerInactiveReason | null;
+
+  @ApiPropertyOptional({
+    example: '2026-09-18T20:42:00.000Z',
+    nullable: true,
+    description: 'Timestamp of the latest activity signal known to the server',
+  })
+  public lastSignalAt!: Date | null;
 }

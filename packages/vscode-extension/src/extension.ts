@@ -7,7 +7,7 @@ import { TasksMonitor } from './signals/tasks-monitor.js';
 import { TerminalMonitor } from './signals/terminal-monitor.js';
 import { DevPulseStatusBar } from './status-bar/devpulse-status-bar.js';
 import { StatsPoller } from './status-bar/stats-poller.js';
-import { StatusBarState } from './status-bar/status-bar-state.js';
+import { StatusBarState, type TrackingBlockReason } from './status-bar/status-bar-state.js';
 import { TelemetryApiClient } from './telemetry/api-client.js';
 import { TelemetryBridge } from './telemetry/telemetry-bridge.js';
 import { ActivityMonitor } from './activity-monitor.js';
@@ -20,6 +20,7 @@ interface TelemetrySession extends vscode.Disposable {
 }
 
 let session: TelemetrySession | undefined;
+let extensionOutputChannel: vscode.LogOutputChannel | undefined;
 
 function canStartTelemetry(): boolean {
   return vscode.workspace.isTrusted && vscode.env.isTelemetryEnabled;
@@ -27,6 +28,7 @@ function canStartTelemetry(): boolean {
 
 export function activate(context: vscode.ExtensionContext): void {
   const outputChannel = vscode.window.createOutputChannel('DevPulse', { log: true });
+  extensionOutputChannel = outputChannel;
   const state = new StatusBarState();
   context.subscriptions.push(outputChannel, state);
 
@@ -48,6 +50,22 @@ export function activate(context: vscode.ExtensionContext): void {
   const apiClient = new TelemetryApiClient(context, outputChannel);
   const statsPoller = new StatsPoller(apiClient, state, outputChannel);
   context.subscriptions.push(statsPoller);
+
+  const getTrackingBlocker = (): TrackingBlockReason | null => {
+    if (!vscode.workspace.isTrusted) return 'workspace-untrusted';
+    if (!vscode.env.isTelemetryEnabled) return 'telemetry-disabled';
+    if (!vscode.workspace.workspaceFolders?.length) return 'no-workspace';
+
+    const gitContext = gitContextProvider.currentContext;
+    if (gitContext.workspaceFolderPath === null) return 'initializing';
+    if (gitContext.gitBranch === null) return 'no-git';
+
+    return null;
+  };
+
+  const updateTrackingBlocker = (): void => {
+    state.setBlocker(getTrackingBlocker());
+  };
 
   const startTelemetry = (): void => {
     if (session) return;
@@ -98,6 +116,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
     bridge.start().catch((error: unknown) => {
       outputChannel.error(`Telemetry failed to start: ${String(error)}`);
+      state.setBlocker('startup-error');
       stopTelemetry();
     });
 
@@ -133,6 +152,8 @@ export function activate(context: vscode.ExtensionContext): void {
   };
 
   const reconcile = (): void => {
+    updateTrackingBlocker();
+
     if (canStartTelemetry()) {
       startTelemetry();
     } else {
@@ -141,6 +162,9 @@ export function activate(context: vscode.ExtensionContext): void {
   };
 
   context.subscriptions.push(
+    gitContextProvider.onDidChangeContext(() => {
+      updateTrackingBlocker();
+    }),
     vscode.env.onDidChangeTelemetryEnabled(() => {
       reconcile();
     }),
@@ -166,7 +190,7 @@ export async function deactivate(): Promise<void> {
   try {
     await current.bridge.shutdown(controller.signal);
   } catch (error: unknown) {
-    console.warn('DevPulse shutdown error:', error);
+    extensionOutputChannel?.warn(`DevPulse shutdown error: ${String(error)}`);
   } finally {
     clearTimeout(timeoutId);
     try {

@@ -115,6 +115,8 @@ export interface LiveStatus {
   currentLanguage: string | null;
   currentSessionDurationSeconds: number | null;
   sessionStartedAt: string | null;
+  inactiveReason: 'no-data' | 'session-closed' | 'signal-stale' | null;
+  lastSignalAt: string | null;
 }
 
 export interface LanguageStat {

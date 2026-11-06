@@ -232,7 +232,7 @@ export class AnalyticsService {
     const [lastEvent, queueMetrics, llmInfo, latencyMs] = await Promise.all([
       this.sessionRepo.findOne({
         where: { userId },
-        order: { startedAt: 'DESC' },
+        order: { endedAt: 'DESC' },
         select: ['startedAt', 'endedAt'],
       }),
       this.telemetryQueue.getQueueMetrics(),
@@ -249,15 +249,16 @@ export class AnalyticsService {
       this.measureDbLatency(),
     ]);
 
-    const minutesSinceLastEvent = lastEvent
-      ? Math.floor((Date.now() - lastEvent.startedAt.getTime()) / 60_000)
+    const lastEventAt = lastEvent ? (lastEvent.endedAt ?? lastEvent.startedAt) : null;
+    const minutesSinceLastEvent = lastEventAt
+      ? Math.floor((Date.now() - lastEventAt.getTime()) / 60_000)
       : null;
 
     return {
       telemetryBridge: {
         status:
           minutesSinceLastEvent !== null && minutesSinceLastEvent < 10 ? 'operational' : 'idle',
-        lastEventAt: lastEvent?.startedAt.toISOString() ?? null,
+        lastEventAt: lastEventAt?.toISOString() ?? null,
         minutesSinceLastEvent,
       },
       bullmq: {

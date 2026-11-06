@@ -42,8 +42,14 @@ describe('AnalyticsController (Integration)', () => {
   });
 
   const mockLiveStatus = Object.assign(new GetIntegrationStatusResponseDto(), {
-    isCoding: true,
+    isCodingNow: true,
     currentProject: 'DevPulse Core',
+    currentBranch: 'main',
+    currentLanguage: 'typescript',
+    currentSessionDurationSeconds: 900,
+    sessionStartedAt: new Date('2026-03-30T11:45:00.000Z'),
+    inactiveReason: null,
+    lastSignalAt: new Date('2026-03-30T12:00:00.000Z'),
   });
 
   const mockAiRoi = Object.assign(new GetIntegrationAiRoiResponseDto(), {

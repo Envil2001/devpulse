@@ -14,7 +14,10 @@ import { GetAnalyticsHotFilesResponseDto } from '../dto/response/get-analytics-h
 import { GetIntegrationAiRoiResponseDto } from '../dto/response/get-integration-ai-roi-response.dto';
 import { GetIntegrationLanguagesResponseDto } from '../dto/response/get-integration-languages-response.dto';
 import { GetIntegrationSessionItemDto } from '../dto/response/get-integration-sessions-response.dto';
-import { GetIntegrationStatusResponseDto } from '../dto/response/get-integration-status-response.dto';
+import {
+  GetIntegrationStatusResponseDto,
+  type TrackerInactiveReason,
+} from '../dto/response/get-integration-status-response.dto';
 import { GetIntegrationTodayResponseDto } from '../dto/response/get-integration-today-response.dto';
 
 const LIVE_SESSION_TIMEOUT_MS = 5 * 60 * 1000;
@@ -24,14 +27,21 @@ const DAY_KEY_FORMAT = 'yyyy-MM-dd';
 const OTHER_LANGUAGE_LABEL = 'Other';
 const HOT_PATHS_LIMIT = 5;
 
-const OFFLINE_STATUS: GetIntegrationStatusResponseDto = {
-  isCodingNow: false,
-  currentProject: null,
-  currentBranch: null,
-  currentLanguage: null,
-  currentSessionDurationSeconds: null,
-  sessionStartedAt: null,
-};
+function inactiveStatus(
+  inactiveReason: TrackerInactiveReason,
+  lastSignalAt: Date | null,
+): GetIntegrationStatusResponseDto {
+  return {
+    isCodingNow: false,
+    currentProject: null,
+    currentBranch: null,
+    currentLanguage: null,
+    currentSessionDurationSeconds: null,
+    sessionStartedAt: null,
+    inactiveReason,
+    lastSignalAt,
+  };
+}
 
 interface LanguageRow {
   language: string;
@@ -130,29 +140,35 @@ export class IntegrationsAnalyticsService {
   }
 
   public async getLiveStatus(userId: TypeId<'users'>): Promise<GetIntegrationStatusResponseDto> {
-    const activeSession = await this.sessionRepo.findOne({
-      where: { userId, status: WorkSessionStatus.ACTIVE },
+    const latestSession = await this.sessionRepo.findOne({
+      where: { userId },
       relations: ['project'],
       order: { endedAt: 'DESC' },
     });
 
-    if (!activeSession) {
-      return OFFLINE_STATUS;
+    if (!latestSession) {
+      return inactiveStatus('no-data', null);
     }
 
-    const lastSeenMs = (activeSession.endedAt ?? activeSession.startedAt).getTime();
+    const lastSignalAt = latestSession.endedAt ?? latestSession.startedAt;
 
-    if (Date.now() - lastSeenMs > LIVE_SESSION_TIMEOUT_MS) {
-      return OFFLINE_STATUS;
+    if (latestSession.status !== WorkSessionStatus.ACTIVE) {
+      return inactiveStatus('session-closed', lastSignalAt);
+    }
+
+    if (Date.now() - lastSignalAt.getTime() > LIVE_SESSION_TIMEOUT_MS) {
+      return inactiveStatus('signal-stale', lastSignalAt);
     }
 
     return {
       isCodingNow: true,
-      currentProject: activeSession.project?.name ?? null,
-      currentBranch: activeSession.gitBranch,
-      currentLanguage: activeSession.currentLanguage ?? activeSession.primaryLanguage,
-      currentSessionDurationSeconds: activeSession.activeSeconds,
-      sessionStartedAt: activeSession.startedAt,
+      currentProject: latestSession.project?.name ?? null,
+      currentBranch: latestSession.gitBranch,
+      currentLanguage: latestSession.currentLanguage ?? latestSession.primaryLanguage,
+      currentSessionDurationSeconds: latestSession.activeSeconds,
+      sessionStartedAt: latestSession.startedAt,
+      inactiveReason: null,
+      lastSignalAt,
     };
   }
 

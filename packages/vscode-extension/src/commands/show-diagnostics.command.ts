@@ -29,6 +29,8 @@ export function registerShowDiagnosticsCommand(
       `VS Code telemetry: ${vscode.env.isTelemetryEnabled ? 'enabled' : 'disabled'}`,
     );
     outputChannel.info(`Tracking paused: ${String(state.isPaused)}`);
+    outputChannel.info(`Activity: ${state.activity}`);
+    outputChannel.info(`Tracking blocker: ${state.blocker ?? 'none'}`);
     outputChannel.info(`Health: ${state.health}`);
     outputChannel.info(`Machine ID: ${vscode.env.machineId}`);
     outputChannel.info(`Session ID: ${vscode.env.sessionId}`);

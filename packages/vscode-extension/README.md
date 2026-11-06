@@ -37,14 +37,20 @@ create an extension key from **Settings → API Keys**.
 Open the Command Palette (`Cmd+Shift+P` / `Ctrl+Shift+P`) and run:
 DevPulse: Set API Key
 
-Paste your key. The status bar in the bottom-left should switch to a
-green indicator within a minute.
+Paste your key. The status bar in the bottom-left shows whether DevPulse is
+active, waiting for activity, paused, buffering locally, or blocked. Hover it
+to see the exact reason and the current sync state.
 
 ### 4. Work normally
 
 DevPulse starts tracking automatically. Events are batched and sent every
 minute. Watch the log in **Output → DevPulse** if you want to see what is
 being sent.
+
+The tracker reports clear local reasons when it cannot collect activity:
+workspace not trusted, VS Code telemetry disabled, no workspace, no Git
+branch, or startup failure. Missing/invalid API keys and server outages are
+shown separately because activity can still be buffered locally.
 
 ## Configuration
 

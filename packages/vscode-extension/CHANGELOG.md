@@ -4,6 +4,16 @@ All notable changes to the DevPulse extension will be documented here.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Changed
+
+- **Tracker diagnostics** — the status bar now distinguishes active, idle,
+  paused, locally blocked, and sync-only failures, with a concrete reason in
+  the tooltip and diagnostics output.
+- **Dashboard status** — inactive live status now distinguishes no data, a
+  closed tracker session, and a stale signal.
+
 ## [0.0.1] — 2026-10-18
 
 ### Added
