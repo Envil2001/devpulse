@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-import type { TelemetryApiClient } from '../telemetry/api-client.js';
+import { MissingApiKeyError, type TelemetryApiClient } from '../telemetry/api-client.js';
 import { TelemetryRequestError } from '../telemetry/telemetry-request-error.js';
 
 import type { StatusBarState } from './status-bar-state.js';
@@ -45,6 +45,11 @@ export class StatsPoller implements vscode.Disposable {
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       this.log?.warn(`stats poll failed: ${message}`);
+
+      if (error instanceof MissingApiKeyError) {
+        this.state.setHealth('missing-key');
+        return;
+      }
 
       if (error instanceof TelemetryRequestError && error.isAuthError) {
         this.state.setHealth('invalid-key');

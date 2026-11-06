@@ -23,8 +23,8 @@ export function registerCommands(
   deps: CommandDependencies,
 ): Array<vscode.Disposable> {
   return [
-    registerSetApiKeyCommand(context),
-    registerClearApiKeyCommand(context),
+    registerSetApiKeyCommand(context, deps.state, deps.getBridge),
+    registerClearApiKeyCommand(context, deps.state),
 
     registerShowStatusMenuCommand(deps.state),
     registerPauseTrackingCommand(deps.state, deps.getBridge),

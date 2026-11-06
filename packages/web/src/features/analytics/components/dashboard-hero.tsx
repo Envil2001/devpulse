@@ -13,6 +13,24 @@ interface DashboardHeroProps {
   controls: ReactNode;
 }
 
+const INACTIVE_COPY: Record<
+  Exclude<LiveStatus['inactiveReason'], null>,
+  { label: string; detail: string }
+> = {
+  'no-data': {
+    label: 'No tracker signal yet',
+    detail: 'Start DevPulse in VS Code to begin tracking.',
+  },
+  'session-closed': {
+    label: 'Tracker session stopped',
+    detail: 'Open DevPulse in VS Code for the exact local reason.',
+  },
+  'signal-stale': {
+    label: 'Tracker signal is stale',
+    detail: 'Check the DevPulse status in VS Code.',
+  },
+};
+
 export function DashboardHero({
   displayName,
   liveStatus,
@@ -20,9 +38,15 @@ export function DashboardHero({
 }: DashboardHeroProps): JSX.Element {
   const firstName = displayName.trim().split(/\s+/, 1)[0] || displayName;
   const isLive = liveStatus?.isCodingNow === true;
+  const inactiveCopy = liveStatus?.inactiveReason
+    ? INACTIVE_COPY[liveStatus.inactiveReason]
+    : {
+        label: 'Checking tracker…',
+        detail: 'Reading the latest activity signal.',
+      };
 
   return (
-    <section className="dashboard-hero relative isolate overflow-hidden rounded-3xl border border-white/[0.08] px-5 py-6 sm:px-7 sm:py-7 lg:px-9 lg:py-8">
+    <section className="dashboard-hero relative isolate overflow-hidden rounded-3xl border border-white/8 px-5 py-6 sm:px-7 sm:py-7 lg:px-9 lg:py-8">
       <div className="relative z-10 grid items-end gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="max-w-3xl">
           <div className="mb-5 flex items-center gap-2 font-mono text-[10px] font-medium tracking-[0.22em] text-brand uppercase">
@@ -39,29 +63,34 @@ export function DashboardHero({
           </p>
         </div>
 
-        <div className="rounded-2xl border border-white/[0.08] bg-black/20 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] backdrop-blur-sm">
+        <div className="rounded-2xl border border-white/8 bg-black/20 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] backdrop-blur-sm">
           <div className="flex items-center justify-between gap-4">
             <span className="font-mono text-[10px] tracking-[0.18em] text-subtle uppercase">
               Current signal
             </span>
-            <span
-              className={
-                isLive
-                  ? 'inline-flex items-center gap-1.5 text-xs font-medium text-brand'
-                  : 'inline-flex items-center gap-1.5 text-xs font-medium text-subtle'
-              }
-            >
+            <div className="text-right">
               <span
-                className={`h-1.5 w-1.5 rounded-full ${
-                  isLive ? 'bg-brand shadow-[0_0_8px_var(--color-brand-glow)]' : 'bg-subtle'
-                }`}
-              />
-              {isLive ? 'Coding now' : 'Awaiting activity'}
-            </span>
+                className={
+                  isLive
+                    ? 'inline-flex items-center gap-1.5 text-xs font-medium text-brand'
+                    : 'inline-flex items-center gap-1.5 text-xs font-medium text-subtle'
+                }
+              >
+                <span
+                  className={`h-1.5 w-1.5 rounded-full ${
+                    isLive ? 'bg-brand shadow-[0_0_8px_var(--color-brand-glow)]' : 'bg-subtle'
+                  }`}
+                />
+                {isLive ? 'Coding now' : inactiveCopy.label}
+              </span>
+              {!isLive && (
+                <p className="mt-1 max-w-56 text-[11px] text-subtle">{inactiveCopy.detail}</p>
+              )}
+            </div>
           </div>
 
           <div className="mt-5 space-y-3">
-            <div className="flex items-center justify-between gap-4 border-b border-white/[0.06] pb-3">
+            <div className="flex items-center justify-between gap-4 border-b border-white/6 pb-3">
               <span className="flex items-center gap-2 text-xs text-subtle">
                 <Activity className="h-3.5 w-3.5" strokeWidth={1.5} /> Project
               </span>
@@ -69,7 +98,7 @@ export function DashboardHero({
                 {liveStatus?.currentProject ?? 'No live project'}
               </span>
             </div>
-            <div className="flex items-center justify-between gap-4 border-b border-white/[0.06] pb-3">
+            <div className="flex items-center justify-between gap-4 border-b border-white/6 pb-3">
               <span className="flex items-center gap-2 text-xs text-subtle">
                 <Code2 className="h-3.5 w-3.5" strokeWidth={1.5} /> Language
               </span>

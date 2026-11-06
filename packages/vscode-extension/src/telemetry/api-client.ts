@@ -17,6 +17,13 @@ const STATS_TIMEOUT_MS = 10_000;
 const CONFIG_NAMESPACE = 'devpulse';
 const CONFIG_KEY = 'apiUrl';
 
+export class MissingApiKeyError extends Error {
+  constructor() {
+    super('DevPulse API key is missing');
+    this.name = 'MissingApiKeyError';
+  }
+}
+
 export interface TodayStats {
   activeSeconds: number;
   focusScore: number;
@@ -172,7 +179,7 @@ export class TelemetryApiClient {
   private async requireApiKey(): Promise<string> {
     const apiKey = await this.context.secrets.get(DEVPULSE_API_KEY_SECRET);
     if (apiKey === undefined || apiKey.trim().length === 0) {
-      throw new Error('MissingApiKey');
+      throw new MissingApiKeyError();
     }
     return apiKey.trim();
   }

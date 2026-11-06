@@ -6,9 +6,20 @@ export interface TodayStats {
   sessionsCount: number;
 }
 
-export type HealthStatus = 'ok' | 'invalid-key' | 'offline' | 'error';
+export type ActivityStatus = 'active' | 'idle';
+export type TrackingBlockReason =
+  | 'initializing'
+  | 'workspace-untrusted'
+  | 'telemetry-disabled'
+  | 'no-workspace'
+  | 'no-git'
+  | 'startup-error';
+export type HealthStatus = 'ok' | 'missing-key' | 'invalid-key' | 'offline' | 'error';
+
 export class StatusBarState implements vscode.Disposable {
   private isPausedValue = false;
+  private activityValue: ActivityStatus = 'idle';
+  private blockerValue: TrackingBlockReason | null = 'initializing';
   private todayStatsValue: TodayStats | null = null;
   private healthValue: HealthStatus = 'ok';
 
@@ -17,6 +28,14 @@ export class StatusBarState implements vscode.Disposable {
 
   get isPaused(): boolean {
     return this.isPausedValue;
+  }
+
+  get activity(): ActivityStatus {
+    return this.activityValue;
+  }
+
+  get blocker(): TrackingBlockReason | null {
+    return this.blockerValue;
   }
 
   get todayStats(): TodayStats | null {
@@ -30,6 +49,18 @@ export class StatusBarState implements vscode.Disposable {
   setPaused(value: boolean): void {
     if (this.isPausedValue === value) return;
     this.isPausedValue = value;
+    this.emitter.fire();
+  }
+
+  setActivity(value: ActivityStatus): void {
+    if (this.activityValue === value) return;
+    this.activityValue = value;
+    this.emitter.fire();
+  }
+
+  setBlocker(value: TrackingBlockReason | null): void {
+    if (this.blockerValue === value) return;
+    this.blockerValue = value;
     this.emitter.fire();
   }
 

@@ -4,14 +4,38 @@ import { formatDuration } from '@devpulse/lib';
 
 import type { GitContextProvider } from '../git-context.js';
 
-import type { StatusBarState, TodayStats } from './status-bar-state.js';
+import type {
+  HealthStatus,
+  StatusBarState,
+  TodayStats,
+  TrackingBlockReason,
+} from './status-bar-state.js';
+
+const BLOCK_REASON_LABELS: Record<TrackingBlockReason, string> = {
+  initializing: 'Starting tracker…',
+  'workspace-untrusted': 'Workspace is not trusted',
+  'telemetry-disabled': 'VS Code telemetry is disabled',
+  'no-workspace': 'No workspace is open',
+  'no-git': 'No Git branch detected',
+  'startup-error': 'Tracker failed to start',
+};
+
+const HEALTH_LABELS: Record<Exclude<HealthStatus, 'ok'>, string> = {
+  'missing-key': 'API key is missing — activity is buffered locally',
+  'invalid-key': 'API key is invalid — activity is buffered locally',
+  offline: 'Server is offline — activity is buffered locally',
+  error: 'Sync failed — check the DevPulse log',
+};
 
 function statusIcon(state: StatusBarState): string {
   if (state.isPaused) return '$(debug-pause)';
-  if (state.health === 'invalid-key' || state.health === 'offline' || state.health === 'error') {
+  if (state.blocker !== null) return '$(warning)';
+  const health = state.health;
+  if (health === 'invalid-key' || health === 'offline' || health === 'error') {
     return '$(warning)';
   }
-  return '$(circle-filled)';
+  if (health === 'missing-key') return '$(key)';
+  return state.activity === 'active' ? '$(circle-filled)' : '$(circle-outline)';
 }
 
 export class DevPulseStatusBar implements vscode.Disposable {
@@ -101,18 +125,25 @@ export class DevPulseStatusBar implements vscode.Disposable {
       md.appendMarkdown('No activity recorded today.\n\n');
     }
 
-    md.appendMarkdown(`Status: ${this.statusLabel()}\n\n`);
+    md.appendMarkdown(`Tracking: **${this.statusLabel()}**\n\n`);
+
+    const health = this.statusBarState.health;
+    if (health !== 'ok') {
+      md.appendMarkdown(`Sync: ${HEALTH_LABELS[health]}\n\n`);
+    }
+
     md.appendMarkdown('_Click for menu_');
 
     return md;
   }
 
   private statusLabel(): string {
-    if (this.statusBarState.isPaused) return 'Paused';
-    if (this.statusBarState.health === 'invalid-key') return 'Invalid API key';
-    if (this.statusBarState.health === 'offline') return 'Offline';
-    if (this.statusBarState.health === 'error') return 'Sync Error';
-    return 'Active';
+    if (this.statusBarState.isPaused) return 'Paused by you';
+    const blocker = this.statusBarState.blocker;
+    if (blocker !== null) {
+      return BLOCK_REASON_LABELS[blocker];
+    }
+    return this.statusBarState.activity === 'active' ? 'Active' : 'Idle — waiting for activity';
   }
 
   public dispose(): void {
