@@ -104,13 +104,13 @@ export function CreateApiKeyDialog({
                         value="extension"
                         icon={Terminal}
                         title="Extension"
-                        description="For tracking VS Code"
+                        description="Upload telemetry from VS Code"
                       />
                       <RadioCardsItem
                         value="integration"
                         icon={Blocks}
                         title="Integration"
-                        description="For reading analytics"
+                        description="Read analytics from external systems"
                       />
                     </RadioCards>
                   </FormControl>

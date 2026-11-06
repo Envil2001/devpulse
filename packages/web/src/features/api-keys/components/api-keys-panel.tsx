@@ -1,6 +1,7 @@
 'use client';
 
-import { Blocks, Key, Plus, Terminal } from 'lucide-react';
+import { Blocks, BookOpen, Key, Plus, Terminal } from 'lucide-react';
+import Link from 'next/link';
 import { useState } from 'react';
 import { type JSX } from 'react/jsx-runtime';
 
@@ -37,10 +38,18 @@ export function ApiKeysPanel(): JSX.Element {
           <PanelTitle>API Keys</PanelTitle>
           <PanelDescription>Manage API keys for VS Code and external integrations</PanelDescription>
         </div>
-        <Button size="sm" onClick={() => setCreateOpen(true)}>
-          <Plus className="mr-1.5 h-4 w-4" strokeWidth={1.5} />
-          Create Key
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button asChild size="sm" variant="outline">
+            <Link href="/docs">
+              <BookOpen className="mr-1.5 h-4 w-4" strokeWidth={1.5} />
+              API docs
+            </Link>
+          </Button>
+          <Button size="sm" onClick={() => setCreateOpen(true)}>
+            <Plus className="mr-1.5 h-4 w-4" strokeWidth={1.5} />
+            Create Key
+          </Button>
+        </div>
       </PanelHeader>
 
       <PanelContent>
@@ -74,9 +83,18 @@ export function ApiKeysPanel(): JSX.Element {
         {!isLoading && !isError && keys.length > 0 && (
           <div className="flex flex-col gap-8">
             <section>
-              <div className="mb-4 flex items-center gap-2">
-                <Terminal className="h-4 w-4 text-subtle" strokeWidth={1.5} aria-hidden="true" />
-                <h3 className="text-base font-medium text-foreground">Extension Keys</h3>
+              <div className="mb-4 flex items-start gap-2">
+                <Terminal
+                  className="mt-0.5 h-4 w-4 text-subtle"
+                  strokeWidth={1.5}
+                  aria-hidden="true"
+                />
+                <div>
+                  <h3 className="text-base font-medium text-foreground">Extension Keys</h3>
+                  <p className="mt-0.5 text-xs leading-relaxed text-subtle">
+                    Write-only keys for uploading telemetry from the VS Code extension.
+                  </p>
+                </div>
               </div>
               <ApiKeysTable
                 list={extensionKeys}
@@ -87,9 +105,18 @@ export function ApiKeysPanel(): JSX.Element {
             </section>
 
             <section>
-              <div className="mb-4 flex items-center gap-2">
-                <Blocks className="h-4 w-4 text-subtle" strokeWidth={1.5} aria-hidden="true" />
-                <h3 className="text-base font-medium text-foreground">Integration Keys</h3>
+              <div className="mb-4 flex items-start gap-2">
+                <Blocks
+                  className="mt-0.5 h-4 w-4 text-subtle"
+                  strokeWidth={1.5}
+                  aria-hidden="true"
+                />
+                <div>
+                  <h3 className="text-base font-medium text-foreground">Integration Keys</h3>
+                  <p className="mt-0.5 text-xs leading-relaxed text-subtle">
+                    Read-only keys for external systems using the documented analytics API.
+                  </p>
+                </div>
               </div>
               <ApiKeysTable
                 list={integrationKeys}

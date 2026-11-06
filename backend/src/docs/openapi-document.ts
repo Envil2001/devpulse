@@ -3,6 +3,7 @@ import { type OpenAPIObject } from '@nestjs/swagger';
 type OpenApiRecord = Record<string, unknown>;
 
 const HTTP_METHODS = new Set(['get', 'post', 'put', 'patch', 'delete']);
+const PUBLIC_INTEGRATION_PATH_PREFIX = '/api/v1/integrations/';
 
 function asRecord(value: unknown): OpenApiRecord | undefined {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
@@ -55,7 +56,7 @@ function getSchemaExample(
 export function retainPublicIntegrationPaths(document: OpenAPIObject): void {
   document.paths = Object.fromEntries(
     Object.entries(document.paths).filter(([endpointPath]) =>
-      endpointPath.includes('/integrations/'),
+      endpointPath.startsWith(PUBLIC_INTEGRATION_PATH_PREFIX),
     ),
   );
 }

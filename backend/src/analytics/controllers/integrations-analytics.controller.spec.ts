@@ -19,6 +19,7 @@ import { User } from '../../users/entities/user.entity';
 import { type GetAnalyticsRangeRequestDto } from '../dto/request/get-analytics-range-request.dto';
 import { type GetAnalyticsHotFilesResponseDto } from '../dto/response/get-analytics-hot-files-response.dto';
 import { type GetIntegrationSessionItemDto } from '../dto/response/get-integration-sessions-response.dto';
+import { AnalyticsService } from '../services/analytics.service';
 import { IntegrationsAnalyticsService } from '../services/integrations-analytics.service';
 
 import { IntegrationsAnalyticsController } from './integrations-analytics.controller';
@@ -59,8 +60,23 @@ describe('IntegrationsAnalyticsController (Integration)', () => {
   };
 
   const mockIntegrationsService = {
-    getRecentSessions: jest.fn((_userId: TypeId<'users'>, _limit: number) =>
+    getRecentSessions: jest.fn((_userId: TypeId<'users'>, _limit: number, _projectId?: string) =>
       Promise.resolve([mockSessionItem]),
+    ),
+    getLanguagesBreakdown: jest.fn(
+      (_userId: TypeId<'users'>, _query: GetAnalyticsRangeRequestDto) =>
+        Promise.resolve({ totalActiveSeconds: 3600, languages: [] }),
+    ),
+    getAiRoiMetrics: jest.fn((_userId: TypeId<'users'>, _query: GetAnalyticsRangeRequestDto) =>
+      Promise.resolve({
+        aiSessions: 1,
+        manualSessions: 1,
+        aiInteractionsCount: 2,
+        aiLinesPerHour: 100,
+        manualLinesPerHour: 80,
+        speedupPercent: 25,
+        estimatedHoursSaved: 0.5,
+      }),
     ),
     getHotFiles: jest.fn((_userId: TypeId<'users'>, _query: GetAnalyticsRangeRequestDto) =>
       Promise.resolve({
@@ -71,6 +87,21 @@ describe('IntegrationsAnalyticsController (Integration)', () => {
     ),
   };
 
+  const mockAnalyticsService = {
+    getDashboardStats: jest.fn((_userId: TypeId<'users'>, _query: GetAnalyticsRangeRequestDto) =>
+      Promise.resolve({
+        totalActiveSeconds: 3600,
+        totalEarnedMoney: 60,
+        averageFocusScore: 90,
+        totalSessionsCount: 1,
+        topLanguage: 'typescript',
+      }),
+    ),
+    getTimeseries: jest.fn(() => Promise.resolve({ series: [] })),
+    getBranchesDistribution: jest.fn(() => Promise.resolve({ branches: [] })),
+    getCommandsBreakdown: jest.fn(() => Promise.resolve({ totalCommands: 0, commands: [] })),
+  };
+
   const mockProjectsService = {
     getUserProjects: jest.fn((_userId: TypeId<'users'>) => Promise.resolve([mockProjectItem])),
   };
@@ -79,6 +110,10 @@ describe('IntegrationsAnalyticsController (Integration)', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       controllers: [IntegrationsAnalyticsController],
       providers: [
+        {
+          provide: AnalyticsService,
+          useValue: mockAnalyticsService,
+        },
         {
           provide: IntegrationsAnalyticsService,
           useValue: mockIntegrationsService,
@@ -144,7 +179,11 @@ describe('IntegrationsAnalyticsController (Integration)', () => {
 
     expect(response.status).toBe(200);
     expect(Array.isArray(body)).toBe(true);
-    expect(mockIntegrationsService.getRecentSessions).toHaveBeenCalledWith('u_user123', 50);
+    expect(mockIntegrationsService.getRecentSessions).toHaveBeenCalledWith(
+      'u_user123',
+      50,
+      undefined,
+    );
   });
 
   it('should reject a non-numeric session limit', async () => {
@@ -180,6 +219,33 @@ describe('IntegrationsAnalyticsController (Integration)', () => {
     expect(mockIntegrationsService.getHotFiles).toHaveBeenCalledWith(
       'u_user123',
       expect.objectContaining({ projectId: 'p_123' }),
+    );
+  });
+
+  it('should expose a range-filtered analytics summary', async () => {
+    const response = await request(getHttpServer(app))
+      .get('/integrations/analytics/summary?startDate=2026-11-01T00:00:00.000Z')
+      .set('x-api-key', 'valid-api-key');
+
+    expect(response.status).toBe(200);
+    expect(mockAnalyticsService.getDashboardStats).toHaveBeenCalledWith(
+      'u_user123',
+      expect.objectContaining({ startDate: '2026-11-01T00:00:00.000Z' }),
+    );
+  });
+
+  it('should apply project and range filters to language analytics', async () => {
+    const response = await request(getHttpServer(app))
+      .get('/integrations/analytics/languages?projectId=p_123&startDate=2026-11-01T00:00:00.000Z')
+      .set('x-api-key', 'valid-api-key');
+
+    expect(response.status).toBe(200);
+    expect(mockIntegrationsService.getLanguagesBreakdown).toHaveBeenCalledWith(
+      'u_user123',
+      expect.objectContaining({
+        projectId: 'p_123',
+        startDate: '2026-11-01T00:00:00.000Z',
+      }),
     );
   });
 });

@@ -38,6 +38,9 @@ function createDocument(): OpenAPIObject {
       '/api/v1/analytics/hot-files': {
         get: { responses: { 200: { description: 'Success' } } },
       },
+      '/api/v1/admin/integrations/audit': {
+        get: { responses: { 200: { description: 'Internal integration audit' } } },
+      },
     },
     components: {},
   };
