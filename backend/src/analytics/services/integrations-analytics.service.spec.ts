@@ -5,6 +5,19 @@ import { WorkSession, WorkSessionStatus } from '../../telemetry/entities/work-se
 
 import { IntegrationsAnalyticsService } from './integrations-analytics.service';
 
+function repositoryWithSessions(sessions: Array<WorkSession>): Repository<WorkSession> {
+  const queryBuilder = {
+    select: jest.fn().mockReturnThis(),
+    where: jest.fn().mockReturnThis(),
+    andWhere: jest.fn().mockReturnThis(),
+    getMany: jest.fn(() => Promise.resolve(sessions)),
+  };
+
+  return {
+    createQueryBuilder: jest.fn(() => queryBuilder),
+  } as unknown as Repository<WorkSession>;
+}
+
 describe('IntegrationsAnalyticsService', () => {
   it('aggregates top files and immediate parent folders', async () => {
     const query = jest.fn((_sql: string, _params: Array<string>) =>
@@ -118,5 +131,61 @@ describe('IntegrationsAnalyticsService', () => {
       inactiveReason: null,
       lastSignalAt,
     });
+  });
+
+  it('reports sample progress without claiming a speedup too early', async () => {
+    const sessions = [
+      Object.assign(new WorkSession(), {
+        activeSeconds: 1800,
+        aiAssisted: true,
+        aiInteractionsCount: 3,
+        commits: [{ insertions: 80, deletions: 20 }],
+      }),
+      Object.assign(new WorkSession(), {
+        activeSeconds: 3600,
+        aiAssisted: false,
+        aiInteractionsCount: 0,
+        commits: [{ insertions: 100, deletions: 20 }],
+      }),
+    ];
+    const service = new IntegrationsAnalyticsService(repositoryWithSessions(sessions));
+
+    await expect(service.getAiRoiMetrics('u_user123')).resolves.toEqual({
+      aiSessionsCount: 1,
+      manualSessionsCount: 1,
+      totalAiInteractions: 3,
+      aiActiveSeconds: 1800,
+      manualActiveSeconds: 3600,
+      minimumComparisonSeconds: 3600,
+      comparisonReady: false,
+      aiVelocityLinesPerHour: 200,
+      manualVelocityLinesPerHour: 120,
+      speedupPercentage: 0,
+      estimatedHoursSaved: 0,
+    });
+  });
+
+  it('returns a signed throughput change when both samples are comparable', async () => {
+    const sessions = [
+      Object.assign(new WorkSession(), {
+        activeSeconds: 3600,
+        aiAssisted: true,
+        aiInteractionsCount: 2,
+        commits: [{ insertions: 40, deletions: 10 }],
+      }),
+      Object.assign(new WorkSession(), {
+        activeSeconds: 3600,
+        aiAssisted: false,
+        aiInteractionsCount: 0,
+        commits: [{ insertions: 80, deletions: 20 }],
+      }),
+    ];
+    const service = new IntegrationsAnalyticsService(repositoryWithSessions(sessions));
+
+    const result = await service.getAiRoiMetrics('u_user123');
+
+    expect(result.comparisonReady).toBe(true);
+    expect(result.speedupPercentage).toBe(-50);
+    expect(result.estimatedHoursSaved).toBe(0);
   });
 });
