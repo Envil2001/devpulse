@@ -48,9 +48,9 @@ export const TOURS: readonly TourDefinition[] = [
       {
         id: 'ai-roi',
         target: target('ai-roi'),
-        title: 'AI Assistance & ROI',
+        title: 'AI-assisted activity',
         content:
-          'Track how AI tools (Copilot, Claude, Aider) boost your coding speed and how many hours you save.',
+          'See how much activity included detected AI use. Throughput estimates appear only after enough AI-assisted and other activity has been collected.',
         placement: 'bottom',
       },
       {

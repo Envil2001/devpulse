@@ -130,18 +130,10 @@ export class ActivityMonitor implements vscode.Disposable {
       vscode.workspace.onDidRenameFiles(() => {
         this.pulseActivity();
       }),
+      vscode.window.onDidStartTerminalShellExecution(() => {
+        this.pulseActivity();
+      }),
     );
-
-    const w = vscode.window as typeof vscode.window & {
-      onDidStartTerminalShellExecution?: (listener: () => unknown) => vscode.Disposable;
-    };
-    if (typeof w.onDidStartTerminalShellExecution === 'function') {
-      this.disposables.push(
-        w.onDidStartTerminalShellExecution(() => {
-          this.pulseActivity();
-        }),
-      );
-    }
   }
 
   private pulseActivity(): void {

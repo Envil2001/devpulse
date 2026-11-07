@@ -336,15 +336,15 @@ export class IntegrationsAnalyticsService {
 
     const aiVelocity = linesPerHour(ai);
     const manualVelocity = linesPerHour(manual);
-    const comparable =
+    const hasMinimumSamples =
       ai.seconds >= MIN_COMPARISON_SECONDS && manual.seconds >= MIN_COMPARISON_SECONDS;
+    const comparisonReady = hasMinimumSamples && manualVelocity > 0;
 
-    const speedupPercentage =
-      comparable && manualVelocity > 0 && aiVelocity > manualVelocity
-        ? Number((((aiVelocity - manualVelocity) / manualVelocity) * 100).toFixed(1))
-        : 0;
+    const speedupPercentage = comparisonReady
+      ? Number((((aiVelocity - manualVelocity) / manualVelocity) * 100).toFixed(1))
+      : 0;
 
-    const expectedHoursWithoutAi = comparable && manualVelocity > 0 ? ai.lines / manualVelocity : 0;
+    const expectedHoursWithoutAi = comparisonReady ? ai.lines / manualVelocity : 0;
     const estimatedHoursSaved = Math.max(
       0,
       Number((expectedHoursWithoutAi - ai.seconds / SECONDS_PER_HOUR).toFixed(1)),
@@ -354,6 +354,10 @@ export class IntegrationsAnalyticsService {
       aiSessionsCount: ai.sessions,
       manualSessionsCount: manual.sessions,
       totalAiInteractions: ai.interactions,
+      aiActiveSeconds: ai.seconds,
+      manualActiveSeconds: manual.seconds,
+      minimumComparisonSeconds: MIN_COMPARISON_SECONDS,
+      comparisonReady,
       aiVelocityLinesPerHour: aiVelocity,
       manualVelocityLinesPerHour: manualVelocity,
       speedupPercentage,

@@ -18,6 +18,7 @@ import { getHttpServer } from '../../test/get-http-server';
 import { User } from '../../users/entities/user.entity';
 import { type GetAnalyticsRangeRequestDto } from '../dto/request/get-analytics-range-request.dto';
 import { type GetAnalyticsHotFilesResponseDto } from '../dto/response/get-analytics-hot-files-response.dto';
+import { type GetIntegrationAiRoiResponseDto } from '../dto/response/get-integration-ai-roi-response.dto';
 import { type GetIntegrationSessionItemDto } from '../dto/response/get-integration-sessions-response.dto';
 import { AnalyticsService } from '../services/analytics.service';
 import { IntegrationsAnalyticsService } from '../services/integrations-analytics.service';
@@ -69,14 +70,18 @@ describe('IntegrationsAnalyticsController (Integration)', () => {
     ),
     getAiRoiMetrics: jest.fn((_userId: TypeId<'users'>, _query: GetAnalyticsRangeRequestDto) =>
       Promise.resolve({
-        aiSessions: 1,
-        manualSessions: 1,
-        aiInteractionsCount: 2,
-        aiLinesPerHour: 100,
-        manualLinesPerHour: 80,
-        speedupPercent: 25,
+        aiSessionsCount: 1,
+        manualSessionsCount: 1,
+        totalAiInteractions: 2,
+        aiActiveSeconds: 3600,
+        manualActiveSeconds: 3600,
+        minimumComparisonSeconds: 3600,
+        comparisonReady: true,
+        aiVelocityLinesPerHour: 100,
+        manualVelocityLinesPerHour: 80,
+        speedupPercentage: 25,
         estimatedHoursSaved: 0.5,
-      }),
+      } satisfies GetIntegrationAiRoiResponseDto),
     ),
     getHotFiles: jest.fn((_userId: TypeId<'users'>, _query: GetAnalyticsRangeRequestDto) =>
       Promise.resolve({

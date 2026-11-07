@@ -53,8 +53,17 @@ describe('AnalyticsController (Integration)', () => {
   });
 
   const mockAiRoi = Object.assign(new GetIntegrationAiRoiResponseDto(), {
-    hoursSaved: 12.5,
-    costSavings: 750,
+    aiSessionsCount: 2,
+    manualSessionsCount: 3,
+    totalAiInteractions: 8,
+    aiActiveSeconds: 5400,
+    manualActiveSeconds: 7200,
+    minimumComparisonSeconds: 3600,
+    comparisonReady: true,
+    aiVelocityLinesPerHour: 400,
+    manualVelocityLinesPerHour: 250,
+    speedupPercentage: 60,
+    estimatedHoursSaved: 1.2,
   });
 
   const mockHotFiles = Object.assign(new GetAnalyticsHotFilesResponseDto(), {

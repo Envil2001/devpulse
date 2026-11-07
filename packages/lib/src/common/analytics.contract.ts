@@ -21,6 +21,10 @@ export interface AiRoiMetrics {
   aiSessionsCount: number;
   manualSessionsCount: number;
   totalAiInteractions: number;
+  aiActiveSeconds: number;
+  manualActiveSeconds: number;
+  minimumComparisonSeconds: number;
+  comparisonReady: boolean;
   aiVelocityLinesPerHour: number;
   manualVelocityLinesPerHour: number;
   speedupPercentage: number;
